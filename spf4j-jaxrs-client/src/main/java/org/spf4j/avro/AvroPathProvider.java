@@ -26,15 +26,15 @@ import org.apache.avro.reflect.ExtendedReflectDatumWriter;
 import org.apache.avro.reflect.ReflectData;
 
 @Beta
-public class AvroPathProvider implements JsonProvider {
+public final class AvroPathProvider implements JsonProvider {
 
     @Override
-    public Object parse(String json) throws InvalidJsonException {
+    public Object parse(String json) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Object parse(InputStream jsonStream, String charset) throws InvalidJsonException {
+    public Object parse(InputStream jsonStream, String charset) {
         throw new UnsupportedOperationException();
     }
 
@@ -65,16 +65,16 @@ public class AvroPathProvider implements JsonProvider {
     }
 
     @Override
-    public boolean isArray(Object obj) {
+    public boolean isArray(final Object obj) {
         return obj instanceof List;
     }
 
     @Override
-    public int length(Object obj) {
+    public int length(final Object obj) {
         if (isArray(obj)) {
             return ((List) obj).size();
         } else if (isMap(obj)) {
-            throw new InvalidJsonException("Not yet implemented: length(obj) if obj is Map");
+            throw new InvalidJsonException("Not yet implemented: length(obj) if obj is Map: " + obj);
         } else if (obj instanceof String) {
             return ((String) obj).length();
         }
@@ -82,7 +82,7 @@ public class AvroPathProvider implements JsonProvider {
     }
 
     @Override
-    public Iterable<?> toIterable(Object obj) {
+    public Iterable<?> toIterable(final Object obj) {
         if (isArray(obj))
             return ((Iterable) obj);
         else
@@ -90,7 +90,7 @@ public class AvroPathProvider implements JsonProvider {
     }
 
     @Override
-    public Collection<String> getPropertyKeys(Object obj) {
+    public Collection<String> getPropertyKeys(final Object obj) {
         if (isArray(obj)) {
             throw new UnsupportedOperationException("Cannot get property keys for an array");
         } else if (obj instanceof GenericContainer){
@@ -102,17 +102,17 @@ public class AvroPathProvider implements JsonProvider {
     }
 
     @Override
-    public Object getArrayIndex(Object obj, int idx) {
+    public Object getArrayIndex(final Object obj, final int idx) {
         return ((List) obj).get(idx);
     }
 
     @Override
-    public Object getArrayIndex(Object obj, int idx, boolean unwrap) {
+    public Object getArrayIndex(final Object obj, final int idx, final boolean unwrap) {
         return getArrayIndex(obj, idx);
     }
 
     @Override
-    public void setArrayIndex(Object array, int idx, Object newValue) {
+    public void setArrayIndex(final Object array, final int idx, final Object newValue) {
         if (!isArray(array)) {
             throw new UnsupportedOperationException();
         } else {
@@ -126,7 +126,7 @@ public class AvroPathProvider implements JsonProvider {
     }
 
     @Override
-    public Object getMapValue(Object obj, String key) {
+    public Object getMapValue(final Object obj, final String key) {
         if (obj instanceof IndexedRecord) {
             IndexedRecord rec = (IndexedRecord) obj;
             Schema.Field f = rec.getSchema().getField(key);
@@ -138,7 +138,7 @@ public class AvroPathProvider implements JsonProvider {
     }
 
     @Override
-    public void setProperty(Object obj, Object key, Object value) {
+    public void setProperty(final Object obj, final Object key, final Object value) {
         if (isMap(obj)) {
             IndexedRecord rec = (IndexedRecord) obj;
             Schema.Field field = rec.getSchema().getField(String.valueOf(key));
@@ -151,17 +151,17 @@ public class AvroPathProvider implements JsonProvider {
         }
     }
 
-    public void removeProperty(Object obj, Object key) {
+    public void removeProperty(final Object obj, final Object key) {
         throw new UnsupportedOperationException("Cannot remove fields.");
     }
 
     @Override
-    public boolean isMap(Object obj) {
+    public boolean isMap(final Object obj) {
         return obj instanceof IndexedRecord;
     }
 
     @Override
-    public Object unwrap(Object obj) {
+    public Object unwrap(final Object obj) {
         return obj;
     }
 

@@ -1,3 +1,4 @@
 /spf4j-jaxrs-client/target/
 /target/
 /spf4j-jaxrs-server/target/
+/nb-configuration.xml

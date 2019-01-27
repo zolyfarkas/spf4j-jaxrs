@@ -8,7 +8,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import javax.inject.Inject;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
@@ -37,7 +36,8 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
   }
 
   @Override
-  public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+  public boolean isWriteable(final Class<?> type, Type genericType,
+          final Annotation[] annotations, final MediaType mediaType) {
     return true;
   }
 
@@ -46,13 +46,15 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
 
 
   @Override
-  public void writeTo(Object t, Class<?> type,
-          Type genericType, Annotation[] annotations,
-          MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
-          throws IOException, WebApplicationException {
-    Schema schema = ExtendedReflectData.get().getSchema(genericType != null ? genericType : type);
+  public void writeTo(final Object t, final Class<?> type,
+          final Type genericType, final Annotation[] annotations,
+          final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
+          final OutputStream entityStream)
+          throws IOException {
+    ExtendedReflectData reflector = ExtendedReflectData.get();
+    Schema schema = reflector.getSchema(genericType != null ? genericType : type);
     if (schema == null) {
-      schema = ExtendedReflectData.get().createSchema(genericType != null ? genericType : type, t, new HashMap<>());
+      schema = reflector.createSchema(genericType != null ? genericType : type, t, new HashMap<>());
     }
     String id = schema.getProp("mvnId");
     String strSchema;

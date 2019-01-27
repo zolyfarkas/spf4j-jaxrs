@@ -175,4 +175,9 @@ public class Spf4jCompletionStageRxInvoker
     return submit(() -> invocation.build(name, entity).getWrapped().invoke(responseType), getName(name));
   }
 
+  @Override
+  public String toString() {
+    return "Spf4jCompletionStageRxInvoker{" + "invocation=" + invocation + ", executor=" + executor + '}';
+  }
+
 }

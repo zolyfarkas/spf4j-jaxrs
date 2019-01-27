@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
@@ -22,14 +21,16 @@ import org.spf4j.base.Json;
 public final class SchemaMessageBodyWriter implements MessageBodyWriter<Schema> {
 
   @Override
-  public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+  public boolean isWriteable(final Class<?> type, final Type genericType, final Annotation[] annotations,
+          final MediaType mediaType) {
     return Schema.class.isAssignableFrom(type);
   }
 
   @Override
-  public void writeTo(Schema t, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType,
-          MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
-          throws IOException, WebApplicationException {
+  public void writeTo(final Schema t, final Class<?> type, final Type genericType,
+          final Annotation[] annotations, final MediaType mediaType,
+          final MultivaluedMap<String, Object> httpHeaders, final OutputStream entityStream)
+          throws IOException {
     t.toJson(Json.FACTORY.createJsonGenerator(entityStream));
   }
 

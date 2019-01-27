@@ -15,7 +15,7 @@ import org.apache.avro.io.DecoderFactory;
  */
 @Provider
 @Consumes({"application/octet-stream;fmt=avro", "application/avro"})
-public class BinaryAvroMessageBodyReader extends AvroMessageBodyReader {
+public final class BinaryAvroMessageBodyReader extends AvroMessageBodyReader {
 
 
   @Inject
@@ -24,7 +24,7 @@ public class BinaryAvroMessageBodyReader extends AvroMessageBodyReader {
   }
 
   @Override
-  public Decoder getDecoder(Schema writerSchema, InputStream is) throws IOException {
+  public Decoder getDecoder(final Schema writerSchema, final InputStream is) {
     return DecoderFactory.get().binaryDecoder(is, null);
   }
 

@@ -25,8 +25,8 @@ public class CustomExecutorServiceProvider implements ExecutorServiceProvider {
 
   private final String executorName;
 
-  public CustomExecutorServiceProvider(int coreSize, int maxSize, int idleMillis,
-          final int cleanShutdownWaitMillis, String executorName) {
+  public CustomExecutorServiceProvider(final int coreSize, final int maxSize, final int idleMillis,
+          final int cleanShutdownWaitMillis, final String executorName) {
     this.coreSize = coreSize;
     this.maxSize = maxSize;
     this.idleMillis = idleMillis;
@@ -56,7 +56,7 @@ public class CustomExecutorServiceProvider implements ExecutorServiceProvider {
     disposeExecutor(executorService, cleanShutdownWaitMillis);
   }
 
-  public static void disposeExecutor(ExecutorService executorService, final int cleanShutdownWaitMillis) {
+  public static void disposeExecutor(final ExecutorService executorService, final int cleanShutdownWaitMillis) {
     Logger.getLogger(CustomExecutorServiceProvider.class.getName())
             .log(Level.FINE, "Shutting down executor {0}", executorService);
     try {
@@ -75,6 +75,15 @@ public class CustomExecutorServiceProvider implements ExecutorServiceProvider {
               "Interrupted during shutdown, stilll running {0}", stillRunning);
     }
   }
+
+  @Override
+  public String toString() {
+    return "CustomExecutorServiceProvider{" + "coreSize=" + coreSize + ", maxSize="
+            + maxSize + ", idleMillis=" + idleMillis + ", cleanShutdownWaitMillis="
+            + cleanShutdownWaitMillis + ", executorName=" + executorName + '}';
+  }
+
+
 
 
 }

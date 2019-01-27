@@ -35,14 +35,14 @@ import org.spf4j.log.LogAttribute;
 public class ExecutionContextClientFilter implements ClientRequestFilter,
         ClientResponseFilter {
 
+  private static final Logger log = Logger.getLogger("org.spf4j.jaxrs.client");
+
   private final DeadlineProtocol protocol;
 
   @Inject
   public ExecutionContextClientFilter(final DeadlineProtocol protocol) {
     this.protocol = protocol;
   }
-
-  private static final Logger log = Logger.getLogger("org.spf4j.jaxrs.client");
 
   @Override
   public void filter(final ClientRequestContext requestContext) {
@@ -59,7 +59,8 @@ public class ExecutionContextClientFilter implements ClientRequestFilter,
   }
 
   @Override
-  public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
+  public void filter(final ClientRequestContext requestContext, final ClientResponseContext responseContext)
+          throws IOException {
     List<String> warnings = responseContext.getHeaders().get(Headers.WARNING);
     if (warnings != null && !warnings.isEmpty()) {
       ExecutionContext reqCtx = ExecutionContexts.current();
@@ -75,6 +76,11 @@ public class ExecutionContextClientFilter implements ClientRequestFilter,
         LogAttribute.value("httpStatus", responseContext.getStatus()),
         LogAttribute.execTimeMicros(TimeSource.nanoTime() - reqCtx.getStartTimeNanos(), TimeUnit.NANOSECONDS)});
     }
+  }
+
+  @Override
+  public String toString() {
+    return "ExecutionContextClientFilter{" + "protocol=" + protocol + '}';
   }
 
 }

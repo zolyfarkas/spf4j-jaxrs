@@ -20,7 +20,8 @@ public class CustomScheduledExecutionServiceProvider implements ScheduledExecuto
 
   private final int cleanShutdownWaitMillis;
 
-  public CustomScheduledExecutionServiceProvider(int coreSize, int cleanShutdownWaitMillis,  String executorName) {
+  public CustomScheduledExecutionServiceProvider(final int coreSize, final int cleanShutdownWaitMillis,
+          final String executorName) {
     this.coreSize = coreSize;
     this.executorName = executorName;
     this.cleanShutdownWaitMillis = cleanShutdownWaitMillis;
@@ -37,8 +38,16 @@ public class CustomScheduledExecutionServiceProvider implements ScheduledExecuto
   }
 
   @Override
-  public void dispose(ExecutorService executorService) {
+  public void dispose(final ExecutorService executorService) {
     CustomExecutorServiceProvider.disposeExecutor(executorService, cleanShutdownWaitMillis);
   }
+
+  @Override
+  public String toString() {
+    return "CustomScheduledExecutionServiceProvider{" + "coreSize=" + coreSize + ", executorName=" + executorName
+            + ", cleanShutdownWaitMillis=" + cleanShutdownWaitMillis + '}';
+  }
+
+
 
 }

@@ -25,6 +25,7 @@ import org.spf4j.failsafe.AsyncRetryExecutor;
  */
 public class Spf4jInvocationBuilder implements Invocation.Builder {
 
+  private final Spf4JClient client;
   private final Invocation.Builder ib;
   private final Spf4jWebTarget target;
   private AsyncRetryExecutor<Object, Callable<? extends Object>> executor;
@@ -35,6 +36,7 @@ public class Spf4jInvocationBuilder implements Invocation.Builder {
   public Spf4jInvocationBuilder(final Spf4JClient client, final Invocation.Builder ib,
           final AsyncRetryExecutor<Object, Callable<? extends Object>> executor,
           final Spf4jWebTarget target) {
+    this.client = client;
     this.ib = ib;
     this.executor = executor;
     this.target = target;
@@ -116,57 +118,93 @@ public class Spf4jInvocationBuilder implements Invocation.Builder {
 
   @Override
   public Invocation.Builder accept(String... mediaTypes) {
-    ib.accept(mediaTypes);
-    return this;
+    Invocation.Builder builder = ib.accept(mediaTypes);
+    if (builder == ib) {
+      return this;
+    } else {
+      return new Spf4jInvocationBuilder(client, builder, executor, target);
+    }
   }
 
   @Override
   public Invocation.Builder accept(MediaType... mediaTypes) {
-    ib.accept(mediaTypes);
-    return this;
+    Invocation.Builder builder = ib.accept(mediaTypes);
+    if (builder == ib) {
+      return this;
+    } else {
+      return new Spf4jInvocationBuilder(client, builder, executor, target);
+    }
   }
 
   @Override
   public Invocation.Builder acceptLanguage(Locale... locales) {
-    ib.acceptLanguage(locales);
-    return this;
+    Invocation.Builder builder = ib.acceptLanguage(locales);
+    if (builder == ib) {
+      return this;
+    } else {
+      return new Spf4jInvocationBuilder(client, builder, executor, target);
+    }
   }
 
   @Override
   public Invocation.Builder acceptLanguage(String... locales) {
-    ib.acceptLanguage(locales);
-    return this;
+    Invocation.Builder builder = ib.acceptLanguage(locales);
+    if (builder == ib) {
+      return this;
+    } else {
+      return new Spf4jInvocationBuilder(client, builder, executor, target);
+    }
   }
 
   @Override
   public Invocation.Builder acceptEncoding(String... encodings) {
-    ib.acceptEncoding(encodings);
-    return this;
+    Invocation.Builder builder = ib.acceptEncoding(encodings);
+    if (builder == ib) {
+      return this;
+    } else {
+      return new Spf4jInvocationBuilder(client, builder, executor, target);
+    }
   }
 
   @Override
   public Invocation.Builder cookie(Cookie cookie) {
-    ib.cookie(cookie);
-    return this;
+    Invocation.Builder builder = ib.cookie(cookie);
+    if (builder == ib) {
+      return this;
+    } else {
+      return new Spf4jInvocationBuilder(client, builder, executor, target);
+    }
   }
 
   @Override
   public Invocation.Builder cookie(String name, String value) {
-    ib.cookie(name, value);
-    return this;
+    Invocation.Builder builder = ib.cookie(name, value);
+    if (builder == ib) {
+      return this;
+    } else {
+      return new Spf4jInvocationBuilder(client, builder, executor, target);
+    }
   }
 
   @Override
   public Invocation.Builder cacheControl(CacheControl cacheControl) {
-    ib.cacheControl(cacheControl);
-    return this;
+    Invocation.Builder builder = ib.cacheControl(cacheControl);
+    if (builder == ib) {
+      return this;
+    } else {
+      return new Spf4jInvocationBuilder(client, builder, executor, target);
+    }
   }
 
   @Override
   public Invocation.Builder header(String name, Object value) {
-    ib.header(name, Spf4JClient.convert(
+    Invocation.Builder builder = ib.header(name, Spf4JClient.convert(
               Spf4JClient.getParamConverters(this.getTarget().getConfiguration()),value));
-    return this;
+    if (builder == ib) {
+      return this;
+    } else {
+      return new Spf4jInvocationBuilder(client, builder, executor, target);
+    }
   }
 
   @Override
@@ -190,8 +228,12 @@ public class Spf4jInvocationBuilder implements Invocation.Builder {
 
   @Override
   public Spf4jInvocationBuilder property(String name, Object value) {
-    ib.property(name, value);
-    return this;
+    Invocation.Builder builder = ib.property(name, value);
+    if (builder == ib) {
+      return this;
+    } else {
+      return new Spf4jInvocationBuilder(client, builder, executor, target);
+    }
   }
 
   @Override

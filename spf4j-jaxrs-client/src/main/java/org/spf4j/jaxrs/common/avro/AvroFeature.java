@@ -8,10 +8,10 @@ import org.codehaus.jackson.JsonParser;
 import org.spf4j.avro.SchemaClient;
 
 /**
- * registers all avro stuff.
+ * registers all avro message body readers and writers + parameter converters.
  * @author Zoltan Farkas
  */
-public class AvroFeature implements Feature {
+public final class AvroFeature implements Feature {
 
   static {
     org.apache.avro.Schema.FACTORY.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
@@ -27,7 +27,7 @@ public class AvroFeature implements Feature {
 
 
   @Override
-  public boolean configure(FeatureContext context) {
+  public boolean configure(final FeatureContext context) {
     context.register(new JsonAvroMessageBodyReader(client));
     context.register(new BinaryAvroMessageBodyReader(client));
     context.register(new JsonAvroMessageBodyWriter(client));
@@ -36,6 +36,11 @@ public class AvroFeature implements Feature {
     context.register(new SchemaMessageBodyWriter());
     context.register(new AvroParameterConverterProvider(client));
     return true;
+  }
+
+  @Override
+  public String toString() {
+    return "AvroFeature{" + "client=" + client + '}';
   }
 
 }

@@ -5,9 +5,7 @@ import java.io.InputStream;
 import java.io.InvalidObjectException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import javax.inject.Inject;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
@@ -34,21 +32,23 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
   }
 
   @Override
-  public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+  public boolean isReadable(final Class<?> type, final Type genericType, final Annotation[] annotations,
+          final MediaType mediaType) {
     return type != void.class &&  type != Void.class;
   }
 
   public abstract Decoder getDecoder(final Schema writerSchema, final InputStream is)
           throws IOException;
 
-  public  InputStream wrapInputStream(InputStream pentityStream) {
+  public  InputStream wrapInputStream(final InputStream pentityStream) {
     return new MemorizingBufferedInputStream(pentityStream);
   }
 
   @Override
-  public Object readFrom(Class<Object> type, Type genericType, Annotation[] annotations,
-          MediaType mediaType, MultivaluedMap<String, String> httpHeaders, InputStream pentityStream)
-          throws IOException, WebApplicationException {
+  public Object readFrom(final Class<Object> type, final Type genericType, final Annotation[] annotations,
+          final MediaType mediaType, final MultivaluedMap<String, String> httpHeaders,
+          final InputStream pentityStream)
+          throws IOException {
     String schemaStr = httpHeaders.getFirst(Headers.CONTENT_SCHEMA);
     Schema writerSchema;
     Schema readerSchema;

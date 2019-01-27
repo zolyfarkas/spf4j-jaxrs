@@ -166,4 +166,11 @@ public class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
     return this.invocation;
   }
 
+  @Override
+  public String toString() {
+    return "Spf4jInvocation{" + "invocation=" + invocation + ", executor="
+            + executor + ", target=" + target + ", timeoutNanos=" + timeoutNanos
+            + ", httpReqTimeoutNanos=" + httpReqTimeoutNanos + ", method=" + method + '}';
+  }
+
 }

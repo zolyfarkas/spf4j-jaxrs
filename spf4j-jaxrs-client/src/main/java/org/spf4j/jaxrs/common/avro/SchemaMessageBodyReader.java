@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
@@ -29,7 +28,7 @@ public final class SchemaMessageBodyReader implements MessageBodyReader<Schema> 
   @Override
   public Schema readFrom(final Class<Schema> type, final Type genericType, final Annotation[] annotations,
           final MediaType mediaType, final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream)
-          throws IOException, WebApplicationException {
+          throws IOException {
     return new Schema.Parser().parse(entityStream);
   }
 
