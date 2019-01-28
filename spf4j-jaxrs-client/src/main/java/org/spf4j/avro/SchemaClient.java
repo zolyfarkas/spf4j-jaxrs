@@ -223,4 +223,15 @@ public final class SchemaClient implements SchemaResolver {
     return schema.getProp("mvnId");
   }
 
+  @Override
+  public String toString() {
+    return "SchemaClient{" + "schemaArtifactClassifier=" + schemaArtifactClassifier
+            + ", schemaArtifactExtension=" + schemaArtifactExtension + ", failureCacheMillis="
+            + failureCacheMillis + ", snapshotCacheMillis=" + snapshotCacheMillis + ", remoteMavenRepo="
+            + remoteMavenRepo + ", localMavenRepo=" + localMavenRepo + ", memoryCache=" + memoryCache
+            + ", client=" + client + '}';
+  }
+
+
+
 }

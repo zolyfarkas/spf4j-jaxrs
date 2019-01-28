@@ -11,10 +11,9 @@ import javax.ws.rs.core.UriBuilder;
 import org.spf4j.failsafe.AsyncRetryExecutor;
 
 /**
- *
  * @author Zoltan Farkas
  */
-public class Spf4jWebTarget implements WebTarget {
+public final class Spf4jWebTarget implements WebTarget {
 
   private AsyncRetryExecutor<Object, Callable<? extends Object>> executor;
 
@@ -57,27 +56,27 @@ public class Spf4jWebTarget implements WebTarget {
   }
 
   @Override
-  public Spf4jWebTarget path(String path) {
+  public Spf4jWebTarget path(final String path) {
     return new Spf4jWebTarget(client, tg.path(path), executor, this.fromTemplate);
   }
 
   @Override
-  public Spf4jWebTarget resolveTemplate(String name, Object value) {
+  public Spf4jWebTarget resolveTemplate(final String name, final Object value) {
     return new Spf4jWebTarget(client, tg.resolveTemplate(name, value), executor, this);
   }
 
   @Override
-  public Spf4jWebTarget resolveTemplate(String name, Object value, boolean encodeSlashInPath) {
+  public Spf4jWebTarget resolveTemplate(final String name, final Object value, final boolean encodeSlashInPath) {
     return new Spf4jWebTarget(client, tg.resolveTemplate(name, value, encodeSlashInPath), executor, this);
   }
 
   @Override
-  public Spf4jWebTarget resolveTemplateFromEncoded(String name, Object value) {
+  public Spf4jWebTarget resolveTemplateFromEncoded(final String name, final Object value) {
     return new Spf4jWebTarget(client, tg.resolveTemplateFromEncoded(name, value), executor, this);
   }
 
   @Override
-  public Spf4jWebTarget resolveTemplates(Map<String, Object> templateValues) {
+  public Spf4jWebTarget resolveTemplates(final Map<String, Object> templateValues) {
     if (templateValues.isEmpty()) {
       return this;
     }
@@ -85,7 +84,7 @@ public class Spf4jWebTarget implements WebTarget {
   }
 
   @Override
-  public Spf4jWebTarget resolveTemplates(Map<String, Object> templateValues, boolean encodeSlashInPath) {
+  public Spf4jWebTarget resolveTemplates(final Map<String, Object> templateValues, final boolean encodeSlashInPath) {
     if (templateValues.isEmpty()) {
       return this;
     }
@@ -93,7 +92,7 @@ public class Spf4jWebTarget implements WebTarget {
   }
 
   @Override
-  public Spf4jWebTarget resolveTemplatesFromEncoded(Map<String, Object> templateValues) {
+  public Spf4jWebTarget resolveTemplatesFromEncoded(final Map<String, Object> templateValues) {
     if (templateValues.isEmpty()) {
       return this;
     }
@@ -101,14 +100,14 @@ public class Spf4jWebTarget implements WebTarget {
   }
 
   @Override
-  public Spf4jWebTarget matrixParam(String name, Object... values) {
+  public Spf4jWebTarget matrixParam(final String name, final Object... values) {
     return new Spf4jWebTarget(client, tg.matrixParam(name,
             Spf4JClient.convert(Spf4JClient.getParamConverters(getConfiguration()), values)),
             executor, this.fromTemplate);
   }
 
   @Override
-  public Spf4jWebTarget queryParam(String name, Object... values) {
+  public Spf4jWebTarget queryParam(final String name, final Object... values) {
     return new Spf4jWebTarget(client, tg.queryParam(name,
             Spf4JClient.convert(Spf4JClient.getParamConverters(getConfiguration()),values)),
             executor, this.fromTemplate);
@@ -121,12 +120,12 @@ public class Spf4jWebTarget implements WebTarget {
   }
 
   @Override
-  public Spf4jInvocationBuilder request(String... acceptedResponseTypes) {
+  public Spf4jInvocationBuilder request(final String... acceptedResponseTypes) {
     return new Spf4jInvocationBuilder(client, tg.request(acceptedResponseTypes), executor, this);
   }
 
   @Override
-  public Spf4jInvocationBuilder request(MediaType... acceptedResponseTypes) {
+  public Spf4jInvocationBuilder request(final MediaType... acceptedResponseTypes) {
     return new Spf4jInvocationBuilder(client, tg.request(acceptedResponseTypes), executor, this);
   }
 
@@ -136,57 +135,63 @@ public class Spf4jWebTarget implements WebTarget {
   }
 
   @Override
-  public Spf4jWebTarget property(String name, Object value) {
+  public Spf4jWebTarget property(final String name, final Object value) {
     tg.property(name, value);
     return this;
   }
 
   @Override
-  public Spf4jWebTarget register(Class<?> componentClass) {
+  public Spf4jWebTarget register(final Class<?> componentClass) {
     tg.register(componentClass);
     return this;
   }
 
   @Override
-  public Spf4jWebTarget register(Class<?> componentClass, int priority) {
+  public Spf4jWebTarget register(final Class<?> componentClass, final int priority) {
     tg.register(componentClass, priority);
     return this;
   }
 
   @Override
-  public Spf4jWebTarget register(Class<?> componentClass, Class<?>... contracts) {
+  public Spf4jWebTarget register(final Class<?> componentClass, final Class<?>... contracts) {
     tg.register(componentClass, contracts);
     return this;
   }
 
   @Override
-  public Spf4jWebTarget register(Class<?> componentClass, Map<Class<?>, Integer> contracts) {
+  public Spf4jWebTarget register(final Class<?> componentClass, final Map<Class<?>, Integer> contracts) {
     tg.register(componentClass, contracts);
     return this;
   }
 
   @Override
-  public Spf4jWebTarget register(Object component) {
+  public Spf4jWebTarget register(final Object component) {
     tg.register(component);
     return this;
   }
 
   @Override
-  public Spf4jWebTarget register(Object component, int priority) {
+  public Spf4jWebTarget register(final Object component, final int priority) {
     tg.register(component, priority);
     return this;
   }
 
   @Override
-  public Spf4jWebTarget register(Object component, Class<?>... contracts) {
+  public Spf4jWebTarget register(final Object component, final Class<?>... contracts) {
     tg.register(component, contracts);
     return this;
   }
 
   @Override
-  public Spf4jWebTarget register(Object component, Map<Class<?>, Integer> contracts) {
+  public Spf4jWebTarget register(final Object component, final Map<Class<?>, Integer> contracts) {
     tg.register(component, contracts);
     return this;
+  }
+
+  @Override
+  public String toString() {
+    return "Spf4jWebTarget{" + "executor=" + executor + ", tg=" + tg + ", client=" + client
+            + ", fromTemplate=" + fromTemplate + '}';
   }
 
 }

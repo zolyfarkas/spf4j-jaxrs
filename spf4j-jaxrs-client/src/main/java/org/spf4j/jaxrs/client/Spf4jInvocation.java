@@ -62,8 +62,12 @@ public class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
 
   @Override
   public Spf4jInvocation property(String name, Object value) {
-    invocation.property(name, value);
-    return this;
+    Invocation invc = invocation.property(name, value);
+    if (invc == invocation) {
+      return this;
+    } else {
+      return new Spf4jInvocation(invc, timeoutNanos, httpReqTimeoutNanos, executor, target, method);
+    }
   }
 
   private <T> T invoke(Callable<T> what) {

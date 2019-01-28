@@ -23,7 +23,7 @@ import org.spf4j.failsafe.AsyncRetryExecutor;
 /**
  * @author Zoltan Farkas
  */
-public class Spf4jInvocationBuilder implements Invocation.Builder {
+public final class Spf4jInvocationBuilder implements Invocation.Builder {
 
   private final Spf4JClient client;
   private final Invocation.Builder ib;
@@ -370,5 +370,14 @@ public class Spf4jInvocationBuilder implements Invocation.Builder {
   public <T> T method(String name, Entity<?> entity, GenericType<T> responseType) {
     return build(name, entity).invoke(responseType);
   }
+
+  @Override
+  public String toString() {
+    return "Spf4jInvocationBuilder{" + "client=" + client + ", ib=" + ib + ", target="
+            + target + ", executor=" + executor + ", timeoutNanos=" + timeoutNanos
+            + ", httpReqTimeoutNanos=" + httpReqTimeoutNanos + '}';
+  }
+
+
 
 }

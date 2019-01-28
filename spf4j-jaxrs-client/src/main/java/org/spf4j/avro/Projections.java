@@ -7,6 +7,7 @@ import com.jayway.jsonpath.JsonPath;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
 import org.apache.avro.generic.GenericData;
@@ -22,6 +23,7 @@ public class Projections {
 
   private static final Configuration CONF = Configuration.defaultConfiguration().jsonProvider(new AvroPathProvider());
 
+  @Nullable
   public static Object project(Schema toSchema, Schema fromSchema, Object object) {
     if (toSchema == fromSchema) {
       return object;
@@ -44,8 +46,9 @@ public class Projections {
       case BOOLEAN:
       case BYTES:
       case DOUBLE:
-      case NULL:
         return object;
+      case NULL:
+        return null;
       case ARRAY:
         List from = (List) object;
         List to = new ArrayList(from.size());

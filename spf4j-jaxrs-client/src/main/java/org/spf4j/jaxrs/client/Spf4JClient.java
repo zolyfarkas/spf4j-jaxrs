@@ -1,6 +1,7 @@
 
 package org.spf4j.jaxrs.client;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.spf4j.jaxrs.Utils;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -84,16 +85,17 @@ public class Spf4JClient implements Client {
       /**
        * Attempt to client side load balance...
        * Approach works for HTTP only.
-       * for HTTPS  we would need to register a new HTTP URL connection.
+       * for HTTPS  we would need to register a new HTTP URL connection. to do implemented later.
        *
        * @param url
        * @return
        * @throws IOException
        */
       @Override
+      @SuppressFBWarnings("PREDICTABLE_RANDOM")
       public HttpURLConnection getConnection(final URL url) throws IOException {
         try {
-          if (url.getProtocol().equals("https")) {
+          if ("https".equals(url.getProtocol())) {
             return (HttpURLConnection) url.openConnection();
           }
           URI uri = url.toURI();
@@ -191,7 +193,7 @@ public class Spf4JClient implements Client {
     return result == null ? params : result;
   }
 
-   public static Object convert(List<ParamConverterProvider> paramConverters, final Object param) {
+  static Object convert(List<ParamConverterProvider> paramConverters, final Object param) {
      if (param == null) {
        return null;
      }
