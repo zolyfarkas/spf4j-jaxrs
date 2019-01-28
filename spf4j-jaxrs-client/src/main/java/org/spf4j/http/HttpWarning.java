@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import org.spf4j.base.CharSequences;
+import org.spf4j.base.Slf4jMessageFormatter;
 import org.spf4j.io.csv.CharSeparatedValues;
 
 /**
@@ -85,11 +86,21 @@ public final class HttpWarning {
     return new HttpWarning(code, agent, text, zdt);
   }
 
-  public HttpWarning(final int code, final String agent, final String text) {
-    this(code, agent, text, null);
+  public HttpWarning(final int code, final String agent, @Nullable final  ZonedDateTime date,
+          final String format, final Object... params) {
+    this(code, agent, null, Slf4jMessageFormatter.toString(format, params));
   }
 
-  public HttpWarning(final int code, final String agent, final String text, @Nullable final  ZonedDateTime date) {
+
+  public HttpWarning(final int code, final String agent, final String format, final Object... params) {
+    this(code, agent, Slf4jMessageFormatter.toString(format, params));
+  }
+
+  public HttpWarning(final int code, final String agent, final String text) {
+    this(code, agent, null,  text);
+  }
+
+  public HttpWarning(final int code, final String agent, @Nullable final  ZonedDateTime date, final String text) {
     this.code = code;
     this.agent = agent;
     this.text = text;
