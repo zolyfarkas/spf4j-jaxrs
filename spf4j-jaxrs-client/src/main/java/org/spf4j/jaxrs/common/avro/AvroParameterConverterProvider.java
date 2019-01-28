@@ -45,7 +45,7 @@ public final class AvroParameterConverterProvider implements ParamConverterProvi
 
     private final SchemaResolver client;
 
-    public SchemaParamConverter(SchemaResolver client) {
+    SchemaParamConverter(final SchemaResolver client) {
       this.client = client;
     }
 

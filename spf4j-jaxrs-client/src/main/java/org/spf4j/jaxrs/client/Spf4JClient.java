@@ -14,6 +14,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,8 +23,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -51,7 +51,8 @@ import org.spf4j.failsafe.concurrent.FailSafeExecutor;
  *
  * @author Zoltan Farkas
  */
-public class Spf4JClient implements Client {
+@SuppressFBWarnings("FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY")
+public final class Spf4JClient implements Client {
 
   static {
     // time to cache DNS entries in seconds.
@@ -80,36 +81,7 @@ public class Spf4JClient implements Client {
     this.cl = cl;
     ClientConfig configuration = (ClientConfig) cl.getConfiguration();
     HttpUrlConnectorProvider httpUrlConnectorProvider = new HttpUrlConnectorProvider();
-    httpUrlConnectorProvider.connectionFactory(new HttpUrlConnectorProvider.ConnectionFactory() {
-
-      /**
-       * Attempt to client side load balance...
-       * Approach works for HTTP only.
-       * for HTTPS  we would need to register a new HTTP URL connection. to do implemented later.
-       *
-       * @param url
-       * @return
-       * @throws IOException
-       */
-      @Override
-      @SuppressFBWarnings("PREDICTABLE_RANDOM")
-      public HttpURLConnection getConnection(final URL url) throws IOException {
-        try {
-          if ("https".equals(url.getProtocol())) {
-            return (HttpURLConnection) url.openConnection();
-          }
-          URI uri = url.toURI();
-          InetAddress[] targets = InetAddress.getAllByName(uri.getHost());
-          InetAddress chosen = targets[ThreadLocalRandom.current().nextInt(targets.length)];
-          URI newUri = new URI(uri.getScheme(), uri.getUserInfo(),
-                  chosen.getHostAddress(), uri.getPort(), uri.getPath(),
-                  uri.getQuery(), uri.getFragment());
-          return (HttpURLConnection) newUri.toURL().openConnection();
-        } catch (URISyntaxException ex) {
-          throw new RuntimeException(ex);
-        }
-      }
-    });
+    httpUrlConnectorProvider.connectionFactory(CustomConnectionFactory.INSTANCE);
     configuration.connectorProvider(httpUrlConnectorProvider);
     this.retryPolicy = retryPolicy;
     this.hedgePolicy = hedgePolicy;
@@ -117,12 +89,19 @@ public class Spf4JClient implements Client {
     this.executor = retryPolicy.async(hedgePolicy, fsExec);
   }
 
-  public static List<ParamConverterProvider> getParamConverters(Configuration config) {
-    ClientExecutor clientExecutor = ((ClientConfig) config).getClientExecutor();
+  public static List<ParamConverterProvider> getParamConverters(final Configuration pconfig) {
+    ClientExecutor clientExecutor = ((ClientConfig) pconfig).getClientExecutor();
+    Configuration config;
     try {
-    Method m = clientExecutor.getClass().getDeclaredMethod("getConfig");
-    m.setAccessible(true);
-    config = (Configuration) m.invoke(clientExecutor);
+      Method m = clientExecutor.getClass().getDeclaredMethod("getConfig");
+      AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        @Override
+        public Void run() {
+          m.setAccessible(true);
+          return null;
+        }
+      });
+      config = (Configuration) m.invoke(clientExecutor);
     } catch (IllegalAccessException
             | NoSuchMethodException | InvocationTargetException | RuntimeException e) {
       throw new IllegalStateException(e);
@@ -141,7 +120,7 @@ public class Spf4JClient implements Client {
 
 
   @Nullable
-  public static ParamConverter getConverter(final Class type, List<ParamConverterProvider> paramConverters) {
+  public static ParamConverter getConverter(final Class type, final List<ParamConverterProvider> paramConverters) {
     for (ParamConverterProvider pcp : paramConverters) {
       ParamConverter converter = pcp.getConverter(type, type, Arrays.EMPTY_ANNOT_ARRAY);
       if (converter != null) {
@@ -151,8 +130,8 @@ public class Spf4JClient implements Client {
     return null;
   }
 
-  public static Object[] convert(List<ParamConverterProvider> paramConverters, final Object... params) {
-    Object [] result = null;
+  public static Object[] convert(final List<ParamConverterProvider> paramConverters, final Object... params) {
+    Object[] result = null;
     for (int i = 0; i < params.length; i++) {
       Object oo = params[i];
       if (oo != null) {
@@ -172,7 +151,7 @@ public class Spf4JClient implements Client {
     return result == null ? params : result;
   }
 
-  public static List<Object> convert(List<ParamConverterProvider> paramConverters, final List<Object> params) {
+  public static List<Object> convert(final List<ParamConverterProvider> paramConverters, final List<Object> params) {
     List<Object> result = null;
     for (int i = 0, l = params.size(); i < l; i++) {
       Object oo = params.get(i);
@@ -193,22 +172,23 @@ public class Spf4JClient implements Client {
     return result == null ? params : result;
   }
 
-  static Object convert(List<ParamConverterProvider> paramConverters, final Object param) {
-     if (param == null) {
-       return null;
-     }
+  @SuppressFBWarnings("URV_UNRELATED_RETURN_VALUES")
+  @Nullable
+  static Object convert(final List<ParamConverterProvider> paramConverters, final Object param) {
+    if (param == null) {
+      return null;
+    }
     ParamConverter converter = getConverter(param.getClass(), paramConverters);
     if (converter != null) {
-       try {
-         return URLEncoder.encode(converter.toString(param), StandardCharsets.UTF_8.name());
-       } catch (UnsupportedEncodingException ex) {
-         throw new RuntimeException(ex);
-       }
+      try {
+        return URLEncoder.encode(converter.toString(param), StandardCharsets.UTF_8.name());
+      } catch (UnsupportedEncodingException ex) {
+        throw new RuntimeException(ex);
+      }
     } else {
       return param;
     }
-
-   }
+  }
 
 
   public Spf4JClient withHedgePolicy(final HedgePolicy hp) {
@@ -225,27 +205,27 @@ public class Spf4JClient implements Client {
   }
 
   @Override
-  public Spf4jWebTarget target(String uri) {
+  public Spf4jWebTarget target(final String uri) {
     return new Spf4jWebTarget(this, cl.target(uri), executor, null);
   }
 
   @Override
-  public Spf4jWebTarget target(URI uri) {
+  public Spf4jWebTarget target(final URI uri) {
     return new Spf4jWebTarget(this, cl.target(uri), executor, null);
   }
 
   @Override
-  public Spf4jWebTarget target(UriBuilder uriBuilder) {
+  public Spf4jWebTarget target(final UriBuilder uriBuilder) {
     return new Spf4jWebTarget(this, cl.target(uriBuilder), executor, null);
   }
 
   @Override
-  public Spf4jWebTarget target(Link link) {
+  public Spf4jWebTarget target(final Link link) {
     return new Spf4jWebTarget(this, cl.target(link), executor, null);
   }
 
   @Override
-  public Spf4jInvocationBuilder invocation(Link link) {
+  public Spf4jInvocationBuilder invocation(final Link link) {
     return new Spf4jInvocationBuilder(this, cl.invocation(link), executor, new Spf4jWebTarget(this, cl.target(link),
             executor, null));
   }
@@ -266,57 +246,100 @@ public class Spf4JClient implements Client {
   }
 
   @Override
-  public Spf4JClient property(String name, Object value) {
+  public Spf4JClient property(final String name, final Object value) {
     cl.property(name, value);
     return this;
   }
 
   @Override
-  public Spf4JClient register(Class<?> componentClass) {
+  public Spf4JClient register(final Class<?> componentClass) {
     cl.register(componentClass);
     return this;
   }
 
   @Override
-  public Spf4JClient register(Class<?> componentClass, int priority) {
+  public Spf4JClient register(final Class<?> componentClass, final int priority) {
     cl.register(componentClass, priority);
     return this;
   }
 
   @Override
-  public Spf4JClient register(Class<?> componentClass, Class<?>... contracts) {
+  public Spf4JClient register(final Class<?> componentClass, final Class<?>... contracts) {
     cl.register(componentClass, contracts);
     return this;
   }
 
   @Override
-  public Spf4JClient register(Class<?> componentClass, Map<Class<?>, Integer> contracts) {
+  public Spf4JClient register(final Class<?> componentClass, final Map<Class<?>, Integer> contracts) {
     cl.register(componentClass, contracts);
     return this;
   }
 
   @Override
-  public Spf4JClient register(Object component) {
+  public Spf4JClient register(final Object component) {
     cl.register(component);
     return this;
   }
 
   @Override
-  public Spf4JClient register(Object component, int priority) {
+  public Spf4JClient register(final Object component, final int priority) {
     cl.register(component, priority);
     return this;
   }
 
   @Override
-  public Spf4JClient register(Object component, Class<?>... contracts) {
+  public Spf4JClient register(final Object component, final Class<?>... contracts) {
     cl.register(component, contracts);
     return this;
   }
 
   @Override
-  public Spf4JClient register(Object component, Map<Class<?>, Integer> contracts) {
+  public Spf4JClient register(final Object component, final Map<Class<?>, Integer> contracts) {
     cl.register(component, contracts);
     return this;
+  }
+
+  @Override
+  public String toString() {
+    return "Spf4JClient{" + "cl=" + cl + ", retryPolicy=" + retryPolicy + ", hedgePolicy=" + hedgePolicy
+            + ", fsExec=" + fsExec + ", executor=" + executor + '}';
+  }
+
+  private static class CustomConnectionFactory implements HttpUrlConnectorProvider.ConnectionFactory {
+
+    private static final CustomConnectionFactory INSTANCE = new CustomConnectionFactory();
+
+    /**
+     * Attempt to client side load balance...
+     * Approach works for HTTP only.
+     * for HTTPS  we would need to register a new HTTP URL connection. to do implemented later.
+     *
+     * @param url
+     * @return
+     * @throws IOException
+     */
+    @Override
+    @SuppressFBWarnings({"PREDICTABLE_RANDOM", "URLCONNECTION_SSRF_FD"})
+    public HttpURLConnection getConnection(final URL url) throws IOException {
+      try {
+        String protocol = url.getProtocol();
+        if ("file".equalsIgnoreCase(protocol)) {
+          throw new IOException("File protocol not supported: " + url);
+        }
+        if ("https".equalsIgnoreCase(protocol)) {
+          return (HttpURLConnection) url.openConnection();
+        }
+        URI uri = url.toURI();
+        InetAddress[] targets = InetAddress.getAllByName(uri.getHost());
+        InetAddress chosen = targets[ThreadLocalRandom.current().nextInt(targets.length)];
+        URI newUri = new URI(uri.getScheme(), uri.getUserInfo(),
+                chosen.getHostAddress(), uri.getPort(), uri.getPath(),
+                uri.getQuery(), uri.getFragment());
+        return (HttpURLConnection) newUri.toURL().openConnection();
+      } catch (URISyntaxException ex) {
+        throw new RuntimeException(ex);
+      }
+    }
   }
 
 }

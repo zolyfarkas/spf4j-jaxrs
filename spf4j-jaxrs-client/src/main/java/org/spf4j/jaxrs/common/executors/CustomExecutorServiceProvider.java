@@ -34,8 +34,9 @@ public class CustomExecutorServiceProvider implements ExecutorServiceProvider {
     this.executorName = executorName;
   }
 
-
-
+  /**
+   * @inheritdoc
+   */
   @Override
   public ExecutorService getExecutorService() {
     Logger.getLogger(CustomExecutorServiceProvider.class.getName())
@@ -51,6 +52,9 @@ public class CustomExecutorServiceProvider implements ExecutorServiceProvider {
             .build());
   }
 
+  /**
+   * @inheritdoc
+   */
   @Override
   public void dispose(final ExecutorService executorService) {
     disposeExecutor(executorService, cleanShutdownWaitMillis);
@@ -76,6 +80,9 @@ public class CustomExecutorServiceProvider implements ExecutorServiceProvider {
     }
   }
 
+  /**
+   * @inheritdoc
+   */
   @Override
   public String toString() {
     return "CustomExecutorServiceProvider{" + "coreSize=" + coreSize + ", maxSize="

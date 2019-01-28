@@ -17,6 +17,9 @@ public final class SchemaRef {
   private final String ref;
 
   public SchemaRef(final CharSequence sequence) {
+    if (!CharSequences.isValidFileName(sequence)) {
+      throw new IllegalArgumentException("Invalid charecters in " + sequence);
+    }
     int l = sequence.length();
     int idx = -1;
     int idxP1 = idx + 1;
@@ -58,8 +61,7 @@ public final class SchemaRef {
 
   @Override
   public String toString() {
-    return groupId + ':'+ artifactId + ':' + version + ':' + ref;
+    return groupId + ':' + artifactId + ':' + version + ':' + ref;
   }
-
 
 }

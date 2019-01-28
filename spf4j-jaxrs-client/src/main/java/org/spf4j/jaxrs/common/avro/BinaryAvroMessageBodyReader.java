@@ -1,6 +1,5 @@
 package org.spf4j.jaxrs.common.avro;
 
-import java.io.IOException;
 import java.io.InputStream;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;

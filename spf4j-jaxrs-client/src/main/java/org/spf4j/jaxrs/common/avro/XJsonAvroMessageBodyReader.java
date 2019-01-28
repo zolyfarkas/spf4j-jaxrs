@@ -9,25 +9,25 @@ import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
 import org.apache.avro.io.Decoder;
-import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.io.ExtendedJsonDecoder;
 import org.spf4j.io.MemorizingBufferedInputStream;
 
 /**
  * @author Zoltan Farkas
  */
 @Provider
-@Consumes({"application/avro+json"})
-public final class JsonAvroMessageBodyReader extends AvroMessageBodyReader {
+@Consumes({"application/json;fmt=avro-x", "application/avro-x+json", "text/plain;fmt=avro-x"})
+public final class XJsonAvroMessageBodyReader extends AvroMessageBodyReader {
 
 
   @Inject
-  public JsonAvroMessageBodyReader(final SchemaResolver client) {
+  public XJsonAvroMessageBodyReader(final SchemaResolver client) {
     super(client);
   }
 
   @Override
   public Decoder getDecoder(final Schema writerSchema, final InputStream is) throws IOException {
-    return DecoderFactory.get().jsonDecoder(writerSchema, is);
+    return new ExtendedJsonDecoder(writerSchema, is);
   }
 
   public  InputStream wrapInputStream(final InputStream pentityStream) {

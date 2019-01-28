@@ -1,18 +1,18 @@
 package org.spf4j.jaxrs.client.providers;
 
-import org.spf4j.jaxrs.common.executors.*;
 import javax.inject.Inject;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.ext.Provider;
 import org.glassfish.jersey.client.ClientAsyncExecutor;
 import org.spf4j.jaxrs.Utils;
+import org.spf4j.jaxrs.common.executors.CustomExecutorServiceProvider;
 
 /**
  * @author Zoltan Farkas
  */
 @Provider
 @ClientAsyncExecutor
-public class ClientCustomExecutorServiceProvider extends CustomExecutorServiceProvider {
+public final class ClientCustomExecutorServiceProvider extends CustomExecutorServiceProvider {
 
   @Inject
   public ClientCustomExecutorServiceProvider(final Configuration cfg) {

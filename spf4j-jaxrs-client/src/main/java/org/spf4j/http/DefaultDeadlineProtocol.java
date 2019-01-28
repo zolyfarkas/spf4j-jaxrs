@@ -1,4 +1,3 @@
-
 package org.spf4j.http;
 
 import java.time.Instant;
@@ -14,7 +13,7 @@ import org.spf4j.base.Timing;
 /**
  * @author Zoltan Farkas
  */
-public class DefaultDeadlineProtocol implements DeadlineProtocol {
+public final class DefaultDeadlineProtocol implements DeadlineProtocol {
 
   private final String deadlineHeaderName;
 
@@ -28,7 +27,7 @@ public class DefaultDeadlineProtocol implements DeadlineProtocol {
     this(Headers.REQ_DEADLINE, Headers.REQ_TIMEOUT, 60000000000L, 600000000000L);
   }
 
-  public DefaultDeadlineProtocol(String deadlineHeaderName, String timeoutHeaderName,
+  public DefaultDeadlineProtocol(final String deadlineHeaderName, final String timeoutHeaderName,
           final long defaultTimeoutNanos, final long maxTimeoutNanos) {
     if (defaultTimeoutNanos > maxTimeoutNanos) {
       throw new IllegalArgumentException("Invalid server configuration,"
@@ -41,30 +40,29 @@ public class DefaultDeadlineProtocol implements DeadlineProtocol {
   }
 
   @Override
-  public long serialize(final  BiConsumer<String, String> headers, final long deadlineNanos) {
+  public long serialize(final BiConsumer<String, String> headers, final long deadlineNanos) {
     long timeoutNanos = deadlineNanos - TimeSource.nanoTime();
     Instant deadline = Timing.getCurrentTiming().fromNanoTimeToInstant(deadlineNanos);
-    headers.accept(deadlineHeaderName, Long.toString(deadline.getEpochSecond())  + ' ' + deadline.getNano());
+    headers.accept(deadlineHeaderName, Long.toString(deadline.getEpochSecond()) + ' ' + deadline.getNano());
     headers.accept(timeoutHeaderName, timeoutNanos + " n");
     return timeoutNanos;
   }
 
-
   @Override
-  public long deserialize(Function<String, String> headers, final long currentTimeNanos) {
+  public long deserialize(final Function<String, String> headers, final long currentTimeNanos) {
     String deadlineStr = headers.apply(deadlineHeaderName);
     long deadlineNanos;
     if (deadlineStr == null) {
-      String timeoutStr =  headers.apply(timeoutHeaderName);
+      String timeoutStr = headers.apply(timeoutHeaderName);
       if (timeoutStr == null) {
         deadlineNanos = currentTimeNanos + defaultTimeoutNanos;
       } else {
         long parseTimeoutNanos = parseTimeoutNanos(timeoutStr);
         if (parseTimeoutNanos > maxTimeoutNanos) {
-            Logger.getLogger(DefaultDeadlineProtocol.class.getName())
-                    .log(Level.WARNING, "Overwriting client supplied timeout {0} ns with {1} ns",
-                            new Object [] {parseTimeoutNanos, maxTimeoutNanos});
-            deadlineNanos = currentTimeNanos + maxTimeoutNanos;
+          Logger.getLogger(DefaultDeadlineProtocol.class.getName())
+                  .log(Level.WARNING, "Overwriting client supplied timeout {0} ns with {1} ns",
+                          new Object[]{parseTimeoutNanos, maxTimeoutNanos});
+          deadlineNanos = currentTimeNanos + maxTimeoutNanos;
         } else {
           deadlineNanos = currentTimeNanos + parseTimeoutNanos;
         }
@@ -75,42 +73,36 @@ public class DefaultDeadlineProtocol implements DeadlineProtocol {
       if (timeoutNanos > maxTimeoutNanos) {
         Logger.getLogger(DefaultDeadlineProtocol.class.getName())
                 .log(Level.WARNING, "Overwriting client supplied timeout {0} ns with {1} ns",
-                        new Object [] {timeoutNanos, maxTimeoutNanos});
+                        new Object[]{timeoutNanos, maxTimeoutNanos});
         deadlineNanos = currentTimeNanos + maxTimeoutNanos;
       }
     }
     return deadlineNanos;
   }
 
+  /**
+   * Hour → "H" Minute → "M" Second → "S" Millisecond → "m" Microsecond → "u" Nanosecond → "n"
+   */
+  public static TimeUnit from(final CharSequence cs, final int idx) {
+    switch (cs.charAt(idx)) {
+      case 'H':
+        return TimeUnit.HOURS;
+      case 'M':
+        return TimeUnit.MINUTES;
+      case 'S':
+        return TimeUnit.SECONDS;
+      case 'm':
+        return TimeUnit.MILLISECONDS;
+      case 'u':
+        return TimeUnit.MICROSECONDS;
+      case 'n':
+        return TimeUnit.NANOSECONDS;
+      default:
+        throw new IllegalArgumentException("Unsupported time unit " + cs + " at " + idx);
+    }
+  }
 
-/**
-   Hour → "H"
-   Minute → "M"
-   Second → "S"
-   Millisecond → "m"
-   Microsecond → "u"
-   Nanosecond → "n"
-  */
-   public static TimeUnit from(final CharSequence cs, final int idx) {
-     switch (cs.charAt(idx)) {
-       case 'H':
-         return TimeUnit.HOURS;
-       case 'M':
-         return TimeUnit.MINUTES;
-       case 'S':
-         return TimeUnit.SECONDS;
-       case 'm':
-         return TimeUnit.MILLISECONDS;
-       case 'u':
-         return TimeUnit.MICROSECONDS;
-       case 'n':
-         return TimeUnit.NANOSECONDS;
-       default:
-         throw new IllegalArgumentException("Unsupported time unit " + cs + " at " + idx);
-     }
-   }
-
-   public static long parseDeadlineNanos(final CharSequence deadlineHeaderValue) {
+  public static long parseDeadlineNanos(final CharSequence deadlineHeaderValue) {
     long deadlineSeconds = CharSequences.parseUnsignedLong(deadlineHeaderValue, 10, 0);
     long nanoTime = Timing.getCurrentTiming().fromEpochMillisToNanoTime(deadlineSeconds * 1000);
     int indexOf = CharSequences.indexOf(deadlineHeaderValue, 0, deadlineHeaderValue.length(), ' ');
@@ -122,14 +114,20 @@ public class DefaultDeadlineProtocol implements DeadlineProtocol {
   }
 
   public static long parseTimeoutNanos(final CharSequence timeoutHeaderValue) {
-     long timeoutValue = CharSequences.parseUnsignedLong(timeoutHeaderValue, 10, 0);
-     int indexOf = CharSequences.indexOf(timeoutHeaderValue, 0, timeoutHeaderValue.length(), ' ');
-     if (indexOf < 0) {
-       return TimeUnit.MILLISECONDS.toNanos(timeoutValue);
-     }
-     TimeUnit unit = from(timeoutHeaderValue, indexOf + 1);
-     return unit.toNanos(timeoutValue);
+    long timeoutValue = CharSequences.parseUnsignedLong(timeoutHeaderValue, 10, 0);
+    int indexOf = CharSequences.indexOf(timeoutHeaderValue, 0, timeoutHeaderValue.length(), ' ');
+    if (indexOf < 0) {
+      return TimeUnit.MILLISECONDS.toNanos(timeoutValue);
+    }
+    TimeUnit unit = from(timeoutHeaderValue, indexOf + 1);
+    return unit.toNanos(timeoutValue);
   }
 
+  @Override
+  public String toString() {
+    return "DefaultDeadlineProtocol{" + "deadlineHeaderName=" + deadlineHeaderName
+            + ", timeoutHeaderName=" + timeoutHeaderName + ", defaultTimeoutNanos="
+            + defaultTimeoutNanos + ", maxTimeoutNanos=" + maxTimeoutNanos + '}';
+  }
 
 }

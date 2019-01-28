@@ -13,23 +13,23 @@ import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
 import org.apache.avro.io.Encoder;
-import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.io.ExtendedJsonEncoder;
 
 /**
  * @author Zoltan Farkas
  */
 @Provider
-@Produces({"application/avro+json"})
-public final class JsonAvroMessageBodyWriter extends  AvroMessageBodyWriter {
+@Produces({"application/json;fmt=avro-x", "application/avro-x+json", "text/plain;fmt=avro-x+json"})
+public final class XJsonAvroMessageBodyWriter extends  AvroMessageBodyWriter {
 
   @Inject
-  public JsonAvroMessageBodyWriter(final SchemaResolver client) {
+  public XJsonAvroMessageBodyWriter(final SchemaResolver client) {
     super(client);
   }
 
   @Override
   public Encoder getEncoder(final Schema writerSchema, final OutputStream os) throws IOException {
-    return EncoderFactory.get().jsonEncoder(writerSchema, os);
+    return new ExtendedJsonEncoder(writerSchema, os);
   }
 
   @Override
@@ -37,7 +37,7 @@ public final class JsonAvroMessageBodyWriter extends  AvroMessageBodyWriter {
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream)
           throws IOException {
-    httpHeaders.putSingle(HttpHeaders.CONTENT_TYPE, "application/avro+json");
+    httpHeaders.putSingle(HttpHeaders.CONTENT_TYPE, "application/avro-x+json");
     super.writeTo(t, type, genericType, annotations, mediaType, httpHeaders, entityStream);
   }
 

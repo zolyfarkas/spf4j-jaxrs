@@ -1,4 +1,3 @@
-
 package org.spf4j.jaxrs.client;
 
 import java.net.URI;
@@ -109,10 +108,9 @@ public final class Spf4jWebTarget implements WebTarget {
   @Override
   public Spf4jWebTarget queryParam(final String name, final Object... values) {
     return new Spf4jWebTarget(client, tg.queryParam(name,
-            Spf4JClient.convert(Spf4JClient.getParamConverters(getConfiguration()),values)),
+            Spf4JClient.convert(Spf4JClient.getParamConverters(getConfiguration()), values)),
             executor, this.fromTemplate);
   }
-
 
   @Override
   public Spf4jInvocationBuilder request() {

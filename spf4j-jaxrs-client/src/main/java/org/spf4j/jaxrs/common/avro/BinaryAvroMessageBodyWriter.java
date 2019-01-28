@@ -40,7 +40,4 @@ public final class BinaryAvroMessageBodyWriter extends  AvroMessageBodyWriter {
     super.writeTo(t, type, genericType, annotations, mediaType, httpHeaders, entityStream);
   }
 
-
-
-
 }

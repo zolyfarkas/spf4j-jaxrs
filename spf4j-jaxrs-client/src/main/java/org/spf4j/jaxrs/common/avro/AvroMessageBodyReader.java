@@ -31,19 +31,30 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
     this.client = client;
   }
 
+  /**
+   * @inheritdoc
+   */
   @Override
   public boolean isReadable(final Class<?> type, final Type genericType, final Annotation[] annotations,
           final MediaType mediaType) {
     return type != void.class &&  type != Void.class;
   }
 
-  public abstract Decoder getDecoder(final Schema writerSchema, final InputStream is)
+  public abstract Decoder getDecoder(Schema writerSchema, InputStream is)
           throws IOException;
 
+  /**
+   * Wrap the input stream. Overwrite to change the default wrapping.
+   * @param pentityStream
+   * @return
+   */
   public  InputStream wrapInputStream(final InputStream pentityStream) {
     return new MemorizingBufferedInputStream(pentityStream);
   }
 
+  /**
+   * @inheritdoc
+   */
   @Override
   public Object readFrom(final Class<Object> type, final Type genericType, final Annotation[] annotations,
           final MediaType mediaType, final MultivaluedMap<String, String> httpHeaders,

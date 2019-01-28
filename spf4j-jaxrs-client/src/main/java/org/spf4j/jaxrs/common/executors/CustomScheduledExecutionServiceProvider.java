@@ -28,7 +28,9 @@ public class CustomScheduledExecutionServiceProvider implements ScheduledExecuto
   }
 
 
-
+  /**
+   * @inheritdoc
+   */
   @Override
   public ScheduledExecutorService getExecutorService() {
     Logger.getLogger(CustomScheduledExecutionServiceProvider.class.getName())
@@ -37,11 +39,17 @@ public class CustomScheduledExecutionServiceProvider implements ScheduledExecuto
                   coreSize, new CustomThreadFactory(executorName, false, Thread.NORM_PRIORITY)));
   }
 
+  /**
+   * @inheritdoc
+   */
   @Override
   public void dispose(final ExecutorService executorService) {
     CustomExecutorServiceProvider.disposeExecutor(executorService, cleanShutdownWaitMillis);
   }
 
+  /**
+   * @inheritdoc
+   */
   @Override
   public String toString() {
     return "CustomScheduledExecutionServiceProvider{" + "coreSize=" + coreSize + ", executorName=" + executorName

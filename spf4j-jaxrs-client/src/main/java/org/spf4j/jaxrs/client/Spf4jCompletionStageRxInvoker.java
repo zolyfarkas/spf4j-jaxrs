@@ -14,19 +14,18 @@ import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.TimeSource;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
 import org.spf4j.failsafe.AsyncRetryExecutor;
-import org.spf4j.jaxrs.Utils;
 
 /**
  * @author Zoltan Farkas
  */
-public class Spf4jCompletionStageRxInvoker
+public final class Spf4jCompletionStageRxInvoker
         implements CompletionStageRxInvoker {
 
   private final Spf4jInvocationBuilder invocation;
   private final AsyncRetryExecutor<Object, Callable<? extends Object>> executor;
 
-  public Spf4jCompletionStageRxInvoker(Spf4jInvocationBuilder invocation,
-          AsyncRetryExecutor<Object, Callable<? extends Object>> executor) {
+  public Spf4jCompletionStageRxInvoker(final Spf4jInvocationBuilder invocation,
+          final AsyncRetryExecutor<Object, Callable<? extends Object>> executor) {
     this.invocation = invocation;
     this.executor = executor;
   }
@@ -36,11 +35,11 @@ public class Spf4jCompletionStageRxInvoker
     return method + '/' + uri.getHost() + ':' + uri.getPort() + uri.getPath();
   }
 
-  private <T> CompletionStage<T> submit(Callable<T> what, final String name) {
+  private <T> CompletionStage<T> submit(final Callable<T> what, final String name) {
     long nanoTime = TimeSource.nanoTime();
     ExecutionContext current = ExecutionContexts.current();
     long deadlineNanos = ExecutionContexts.computeDeadline(current, invocation.getTimeoutNanos(), TimeUnit.NANOSECONDS);
-    Callable<T> pc = Utils.propagatingServiceExceptionHandlingCallable(current, what, name,
+    Callable<T> pc = Spf4jInvocation.propagatingServiceExceptionHandlingCallable(current, what, name,
             deadlineNanos, invocation.getHttpReqTimeoutNanos());
     return executor.submitRx(pc, nanoTime, deadlineNanos,
             () -> new ContextPropagatingCompletableFuture<>(current, deadlineNanos));
@@ -52,44 +51,44 @@ public class Spf4jCompletionStageRxInvoker
   }
 
   @Override
-  public <T> CompletionStage<T> get(Class<T> responseType) {
+  public <T> CompletionStage<T> get(final Class<T> responseType) {
     return submit(() ->  {
       return invocation.buildGet().getWrapped().invoke(responseType);
     }, getName(HttpMethod.GET));
   }
 
   @Override
-  public <T> CompletionStage<T> get(GenericType<T> responseType) {
+  public <T> CompletionStage<T> get(final GenericType<T> responseType) {
      return submit(() -> invocation.buildGet().getWrapped().invoke(responseType), getName(HttpMethod.GET));
   }
 
   @Override
-  public CompletionStage<Response> put(Entity<?> entity) {
+  public CompletionStage<Response> put(final Entity<?> entity) {
     return submit(() -> invocation.buildPut(entity).getWrapped().invoke(), getName(HttpMethod.PUT));
   }
 
   @Override
-  public <T> CompletionStage<T> put(Entity<?> entity, Class<T> clazz) {
+  public <T> CompletionStage<T> put(final Entity<?> entity, final Class<T> clazz) {
     return submit(() -> invocation.buildPut(entity).getWrapped().invoke(clazz), getName(HttpMethod.PUT));
   }
 
   @Override
-  public <T> CompletionStage<T> put(Entity<?> entity, GenericType<T> type) {
+  public <T> CompletionStage<T> put(final Entity<?> entity, final GenericType<T> type) {
     return submit(() -> invocation.buildPut(entity).getWrapped().invoke(type), getName(HttpMethod.PUT));
   }
 
   @Override
-  public CompletionStage<Response> post(Entity<?> entity) {
+  public CompletionStage<Response> post(final Entity<?> entity) {
     return submit(() -> invocation.buildPost(entity).getWrapped().invoke(), getName(HttpMethod.POST));
   }
 
   @Override
-  public <T> CompletionStage<T> post(Entity<?> entity, Class<T> clazz) {
+  public <T> CompletionStage<T> post(final Entity<?> entity, final Class<T> clazz) {
     return submit(() -> invocation.buildPost(entity).getWrapped().invoke(clazz), getName(HttpMethod.POST));
   }
 
   @Override
-  public <T> CompletionStage<T> post(Entity<?> entity, GenericType<T> type) {
+  public <T> CompletionStage<T> post(final Entity<?> entity, final GenericType<T> type) {
     return submit(() -> invocation.buildPost(entity).getWrapped().invoke(type), getName(HttpMethod.POST));
   }
 
@@ -99,12 +98,12 @@ public class Spf4jCompletionStageRxInvoker
   }
 
   @Override
-  public <T> CompletionStage<T> delete(Class<T> responseType) {
+  public <T> CompletionStage<T> delete(final Class<T> responseType) {
     return submit(() -> invocation.buildDelete().getWrapped().invoke(responseType), getName(HttpMethod.DELETE));
   }
 
   @Override
-  public <T> CompletionStage<T> delete(GenericType<T> responseType) {
+  public <T> CompletionStage<T> delete(final GenericType<T> responseType) {
     return submit(() -> invocation.buildDelete().getWrapped().invoke(responseType), getName(HttpMethod.DELETE));
   }
 
@@ -119,13 +118,13 @@ public class Spf4jCompletionStageRxInvoker
   }
 
   @Override
-  public <T> CompletionStage<T> options(Class<T> responseType) {
+  public <T> CompletionStage<T> options(final Class<T> responseType) {
     return submit(() -> invocation.build(HttpMethod.OPTIONS).getWrapped().invoke(responseType),
             getName(HttpMethod.OPTIONS));
   }
 
   @Override
-  public <T> CompletionStage<T> options(GenericType<T> responseType) {
+  public <T> CompletionStage<T> options(final GenericType<T> responseType) {
     return submit(() -> invocation.build(HttpMethod.OPTIONS).getWrapped().invoke(responseType),
             getName(HttpMethod.OPTIONS));
   }
@@ -136,42 +135,42 @@ public class Spf4jCompletionStageRxInvoker
   }
 
   @Override
-  public <T> CompletionStage<T> trace(Class<T> responseType) {
+  public <T> CompletionStage<T> trace(final Class<T> responseType) {
     return submit(() -> invocation.build("TRACE").getWrapped().invoke(responseType), getName("TRACE"));
   }
 
   @Override
-  public <T> CompletionStage<T> trace(GenericType<T> responseType) {
+  public <T> CompletionStage<T> trace(final GenericType<T> responseType) {
     return submit(() -> invocation.build("TRACE").getWrapped().invoke(responseType), getName("TRACE"));
   }
 
   @Override
-  public CompletionStage<Response> method(String name) {
+  public CompletionStage<Response> method(final String name) {
     return submit(() -> invocation.build(name).getWrapped().invoke(), getName(name));
   }
 
   @Override
-  public <T> CompletionStage<T> method(String name, Class<T> responseType) {
+  public <T> CompletionStage<T> method(final String name, final Class<T> responseType) {
     return submit(() -> invocation.build(name).getWrapped().invoke(responseType), getName(name));
   }
 
   @Override
-  public <T> CompletionStage<T> method(String name, GenericType<T> responseType) {
+  public <T> CompletionStage<T> method(final String name, final GenericType<T> responseType) {
     return submit(() -> invocation.build(name).getWrapped().invoke(responseType), getName(name));
   }
 
   @Override
-  public CompletionStage<Response> method(String name, Entity<?> entity) {
+  public CompletionStage<Response> method(final String name, final Entity<?> entity) {
      return submit(() -> invocation.build(name, entity).getWrapped().invoke(), getName(name));
   }
 
   @Override
-  public <T> CompletionStage<T> method(String name, Entity<?> entity, Class<T> responseType) {
+  public <T> CompletionStage<T> method(final String name, final Entity<?> entity, final Class<T> responseType) {
     return submit(() -> invocation.build(name, entity).getWrapped().invoke(responseType), getName(name));
   }
 
   @Override
-  public <T> CompletionStage<T> method(String name, Entity<?> entity, GenericType<T> responseType) {
+  public <T> CompletionStage<T> method(final String name, final Entity<?> entity, final GenericType<T> responseType) {
     return submit(() -> invocation.build(name, entity).getWrapped().invoke(responseType), getName(name));
   }
 

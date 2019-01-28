@@ -4,6 +4,7 @@ import com.google.common.annotations.Beta;
 import com.google.common.collect.Maps;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,12 +20,15 @@ import org.apache.avro.specific.SpecificData;
  * @author Zoltan Farkas
  */
 @Beta
-public class Projections {
+public final class Projections {
+
+  private Projections() { }
 
   private static final Configuration CONF = Configuration.defaultConfiguration().jsonProvider(new AvroPathProvider());
 
   @Nullable
-  public static Object project(Schema toSchema, Schema fromSchema, Object object) {
+  @SuppressFBWarnings("URV_UNRELATED_RETURN_VALUES")
+  public static Object project(final Schema toSchema, final Schema fromSchema, final Object object) {
     if (toSchema == fromSchema) {
       return object;
     }

@@ -1,5 +1,6 @@
 package org.spf4j.jaxrs.client.providers;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -32,10 +33,10 @@ import org.spf4j.log.LogAttribute;
  */
 @Priority(Priorities.HEADER_DECORATOR)
 @Provider
-public class ExecutionContextClientFilter implements ClientRequestFilter,
+public final class ExecutionContextClientFilter implements ClientRequestFilter,
         ClientResponseFilter {
 
-  private static final Logger log = Logger.getLogger("org.spf4j.jaxrs.client");
+  private static final Logger LOG = Logger.getLogger("org.spf4j.jaxrs.client");
 
   private final DeadlineProtocol protocol;
 
@@ -53,25 +54,26 @@ public class ExecutionContextClientFilter implements ClientRequestFilter,
     headers.add(Headers.REQ_ID, reqCtx.getId());
     int readTimeoutMs = (int) (timeoutNanos / 1000000);
     requestContext.setProperty(ClientProperties.READ_TIMEOUT, readTimeoutMs);
-    if (log.isLoggable(Level.FINE)) {
-      log.log(Level.FINE, "Invoking {0}", new Object[] {reqCtx.getName(), LogAttribute.of("headers", headers)});
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.log(Level.FINE, "Invoking {0}", new Object[] {reqCtx.getName(), LogAttribute.of("headers", headers)});
     }
   }
 
   @Override
+  @SuppressFBWarnings("PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS")
   public void filter(final ClientRequestContext requestContext, final ClientResponseContext responseContext)
           throws IOException {
     List<String> warnings = responseContext.getHeaders().get(Headers.WARNING);
     if (warnings != null && !warnings.isEmpty()) {
       ExecutionContext reqCtx = ExecutionContexts.current();
-      log.log(Level.WARNING, "Done {0}", new Object[] {reqCtx.getName(),
+      LOG.log(Level.WARNING, "Done {0}", new Object[] {reqCtx.getName(),
         LogAttribute.traceId(reqCtx.getId()),
         LogAttribute.of("warnings", warnings),
         LogAttribute.value("httpStatus", responseContext.getStatus()),
         LogAttribute.execTimeMicros(TimeSource.nanoTime() - reqCtx.getStartTimeNanos(), TimeUnit.NANOSECONDS)});
-    } else if (log.isLoggable(Level.FINE)) {
+    } else if (LOG.isLoggable(Level.FINE)) {
       ExecutionContext reqCtx = ExecutionContexts.current();
-      log.log(Level.FINE, "Done {0}", new Object[] {reqCtx.getName(),
+      LOG.log(Level.FINE, "Done {0}", new Object[] {reqCtx.getName(),
         LogAttribute.traceId(reqCtx.getId()),
         LogAttribute.value("httpStatus", responseContext.getStatus()),
         LogAttribute.execTimeMicros(TimeSource.nanoTime() - reqCtx.getStartTimeNanos(), TimeUnit.NANOSECONDS)});

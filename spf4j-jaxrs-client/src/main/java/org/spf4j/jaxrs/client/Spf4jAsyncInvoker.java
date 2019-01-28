@@ -1,6 +1,7 @@
 
 package org.spf4j.jaxrs.client;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.Future;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.AsyncInvoker;
@@ -13,7 +14,8 @@ import javax.ws.rs.core.Response;
  *
  * @author Zoltan Farkas
  */
-public  final class Spf4jAsyncInvoker implements AsyncInvoker {
+@SuppressFBWarnings("FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY")
+public final class Spf4jAsyncInvoker implements AsyncInvoker {
 
   private final Spf4jInvocationBuilder invocation;
 
@@ -47,17 +49,17 @@ public  final class Spf4jAsyncInvoker implements AsyncInvoker {
   }
 
   @Override
-  public <T> Future<T> put(final Entity<?> entity, Class<T> responseType) {
+  public <T> Future<T> put(final Entity<?> entity, final Class<T> responseType) {
     return invocation.buildPut(entity).submit(responseType);
   }
 
   @Override
-  public <T> Future<T> put(final Entity<?> entity, GenericType<T> responseType) {
+  public <T> Future<T> put(final Entity<?> entity, final GenericType<T> responseType) {
     return invocation.buildPut(entity).submit(responseType);
   }
 
   @Override
-  public <T> Future<T> put(final Entity<?> entity, InvocationCallback<T> callback) {
+  public <T> Future<T> put(final Entity<?> entity, final InvocationCallback<T> callback) {
     return invocation.buildPut(entity).submit(callback);
   }
 
@@ -67,17 +69,17 @@ public  final class Spf4jAsyncInvoker implements AsyncInvoker {
   }
 
   @Override
-  public <T> Future<T> post(final Entity<?> entity, Class<T> responseType) {
+  public <T> Future<T> post(final Entity<?> entity, final Class<T> responseType) {
     return invocation.buildPost(entity).submit(responseType);
   }
 
   @Override
-  public <T> Future<T> post(final Entity<?> entity, GenericType<T> responseType) {
+  public <T> Future<T> post(final Entity<?> entity, final GenericType<T> responseType) {
     return invocation.buildPost(entity).submit(responseType);
   }
 
   @Override
-  public <T> Future<T> post(final Entity<?> entity, InvocationCallback<T> callback) {
+  public <T> Future<T> post(final Entity<?> entity, final InvocationCallback<T> callback) {
     return invocation.buildPost(entity).submit(callback);
   }
 

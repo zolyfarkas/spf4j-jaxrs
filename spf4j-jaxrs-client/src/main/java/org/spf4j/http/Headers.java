@@ -6,6 +6,8 @@ package org.spf4j.http;
  */
 public final class Headers {
 
+  private Headers() { }
+
   /**
    * request-deadline → SecondsSinceEpoch Nanos?
    */

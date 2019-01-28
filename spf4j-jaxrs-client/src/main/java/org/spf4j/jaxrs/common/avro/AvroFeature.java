@@ -29,8 +29,10 @@ public final class AvroFeature implements Feature {
   @Override
   public boolean configure(final FeatureContext context) {
     context.register(new JsonAvroMessageBodyReader(client));
-    context.register(new BinaryAvroMessageBodyReader(client));
     context.register(new JsonAvroMessageBodyWriter(client));
+    context.register(new XJsonAvroMessageBodyReader(client));
+    context.register(new XJsonAvroMessageBodyWriter(client));
+    context.register(new BinaryAvroMessageBodyReader(client));
     context.register(new BinaryAvroMessageBodyWriter(client));
     context.register(new SchemaMessageBodyReader());
     context.register(new SchemaMessageBodyWriter());

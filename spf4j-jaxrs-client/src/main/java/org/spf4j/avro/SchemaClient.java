@@ -3,6 +3,7 @@ package org.spf4j.avro;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -22,7 +23,6 @@ import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,7 +33,6 @@ import javax.ws.rs.core.MediaType;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
 import org.glassfish.jersey.client.ClientProperties;
-import org.spf4j.base.UncheckedExecutionException;
 import org.spf4j.io.Streams;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
@@ -61,6 +60,7 @@ public final class SchemaClient implements SchemaResolver {
 
   private final Spf4JClient client;
 
+  @SuppressFBWarnings("PATH_TRAVERSAL_IN")
   public SchemaClient(final URI remoteMavenRepo) {
     this(remoteMavenRepo, Paths.get(org.spf4j.base.Runtime.USER_HOME, ".m2", "repository"),
             "", "jar");
@@ -109,18 +109,10 @@ public final class SchemaClient implements SchemaResolver {
 
   @Override
   public Schema resolveSchema(final String id) {
-    try {
-      return memoryCache.get(id);
-    } catch (ExecutionException | com.google.common.util.concurrent.UncheckedExecutionException ex) {
-      Throwable cause = ex.getCause();
-      if (cause instanceof RuntimeException) {
-        throw (RuntimeException) cause;
-      } else {
-        throw new UncheckedExecutionException(cause);
-      }
-    }
+      return memoryCache.getUnchecked(id);
   }
 
+  @SuppressFBWarnings("PCAIL_POSSIBLE_CONSTANT_ALLOCATION_IN_LOOP")
   Schema loadSchema(final String id) throws IOException {
     SchemaRef sr = new SchemaRef(id);
     Path schemaPackage = getSchemaPackage(sr);
@@ -211,7 +203,7 @@ public final class SchemaClient implements SchemaResolver {
       Logger logger = Logger.getLogger(SchemaClient.class.getName());
       logger.log(Level.FINE, "Cannot download {0}", mUri);
       logger.log(Level.FINE, "Exception detail", ex);
-      Files.write(tmpDownload, java.util.Arrays.asList(Instant.now().toString()), StandardCharsets.UTF_8);
+      Files.write(tmpDownload, Collections.singletonList(Instant.now().toString()), StandardCharsets.UTF_8);
       Files.move(tmpDownload, folder.resolve(fileName + ".fts"), StandardCopyOption.ATOMIC_MOVE);
       throw ex;
     }
@@ -219,7 +211,7 @@ public final class SchemaClient implements SchemaResolver {
   }
 
   @Override
-  public String getId(Schema schema) {
+  public String getId(final Schema schema) {
     return schema.getProp("mvnId");
   }
 

@@ -15,7 +15,7 @@ import org.spf4j.io.csv.CharSeparatedValues;
  *
  * @author Zoltan Farkas
  */
-public class HttpWarning {
+public final class HttpWarning {
 
   /**
    * Warning status - Response is stale.
@@ -66,7 +66,7 @@ public class HttpWarning {
    * @param headerValue
    * @return
    */
-  public static HttpWarning parse(CharSequence headerValue) {
+  public static HttpWarning parse(final CharSequence headerValue) {
     Iterable<Iterable<String>> parsed = CSV.asIterable(CharSequences.reader(headerValue));
     Iterable<String> line = parsed.iterator().next();
     Iterator<String> lIt = line.iterator();

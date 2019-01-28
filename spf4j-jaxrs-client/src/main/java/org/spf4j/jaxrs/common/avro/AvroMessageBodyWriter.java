@@ -35,16 +35,22 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
     this.client = client;
   }
 
+  /**
+   * @inheritdoc
+   */
   @Override
-  public boolean isWriteable(final Class<?> type, Type genericType,
+  public boolean isWriteable(final Class<?> type, final Type genericType,
           final Annotation[] annotations, final MediaType mediaType) {
     return true;
   }
 
-  public abstract Encoder getEncoder(final Schema writerSchema, final OutputStream os)
+  public abstract Encoder getEncoder(Schema writerSchema, OutputStream os)
           throws IOException;
 
 
+  /**
+   * @inheritdoc
+   */
   @Override
   public void writeTo(final Object t, final Class<?> type,
           final Type genericType, final Annotation[] annotations,

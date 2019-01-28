@@ -1,6 +1,7 @@
 
 package org.spf4j.jaxrs.client;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -23,6 +24,7 @@ import org.spf4j.failsafe.AsyncRetryExecutor;
 /**
  * @author Zoltan Farkas
  */
+@SuppressFBWarnings("FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY")
 public final class Spf4jInvocationBuilder implements Invocation.Builder {
 
   private final Spf4JClient client;
@@ -100,13 +102,13 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public Spf4jInvocation buildPost(Entity<?> entity) {
+  public Spf4jInvocation buildPost(final Entity<?> entity) {
     return new Spf4jInvocation(ib.buildPost(entity), timeoutNanos, httpReqTimeoutNanos,
             executor, this.target, HttpMethod.POST);
   }
 
   @Override
-  public Spf4jInvocation buildPut(Entity<?> entity) {
+  public Spf4jInvocation buildPut(final Entity<?> entity) {
     return new Spf4jInvocation(ib.buildPut(entity), timeoutNanos, httpReqTimeoutNanos,
             executor, this.target, HttpMethod.PUT);
   }
@@ -117,7 +119,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public Invocation.Builder accept(String... mediaTypes) {
+  public Invocation.Builder accept(final String... mediaTypes) {
     Invocation.Builder builder = ib.accept(mediaTypes);
     if (builder == ib) {
       return this;
@@ -127,7 +129,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public Invocation.Builder accept(MediaType... mediaTypes) {
+  public Invocation.Builder accept(final MediaType... mediaTypes) {
     Invocation.Builder builder = ib.accept(mediaTypes);
     if (builder == ib) {
       return this;
@@ -137,7 +139,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public Invocation.Builder acceptLanguage(Locale... locales) {
+  public Invocation.Builder acceptLanguage(final Locale... locales) {
     Invocation.Builder builder = ib.acceptLanguage(locales);
     if (builder == ib) {
       return this;
@@ -147,7 +149,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public Invocation.Builder acceptLanguage(String... locales) {
+  public Invocation.Builder acceptLanguage(final String... locales) {
     Invocation.Builder builder = ib.acceptLanguage(locales);
     if (builder == ib) {
       return this;
@@ -157,7 +159,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public Invocation.Builder acceptEncoding(String... encodings) {
+  public Invocation.Builder acceptEncoding(final String... encodings) {
     Invocation.Builder builder = ib.acceptEncoding(encodings);
     if (builder == ib) {
       return this;
@@ -167,7 +169,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public Invocation.Builder cookie(Cookie cookie) {
+  public Invocation.Builder cookie(final Cookie cookie) {
     Invocation.Builder builder = ib.cookie(cookie);
     if (builder == ib) {
       return this;
@@ -177,7 +179,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public Invocation.Builder cookie(String name, String value) {
+  public Invocation.Builder cookie(final String name, final String value) {
     Invocation.Builder builder = ib.cookie(name, value);
     if (builder == ib) {
       return this;
@@ -187,7 +189,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public Invocation.Builder cacheControl(CacheControl cacheControl) {
+  public Invocation.Builder cacheControl(final CacheControl cacheControl) {
     Invocation.Builder builder = ib.cacheControl(cacheControl);
     if (builder == ib) {
       return this;
@@ -197,9 +199,9 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public Invocation.Builder header(String name, Object value) {
+  public Invocation.Builder header(final String name, final Object value) {
     Invocation.Builder builder = ib.header(name, Spf4JClient.convert(
-              Spf4JClient.getParamConverters(this.getTarget().getConfiguration()),value));
+              Spf4JClient.getParamConverters(this.getTarget().getConfiguration()), value));
     if (builder == ib) {
       return this;
     } else {
@@ -208,7 +210,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public Invocation.Builder headers(MultivaluedMap<String, Object> headers) {
+  public Invocation.Builder headers(final MultivaluedMap<String, Object> headers) {
     MultivaluedHashMap<String, Object> map = null;
     for (Map.Entry<String, List<Object>> entry : headers.entrySet()) {
       List<Object> value = entry.getValue();
@@ -227,7 +229,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public Spf4jInvocationBuilder property(String name, Object value) {
+  public Spf4jInvocationBuilder property(final String name, final Object value) {
     Invocation.Builder builder = ib.property(name, value);
     if (builder == ib) {
       return this;
@@ -242,7 +244,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public <T extends RxInvoker> T rx(Class<T> clazz) {
+  public <T extends RxInvoker> T rx(final Class<T> clazz) {
     return ib.rx(clazz);
   }
 
@@ -252,42 +254,42 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public <T> T get(Class<T> responseType) {
+  public <T> T get(final Class<T> responseType) {
     return buildGet().invoke(responseType);
   }
 
   @Override
-  public <T> T get(GenericType<T> responseType) {
+  public <T> T get(final GenericType<T> responseType) {
     return buildGet().invoke(responseType);
   }
 
   @Override
-  public Response put(Entity<?> entity) {
+  public Response put(final Entity<?> entity) {
      return buildPut(entity).invoke();
   }
 
   @Override
-  public <T> T put(Entity<?> entity, Class<T> responseType) {
+  public <T> T put(final Entity<?> entity, final Class<T> responseType) {
     return buildPut(entity).invoke(responseType);
   }
 
   @Override
-  public <T> T put(Entity<?> entity, GenericType<T> responseType) {
+  public <T> T put(final Entity<?> entity, final GenericType<T> responseType) {
     return buildPut(entity).invoke(responseType);
   }
 
   @Override
-  public Response post(Entity<?> entity) {
+  public Response post(final Entity<?> entity) {
     return buildPost(entity).invoke();
   }
 
   @Override
-  public <T> T post(Entity<?> entity, Class<T> responseType) {
+  public <T> T post(final Entity<?> entity, final Class<T> responseType) {
     return buildPost(entity).invoke(responseType);
   }
 
   @Override
-  public <T> T post(Entity<?> entity, GenericType<T> responseType) {
+  public <T> T post(final Entity<?> entity, final GenericType<T> responseType) {
     return buildPost(entity).invoke(responseType);
   }
 
@@ -297,12 +299,12 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public <T> T delete(Class<T> responseType) {
+  public <T> T delete(final Class<T> responseType) {
     return buildDelete().invoke(responseType);
   }
 
   @Override
-  public <T> T delete(GenericType<T> responseType) {
+  public <T> T delete(final GenericType<T> responseType) {
     return buildDelete().invoke(responseType);
   }
 
@@ -317,12 +319,12 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public <T> T options(Class<T> responseType) {
+  public <T> T options(final Class<T> responseType) {
     return build(HttpMethod.OPTIONS).invoke(responseType);
   }
 
   @Override
-  public <T> T options(GenericType<T> responseType) {
+  public <T> T options(final GenericType<T> responseType) {
     return build(HttpMethod.OPTIONS).invoke(responseType);
   }
 
@@ -332,42 +334,42 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   @Override
-  public <T> T trace(Class<T> responseType) {
+  public <T> T trace(final Class<T> responseType) {
     return build("TRACE").invoke(responseType);
   }
 
   @Override
-  public <T> T trace(GenericType<T> responseType) {
+  public <T> T trace(final GenericType<T> responseType) {
     return build("TRACE").invoke(responseType);
   }
 
   @Override
-  public Response method(String name) {
+  public Response method(final String name) {
     return build(name).invoke();
   }
 
   @Override
-  public <T> T method(String name, Class<T> responseType) {
+  public <T> T method(final String name, final Class<T> responseType) {
     return build(name).invoke(responseType);
   }
 
   @Override
-  public <T> T method(String name, GenericType<T> responseType) {
+  public <T> T method(final String name, final GenericType<T> responseType) {
     return build(name).invoke(responseType);
   }
 
   @Override
-  public Response method(String name, Entity<?> entity) {
+  public Response method(final String name, final Entity<?> entity) {
     return build(name, entity).invoke();
   }
 
   @Override
-  public <T> T method(String name, Entity<?> entity, Class<T> responseType) {
+  public <T> T method(final String name, final Entity<?> entity, final Class<T> responseType) {
     return build(name, entity).invoke(responseType);
   }
 
   @Override
-  public <T> T method(String name, Entity<?> entity, GenericType<T> responseType) {
+  public <T> T method(final String name, final Entity<?> entity, final GenericType<T> responseType) {
     return build(name, entity).invoke(responseType);
   }
 

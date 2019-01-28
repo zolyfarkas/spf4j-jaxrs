@@ -1,18 +1,18 @@
 package org.spf4j.jaxrs.client.providers;
 
-import org.spf4j.jaxrs.common.executors.*;
 import javax.inject.Inject;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.ext.Provider;
 import org.glassfish.jersey.client.ClientBackgroundScheduler;
 import org.spf4j.jaxrs.Utils;
+import org.spf4j.jaxrs.common.executors.CustomScheduledExecutionServiceProvider;
 
 /**
  * @author Zoltan Farkas
  */
 @Provider
 @ClientBackgroundScheduler
-public class ClientCustomScheduledExecutionServiceProvider extends CustomScheduledExecutionServiceProvider {
+public final class ClientCustomScheduledExecutionServiceProvider extends CustomScheduledExecutionServiceProvider {
 
   @Inject
   public ClientCustomScheduledExecutionServiceProvider(final Configuration cfg) {
