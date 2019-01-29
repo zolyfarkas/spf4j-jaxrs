@@ -215,7 +215,11 @@ public final class ConfigurationInjector implements InjectionResolver<Config> {
   @Nullable
   public Object resolve(final Injectee injectee, final ServiceHandle<?> handle) {
     Type requiredType = injectee.getRequiredType();
-    return typeResolvers.getExact(requiredType).apply(injectee, handle);
+    BiFunction<Injectee, ServiceHandle<?>, Object> exact = typeResolvers.get(requiredType);
+    if (exact == null) {
+      return null;
+    }
+    return exact.apply(injectee, handle);
   }
 
   private static Config getConfigAnnotation(final Injectee injectee) {
