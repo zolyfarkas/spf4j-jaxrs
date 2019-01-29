@@ -32,6 +32,8 @@ public final class AvroFeature implements Feature {
     context.register(new JsonAvroMessageBodyWriter(client));
     context.register(new XJsonAvroMessageBodyReader(client));
     context.register(new XJsonAvroMessageBodyWriter(client));
+    context.register(new CsvAvroMessageBodyReader(client));
+    context.register(new CsvAvroMessageBodyWriter(client));
     context.register(new BinaryAvroMessageBodyReader(client));
     context.register(new BinaryAvroMessageBodyWriter(client));
     context.register(new SchemaMessageBodyReader());

@@ -37,7 +37,7 @@ public final class XJsonAvroMessageBodyWriter extends  AvroMessageBodyWriter {
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream)
           throws IOException {
-    httpHeaders.putSingle(HttpHeaders.CONTENT_TYPE, "application/avro-x+json");
+    httpHeaders.putSingle(HttpHeaders.CONTENT_TYPE, "application/avro-x+json;charset=UTF-8");
     super.writeTo(t, type, genericType, annotations, mediaType, httpHeaders, entityStream);
   }
 
