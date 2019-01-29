@@ -61,18 +61,21 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
           final InputStream pentityStream)
           throws IOException {
     String schemaStr = httpHeaders.getFirst(Headers.CONTENT_SCHEMA);
-    Schema writerSchema;
-    Schema readerSchema;
+    Schema readerSchema = null;
     Schema schema = ExtendedReflectData.get().getSchema(genericType != null ? genericType : type);
     if (schema != null) {
       readerSchema = schema;
-    } else {
-      throw new InvalidObjectException("No schema available and cannot be infered for " + type + ", " + genericType);
     }
+    Schema writerSchema;
     if (schemaStr != null) {
       writerSchema = new Schema.Parser(new AvroNamesRefResolver(client)).parse(schemaStr);
-    } else {
+      if (readerSchema == null) {
+        readerSchema = writerSchema;
+      }
+    } else if (readerSchema != null) { //no writer schema, will try to recode with the reader schema.
       writerSchema = readerSchema;
+    } else {
+      throw new UnsupportedOperationException("Unable to deserialize " + type);
     }
     DatumReader reader = new ReflectDatumReader(writerSchema, readerSchema);
     InputStream entityStream = wrapInputStream(pentityStream);
