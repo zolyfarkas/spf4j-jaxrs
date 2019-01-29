@@ -1,5 +1,6 @@
 package org.spf4j.servlet;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.spf4j.http.ContextTags;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,15 +38,9 @@ import org.spf4j.log.Slf4jLogRecord;
 /**
  * A Filter for REST services
  *
- * HTTP headers:
- *
- * request-deadline → SecondsSinceEpoch Nanos? requestt-timeout → TimeoutValue TimeoutUnit? TimeoutValue → {positive
- * integer as ASCII string of at most 8 digits} TimeoutUnit → Hour / Minute / Second / Millisecond / Microsecond /
- * Nanosecond Hour → "H" Minute → "M" Second → "S" Millisecond → "m" Microsecond → "u" Nanosecond → "n"
  */
 @WebFilter(asyncSupported = true)
-public class ExecutionContextFilter implements Filter {
-
+public final class ExecutionContextFilter implements Filter {
 
   public static final String CFG_ID_HEADER_NAME = "spf4j.jax-rs.idHeaderName";
 
@@ -80,15 +75,18 @@ public class ExecutionContextFilter implements Filter {
   }
 
   @Override
-  public void init(final FilterConfig filterConfig) throws ServletException {
+  public void init(final FilterConfig filterConfig) {
     log = Logger.getLogger("org.spf4j.servlet." + filterConfig.getFilterName());
     idHeaderName = Filters.getStringParameter(filterConfig, CFG_ID_HEADER_NAME, Headers.REQ_ID);
   }
 
   @Override
-  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+  public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
           throws IOException, ServletException {
-
+    if (!(request instanceof HttpServletRequest) || !(response instanceof HttpServletResponse)) {
+      chain.doFilter(request, response);
+      return;
+    }
     CountingHttpServletRequest httpReq = new CountingHttpServletRequest((HttpServletRequest) request);
     CountingHttpServletResponse httpResp = new CountingHttpServletResponse((HttpServletResponse) response);
     long startTimeNanos = TimeSource.nanoTime();
@@ -106,7 +104,7 @@ public class ExecutionContextFilter implements Filter {
         asyncContext.setTimeout(ctx.getMillisToDeadline());
         asyncContext.addListener(new AsyncListener() {
           @Override
-          public void onComplete(final AsyncEvent event) throws IOException {
+          public void onComplete(final AsyncEvent event) {
               logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp);
               ctx.close();
           }
@@ -141,6 +139,7 @@ public class ExecutionContextFilter implements Filter {
   }
 
 
+  @SuppressFBWarnings("UCC_UNRELATED_COLLECTION_CONTENTS")
   public void logRequestEnd(final Level plevel,
           final ExecutionContext ctx, final CountingHttpServletRequest req, final CountingHttpServletResponse resp) {
     org.spf4j.log.Level level;
@@ -232,7 +231,7 @@ public class ExecutionContextFilter implements Filter {
     }
     StackSamples stackSamples = ctx.getStackSamples();
     if (stackSamples != null) {
-      logger.log(java.util.logging.Level.INFO, "profileDetail", new Object [] {traceId, stackSamples});
+      logger.log(java.util.logging.Level.INFO, "profileDetail", new Object[] {traceId, stackSamples});
     }
   }
 
@@ -240,5 +239,14 @@ public class ExecutionContextFilter implements Filter {
   public void destroy() {
     // nothing to destroy
   }
+
+  @Override
+  public String toString() {
+    return "ExecutionContextFilter{" + "deadlineProtocol=" + deadlineProtocol + ", idHeaderName="
+            + idHeaderName + ", warnThreshold=" + warnThreshold + ", errorThreshold="
+            + errorThreshold + '}';
+  }
+
+
 
 }

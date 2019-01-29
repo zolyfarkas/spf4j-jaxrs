@@ -1,6 +1,6 @@
 package org.spf4j.jaxrs.server;
 
-import java.lang.annotation.Annotation;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
@@ -33,35 +34,22 @@ import org.spf4j.servlet.CountingHttpServletResponse;
  * Based on  https://blog.dejavu.sk/intercepting-jersey-resource-method-calls/
  * @author Zoltan Farkas
  */
-public class Spf4jInterceptionService implements InterceptionService {
+public final class Spf4jInterceptionService implements InterceptionService {
 
   @Override
   public Filter getDescriptorFilter() {
-    return new Filter() {
-      @Override
-      public boolean matches(Descriptor d) {
-        if (d instanceof SystemDescriptor) {
-          Annotation path = ((SystemDescriptor) d).getImplementationClass().getAnnotation(Path.class);
-          if (path != null) {
-            return true;
-          } else {
-            return false;
-          }
-        }
-        return false;
-      }
-    };
+    return new ResourceFilter();
   }
 
   @Override
-  public List<MethodInterceptor> getMethodInterceptors(Method method) {
+  public List<MethodInterceptor> getMethodInterceptors(final Method method) {
     int i  = 0;
     Deprecated dannot = method.getAnnotation(Deprecated.class);
     List<HttpWarning> warnings = null;
     if (dannot != null) {
       warnings = new ArrayList<>(2);
-      warnings.add(new HttpWarning(HttpWarning.MISCELLANEOUS, "todo_agent" ,
-              "Deprecated-Operation: " + method.toString()));
+      warnings.add(new HttpWarning(HttpWarning.MISCELLANEOUS, "todo_agent",
+              "Deprecated-Operation: " + method));
     }
     List<MethodInterceptor> extra = null;
     for (Parameter param : method.getParameters()) {
@@ -79,15 +67,15 @@ public class Spf4jInterceptionService implements InterceptionService {
         }
         QueryParam qp = param.getAnnotation(QueryParam.class);
         if (qp != null) {
-          warnings.add(new HttpWarning(HttpWarning.MISCELLANEOUS, "todo_agent" ,
+          warnings.add(new HttpWarning(HttpWarning.MISCELLANEOUS, "todo_agent",
                   "Deprecated-Query-Param: " + qp.value()));
         } else {
           PathParam pp = param.getAnnotation(PathParam.class);
           if (pp != null) {
-            warnings.add(new HttpWarning(HttpWarning.MISCELLANEOUS, "todo_agent" ,
+            warnings.add(new HttpWarning(HttpWarning.MISCELLANEOUS, "todo_agent",
                   "Deprecated-Path-Param: " + pp.value()));
           } else {
-            warnings.add(new HttpWarning(HttpWarning.MISCELLANEOUS, "todo_agent" ,
+            warnings.add(new HttpWarning(HttpWarning.MISCELLANEOUS, "todo_agent",
                      "Deprecated-Param: " + param.getName()));
           }
         }
@@ -109,7 +97,8 @@ public class Spf4jInterceptionService implements InterceptionService {
   }
 
   @Override
-  public List<ConstructorInterceptor> getConstructorInterceptors(Constructor<?> constructor) {
+  @Nullable
+  public List<ConstructorInterceptor> getConstructorInterceptors(final Constructor<?> constructor) {
     return null;
   }
 
@@ -117,7 +106,7 @@ public class Spf4jInterceptionService implements InterceptionService {
 
     private final Logger log;
 
-    public LoggingInterceptor(Method m) {
+    LoggingInterceptor(final Method m) {
       this.log = new ExecContextLogger(LoggerFactory.getLogger(m.getDeclaringClass().getName() + "->" + m.getName()));
     }
 
@@ -137,12 +126,12 @@ public class Spf4jInterceptionService implements InterceptionService {
 
     private final int loc;
 
-    public AsycResponseTimeoutSetterInterceptor(int loc) {
+    AsycResponseTimeoutSetterInterceptor(final int loc) {
       this.loc = loc;
     }
 
     @Override
-    public Object invoke(MethodInvocation invocation) throws Throwable {
+    public Object invoke(final MethodInvocation invocation) throws Throwable {
       ((AsyncResponse) invocation.getArguments()[loc])
               .setTimeout(ExecutionContexts.getTimeToDeadline(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
       return invocation.proceed();
@@ -153,23 +142,33 @@ public class Spf4jInterceptionService implements InterceptionService {
 
     private final List<HttpWarning> warnings;
 
-    public WarningsInterceptor(List<HttpWarning> warnings) {
+    WarningsInterceptor(final List<HttpWarning> warnings) {
       this.warnings = warnings;
     }
 
     @Override
+    @SuppressFBWarnings("HTTP_RESPONSE_SPLITTING") // Warning text message is validated for cr/lf
     public Object invoke(final MethodInvocation invocation) throws Throwable {
       ExecutionContext current = ExecutionContexts.current();
       CountingHttpServletResponse resp = current.get(ContextTags.HTTP_RESP);
       for (HttpWarning warning: warnings) {
         current.add(ContextTags.HTTP_WARNINGS, warning);
-        // TODO, encode warning string.
-        // https://docs.oracle.com/javaee/6/api/javax/mail/internet/MimeUtility.html
         resp.addHeader(Headers.WARNING, warning.toString());
       }
       return invocation.proceed();
     }
 
+  }
+
+  private static class ResourceFilter implements Filter {
+
+    @Override
+    public boolean matches(final Descriptor d) {
+      if (d instanceof SystemDescriptor) {
+        return ((SystemDescriptor) d).getImplementationClass().getAnnotation(Path.class) != null;
+      }
+      return false;
+    }
   }
 
 }

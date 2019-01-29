@@ -1,6 +1,6 @@
 package org.spf4j.jaxrs.server;
 
-import org.spf4j.jaxrs.common.executors.*;
+import org.spf4j.jaxrs.common.executors.CustomScheduledExecutionServiceProvider;
 import javax.inject.Inject;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.ext.Provider;
@@ -12,7 +12,7 @@ import org.spf4j.jaxrs.Utils;
  */
 @Provider
 @BackgroundScheduler
-public class ServerCustomScheduledExecutionServiceProvider extends CustomScheduledExecutionServiceProvider {
+public final class ServerCustomScheduledExecutionServiceProvider extends CustomScheduledExecutionServiceProvider {
 
   @Inject
   public ServerCustomScheduledExecutionServiceProvider(final Configuration cfg) {

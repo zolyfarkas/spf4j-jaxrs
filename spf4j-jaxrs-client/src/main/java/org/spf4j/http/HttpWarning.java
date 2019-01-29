@@ -101,6 +101,9 @@ public final class HttpWarning {
   }
 
   public HttpWarning(final int code, final String agent, @Nullable final  ZonedDateTime date, final String text) {
+    if (text.indexOf('\n') >= 0 || text.indexOf('\r') >= 0) {
+      throw new IllegalArgumentException("No multiline warning messages supported: " + text);
+    }
     this.code = code;
     this.agent = agent;
     this.text = text;

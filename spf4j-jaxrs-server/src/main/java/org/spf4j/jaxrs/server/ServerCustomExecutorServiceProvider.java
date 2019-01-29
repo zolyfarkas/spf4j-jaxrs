@@ -1,6 +1,6 @@
 package org.spf4j.jaxrs.server;
 
-import org.spf4j.jaxrs.common.executors.*;
+import org.spf4j.jaxrs.common.executors.CustomExecutorServiceProvider;
 import javax.inject.Inject;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.ext.Provider;
@@ -12,7 +12,7 @@ import org.spf4j.jaxrs.Utils;
  */
 @Provider
 @ManagedAsyncExecutor
-public class ServerCustomExecutorServiceProvider extends CustomExecutorServiceProvider {
+public final class ServerCustomExecutorServiceProvider extends CustomExecutorServiceProvider {
 
   @Inject
   public ServerCustomExecutorServiceProvider(final Configuration cfg) {

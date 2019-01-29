@@ -30,10 +30,6 @@
     <version>2.1.0-SNAPSHOT</version>
   </parent>
 
-  <properties>
-        <avro.version>1.8.1.37p</avro.version>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>org.spf4j</groupId>

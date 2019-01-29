@@ -2,10 +2,12 @@ package org.spf4j.jaxrs.client.providers;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.annotation.Priority;
 import javax.inject.Inject;
 import javax.ws.rs.Priorities;
@@ -21,6 +23,7 @@ import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.TimeSource;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.http.Headers;
+import org.spf4j.http.HttpWarning;
 import org.spf4j.log.LogAttribute;
 
 /**
@@ -65,10 +68,12 @@ public final class ExecutionContextClientFilter implements ClientRequestFilter,
           throws IOException {
     List<String> warnings = responseContext.getHeaders().get(Headers.WARNING);
     if (warnings != null && !warnings.isEmpty()) {
+      List<HttpWarning> pws = warnings.stream().map((w) ->  HttpWarning.parse(w))
+              .collect(Collectors.toCollection(() -> new ArrayList<>(warnings.size())));
       ExecutionContext reqCtx = ExecutionContexts.current();
       LOG.log(Level.WARNING, "Done {0}", new Object[] {reqCtx.getName(),
         LogAttribute.traceId(reqCtx.getId()),
-        LogAttribute.of("warnings", warnings),
+        LogAttribute.of("warnings", pws),
         LogAttribute.value("httpStatus", responseContext.getStatus()),
         LogAttribute.execTimeMicros(TimeSource.nanoTime() - reqCtx.getStartTimeNanos(), TimeUnit.NANOSECONDS)});
     } else if (LOG.isLoggable(Level.FINE)) {

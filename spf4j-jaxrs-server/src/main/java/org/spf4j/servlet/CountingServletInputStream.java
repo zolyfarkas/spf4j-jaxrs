@@ -35,7 +35,7 @@ public final class CountingServletInputStream extends ServletInputStream
   }
 
   @Override
-  public void setReadListener(ReadListener readListener) {
+  public void setReadListener(final ReadListener readListener) {
     in.setReadListener(readListener);
   }
 

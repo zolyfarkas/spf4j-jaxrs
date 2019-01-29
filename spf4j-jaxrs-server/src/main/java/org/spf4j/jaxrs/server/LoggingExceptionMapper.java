@@ -2,11 +2,14 @@ package org.spf4j.jaxrs.server;
 
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
+import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -26,6 +29,7 @@ import org.spf4j.log.Level;
 import org.spf4j.log.Slf4jLogRecord;
 import org.spf4j.http.ContextTags;
 import org.spf4j.ssdump2.Converter;
+import org.spf4j.jaxrs.Config;
 
 /**
  * @author Zoltan Farkas
@@ -35,17 +39,11 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
 
   private final String host;
 
-  public LoggingExceptionMapper() {
-    String h;
-    try {
-      InetAddress localHost = InetAddress.getLocalHost();
-      h = localHost.getHostName();
-    } catch (UnknownHostException ex) {
-      Logger.getLogger(LoggingExceptionMapper.class.getName())
-              .log(java.util.logging.Level.WARNING, "Unable to figura out host name", ex);
-      h = "unknown";
-    }
-    host = h;
+  @Inject
+  public LoggingExceptionMapper(@Config("baseUri") final String uriStr)
+          throws URISyntaxException, UnknownHostException {
+    URI uri = new URI(uriStr);
+    this.host = InetAddress.getByName(uri.getHost()).getHostName();
   }
 
   @Override
@@ -108,16 +106,17 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
       sses = new ArrayList<>(64);
       Converter.convert(Methods.ROOT, ss, -1, 0, (a, b) -> sses.add(a));
     }
-    String ctxId = ctx.getId().toString();
-    ServiceError.Builder seBuilder = ServiceError.newBuilder()
-            .setCode(status)
-            .setDetail(new DebugDetail(host + '/' + ctx.getName(),
-                    Converters.convert("", ctxId, ctxLogs),
-                    Converters.convert(exception), sses))
-            .setType(exception.getClass().getName())
-            .setMessage(message).setPayload(payload);
-    return Response.status(status).entity(seBuilder.build())
+    return Response.status(status)
+            .entity(new ServiceError(status, exception.getClass().getName(),
+                    message, payload, new DebugDetail(host + '/' + ctx.getName(),
+                      Converters.convert("", ctx.getId().toString(), ctxLogs),
+                      Converters.convert(exception), sses)))
             .build();
+  }
+
+  @Override
+  public String toString() {
+    return "LoggingExceptionMapper{" + "host=" + host + '}';
   }
 
 }

@@ -31,13 +31,47 @@
   <version>2.1.0-SNAPSHOT</version>
   <description>JAX-RS features and components</description>
   <properties>
-        <findbugs.excludeFilterFile>${basedir}/../findbugs_exclude.xml</findbugs.excludeFilterFile>
-        <checkstyle.configLocation>${basedir}/../checkstyle_checks.xml</checkstyle.configLocation>
-        <jersey.version>2.27</jersey.version>
-        <spf4j.version>8.6.1-SNAPSHOT</spf4j.version>
+    <findbugs.excludeFilterFile>${basedir}/../findbugs_exclude.xml</findbugs.excludeFilterFile>
+    <checkstyle.configLocation>${basedir}/../checkstyle_checks.xml</checkstyle.configLocation>
+    <jersey.version>2.27</jersey.version>
+    <spf4j.version>8.6.1-SNAPSHOT</spf4j.version>
+    <avro.version>1.8.1.38p</avro.version>
   </properties>  
   <modules>
     <module>spf4j-jaxrs-client</module>
     <module>spf4j-jaxrs-server</module>
   </modules>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.glassfish.jersey</groupId>
+        <artifactId>jersey-bom</artifactId>
+        <version>${jersey.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.avro</groupId>
+        <artifactId>avro</artifactId>
+        <version>${avro.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.xerial.snappy</groupId>
+            <artifactId>snappy-java</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.thoughtworks.paranamer</groupId>
+            <artifactId>paranamer</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+    </dependencies>
+
+  </dependencyManagement>
 </project>
