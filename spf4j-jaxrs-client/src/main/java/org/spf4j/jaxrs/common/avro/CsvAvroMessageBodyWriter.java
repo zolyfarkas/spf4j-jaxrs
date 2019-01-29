@@ -40,7 +40,7 @@ public final class CsvAvroMessageBodyWriter extends  AvroMessageBodyWriter {
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream)
           throws IOException {
-    httpHeaders.putSingle(HttpHeaders.CONTENT_TYPE, "text/csv;fmt=avro,charset=UTF-8");
+    httpHeaders.putSingle(HttpHeaders.CONTENT_TYPE, "text/csv;fmt=avro;charset=UTF-8");
     super.writeTo(t, type, genericType, annotations, mediaType, httpHeaders, entityStream);
   }
 
