@@ -77,13 +77,12 @@ public final class HttpWarning {
     String text = lIt.next();
     ZonedDateTime zdt;
     if (lIt.hasNext()) {
-
       zdt = DateTimeFormatter.RFC_1123_DATE_TIME.parse(lIt.next(), ZonedDateTime::from);
     } else {
       zdt = null;
     }
 
-    return new HttpWarning(code, agent, text, zdt);
+    return new HttpWarning(code, agent, zdt, text);
   }
 
   public HttpWarning(final int code, final String agent, @Nullable final  ZonedDateTime date,
