@@ -3,6 +3,7 @@ package org.spf4j.avro;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -23,6 +24,7 @@ import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,6 +36,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
 import org.glassfish.jersey.client.ClientProperties;
 import org.spf4j.io.Streams;
+import org.spf4j.http.DefaultDeadlineProtocol;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
@@ -73,7 +76,7 @@ public final class SchemaClient implements SchemaResolver {
             .newBuilder()
             .connectTimeout(2, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
-            .register(ExecutionContextClientFilter.class)
+            .register(new ExecutionContextClientFilter(new DefaultDeadlineProtocol()))
             .register(ClientCustomExecutorServiceProvider.class)
             .register(ClientCustomScheduledExecutionServiceProvider.class)
             .property(ClientProperties.USE_ENCODING, "gzip")
@@ -108,8 +111,18 @@ public final class SchemaClient implements SchemaResolver {
   }
 
   @Override
+  @SuppressFBWarnings("LEST_LOST_EXCEPTION_STACK_TRACE") // I am fine withit for now.
   public Schema resolveSchema(final String id) {
-      return memoryCache.getUnchecked(id);
+    try {
+      return memoryCache.get(id);
+    } catch (ExecutionException | UncheckedExecutionException ex) {
+      Throwable cause = ex.getCause();
+      if (cause instanceof RuntimeException) {
+        throw (RuntimeException) cause;
+      } else {
+        throw new UncheckedExecutionException(cause);
+      }
+    }
   }
 
   @SuppressFBWarnings("PCAIL_POSSIBLE_CONSTANT_ALLOCATION_IN_LOOP")
