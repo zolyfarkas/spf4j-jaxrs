@@ -32,7 +32,10 @@ public final class CsvAvroMessageBodyWriter extends  AvroMessageBodyWriter {
 
   @Override
   public Encoder getEncoder(final Schema writerSchema, final OutputStream os) throws IOException {
-    return new CsvEncoder(Csv.CSV.writer(new OutputStreamWriter(os, StandardCharsets.UTF_8)), writerSchema);
+    CsvEncoder csvEncoder = new CsvEncoder(Csv.CSV.writer(new OutputStreamWriter(os, StandardCharsets.UTF_8)),
+            writerSchema);
+    csvEncoder.writeHeader();
+    return csvEncoder;
   }
 
   @Override
