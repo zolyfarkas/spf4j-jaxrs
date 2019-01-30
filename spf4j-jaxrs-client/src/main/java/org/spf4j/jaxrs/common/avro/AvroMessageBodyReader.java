@@ -2,6 +2,7 @@ package org.spf4j.jaxrs.common.avro;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import javax.inject.Inject;
@@ -36,7 +37,9 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
   @Override
   public boolean isReadable(final Class<?> type, final Type genericType, final Annotation[] annotations,
           final MediaType mediaType) {
-    return type != void.class &&  type != Void.class;
+    return type != void.class &&  type != Void.class
+            && !InputStream.class.isAssignableFrom(type)
+            && !Reader.class.isAssignableFrom(type);
   }
 
   public abstract Decoder getDecoder(Schema writerSchema, InputStream is)

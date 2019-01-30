@@ -4,6 +4,7 @@ package org.spf4j.jaxrs.common.avro;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -41,7 +42,9 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
   @Override
   public boolean isWriteable(final Class<?> type, final Type genericType,
           final Annotation[] annotations, final MediaType mediaType) {
-    return true;
+    return type != void.class &&  type != Void.class
+            && !OutputStream.class.isAssignableFrom(type)
+            && !Writer.class.isAssignableFrom(type);
   }
 
   public abstract Encoder getEncoder(Schema writerSchema, OutputStream os)
