@@ -58,7 +58,8 @@ public final class ExecutionContextClientFilter implements ClientRequestFilter,
     int readTimeoutMs = (int) (timeoutNanos / 1000000);
     requestContext.setProperty(ClientProperties.READ_TIMEOUT, readTimeoutMs);
     if (LOG.isLoggable(Level.FINE)) {
-      LOG.log(Level.FINE, "Invoking {0}", new Object[] {reqCtx.getName(), LogAttribute.of("headers", headers)});
+      LOG.log(Level.FINE, "Invoking {0}", new Object[] {requestContext.getUri(),
+        LogAttribute.of("headers", headers)});
     }
   }
 
