@@ -6,6 +6,7 @@ import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
 import org.codehaus.jackson.JsonParser;
 import org.spf4j.avro.SchemaClient;
+import org.spf4j.jaxrs.common.avro.stream.CsvAvroArrayMessageBodyReader;
 
 /**
  * registers all avro message body readers and writers + parameter converters.
@@ -36,6 +37,7 @@ public final class AvroFeature implements Feature {
     context.register(new CsvAvroMessageBodyWriter(client));
     context.register(new BinaryAvroMessageBodyReader(client));
     context.register(new BinaryAvroMessageBodyWriter(client));
+    context.register(new CsvAvroArrayMessageBodyReader(client));
     context.register(new SchemaMessageBodyReader());
     context.register(new SchemaMessageBodyWriter());
     context.register(new AvroParameterConverterProvider(client));

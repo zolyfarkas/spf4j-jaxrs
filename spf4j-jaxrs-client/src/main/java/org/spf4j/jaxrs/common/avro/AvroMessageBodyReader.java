@@ -12,6 +12,7 @@ import javax.ws.rs.ext.MessageBodyReader;
 import org.apache.avro.AvroNamesRefResolver;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
+import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.reflect.ExtendedReflectData;
@@ -37,9 +38,11 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
   @Override
   public boolean isReadable(final Class<?> type, final Type genericType, final Annotation[] annotations,
           final MediaType mediaType) {
-    return type != void.class &&  type != Void.class
+    return IndexedRecord.class.isAssignableFrom(type)
+            || (type != void.class &&  type != Void.class
+            && Iterable.class != type
             && !InputStream.class.isAssignableFrom(type)
-            && !Reader.class.isAssignableFrom(type);
+            && !Reader.class.isAssignableFrom(type));
   }
 
   public abstract Decoder getDecoder(Schema writerSchema, InputStream is)
