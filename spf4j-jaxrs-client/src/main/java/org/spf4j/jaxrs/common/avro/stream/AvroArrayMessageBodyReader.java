@@ -39,7 +39,7 @@ public abstract class AvroArrayMessageBodyReader implements MessageBodyReader<It
   @Override
   public boolean isReadable(final Class<?> type, final Type genericType, final Annotation[] annotations,
           final MediaType mediaType) {
-    return Iterable.class == type;
+    return CloseableIterable.class == type;
   }
 
   public abstract Decoder getDecoder(Schema writerSchema, InputStream is)
