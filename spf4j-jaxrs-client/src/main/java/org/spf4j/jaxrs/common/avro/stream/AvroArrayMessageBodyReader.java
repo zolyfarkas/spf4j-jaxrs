@@ -63,15 +63,15 @@ public abstract class AvroArrayMessageBodyReader implements MessageBodyReader<It
           final MediaType mediaType, final MultivaluedMap<String, String> httpHeaders,
           final InputStream pentityStream)
           throws IOException {
-    String schemaStr = httpHeaders.getFirst(Headers.CONTENT_SCHEMA);
+    String writerSchemaStr = httpHeaders.getFirst(Headers.CONTENT_SCHEMA);
     Schema readerSchema = null;
     Schema schema = ExtendedReflectData.get().getSchema(genericType != null ? genericType : type);
     if (schema != null) {
       readerSchema = schema;
     }
     Schema writerSchema;
-    if (schemaStr != null) {
-      writerSchema = new Schema.Parser(new AvroNamesRefResolver(client)).parse(schemaStr);
+    if (writerSchemaStr != null) {
+      writerSchema = new Schema.Parser(new AvroNamesRefResolver(client)).parse(writerSchemaStr);
       if (readerSchema == null) {
         readerSchema = writerSchema;
       }
