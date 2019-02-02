@@ -35,9 +35,10 @@
     <checkstyle.configLocation>${basedir}/../checkstyle_checks.xml</checkstyle.configLocation>
     <jersey.version>2.28</jersey.version>
     <spf4j.version>8.6.1</spf4j.version>
-    <avro.version>1.8.1.39p</avro.version>
+    <avro.version>1.8.1.42p</avro.version>
   </properties>  
   <modules>
+    <module>spf4j-jaxrs-codegen-extension</module>
     <module>spf4j-jaxrs-client</module>
     <module>spf4j-jaxrs-server</module>
   </modules>
