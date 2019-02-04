@@ -36,7 +36,14 @@
     <jersey.version>2.28</jersey.version>
     <spf4j.version>8.6.1</spf4j.version>
     <avro.version>1.8.1.44p</avro.version>
-  </properties>  
+  </properties>
+
+  <scm>
+    <connection>scm:git:https://github.com/zolyfarkas/spf4j-jaxrs.git</connection>
+    <developerConnection>scm:git:https://github.com/zolyfarkas/spf4j-jaxrs.git</developerConnection>
+    <url>https://github.com/zolyfarkas/spf4j-jaxrs/</url>
+  </scm>
+
   <modules>
     <module>spf4j-jaxrs-codegen-extension</module>
     <module>spf4j-jaxrs-client</module>
