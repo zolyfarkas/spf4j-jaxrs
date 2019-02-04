@@ -1,5 +1,6 @@
 package org.spf4j.jaxrs.client;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionStage;
@@ -18,6 +19,7 @@ import org.spf4j.failsafe.AsyncRetryExecutor;
 /**
  * @author Zoltan Farkas
  */
+@SuppressFBWarnings("FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY")
 public final class Spf4jCompletionStageRxInvoker
         implements CompletionStageRxInvoker {
 

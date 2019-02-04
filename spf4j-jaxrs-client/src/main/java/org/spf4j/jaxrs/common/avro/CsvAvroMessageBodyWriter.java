@@ -13,7 +13,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
-import org.apache.avro.SchemaResolver;
 import org.apache.avro.io.Encoder;
 import org.spf4j.avro.csv.CsvEncoder;
 import org.spf4j.io.Csv;
@@ -26,8 +25,8 @@ import org.spf4j.io.Csv;
 public final class CsvAvroMessageBodyWriter extends  AvroMessageBodyWriter {
 
   @Inject
-  public CsvAvroMessageBodyWriter(final SchemaResolver client) {
-    super(client);
+  public CsvAvroMessageBodyWriter(final SchemaProtocol protocol) {
+    super(protocol);
   }
 
   @Override

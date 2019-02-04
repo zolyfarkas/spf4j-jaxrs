@@ -7,7 +7,6 @@ import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
-import org.apache.avro.SchemaResolver;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.ExtendedJsonDecoder;
 import org.spf4j.io.MemorizingBufferedInputStream;
@@ -21,8 +20,8 @@ public final class XJsonAvroMessageBodyReader extends AvroMessageBodyReader {
 
 
   @Inject
-  public XJsonAvroMessageBodyReader(final SchemaResolver client) {
-    super(client);
+  public XJsonAvroMessageBodyReader(final SchemaProtocol protocol) {
+    super(protocol);
   }
 
   @Override

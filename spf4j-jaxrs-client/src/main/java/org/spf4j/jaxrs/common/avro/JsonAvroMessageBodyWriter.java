@@ -11,7 +11,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
-import org.apache.avro.SchemaResolver;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
 
@@ -23,8 +22,8 @@ import org.apache.avro.io.EncoderFactory;
 public final class JsonAvroMessageBodyWriter extends  AvroMessageBodyWriter {
 
   @Inject
-  public JsonAvroMessageBodyWriter(final SchemaResolver client) {
-    super(client);
+  public JsonAvroMessageBodyWriter(final SchemaProtocol protocol) {
+    super(protocol);
   }
 
   @Override

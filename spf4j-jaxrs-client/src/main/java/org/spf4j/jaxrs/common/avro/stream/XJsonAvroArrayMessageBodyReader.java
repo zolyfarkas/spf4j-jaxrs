@@ -21,10 +21,10 @@ import java.nio.charset.StandardCharsets;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
-import org.apache.avro.SchemaResolver;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.ExtendedJsonDecoder;
 import org.spf4j.io.MemorizingBufferedInputStream;
+import org.spf4j.jaxrs.common.avro.SchemaProtocol;
 
 /**
  * @author Zoltan Farkas
@@ -33,8 +33,8 @@ import org.spf4j.io.MemorizingBufferedInputStream;
 @Consumes({"application/json;fmt=avro-x", "application/avro-x+json", "text/plain;fmt=avro-x"})
 public final class XJsonAvroArrayMessageBodyReader extends AvroArrayMessageBodyReader {
 
-  public XJsonAvroArrayMessageBodyReader(final SchemaResolver client) {
-    super(client);
+  public XJsonAvroArrayMessageBodyReader(final SchemaProtocol protocol) {
+    super(protocol);
   }
 
   @Override

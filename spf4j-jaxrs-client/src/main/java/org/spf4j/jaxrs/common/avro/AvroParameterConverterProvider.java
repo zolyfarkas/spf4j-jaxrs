@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
 import javax.ws.rs.ext.Provider;
@@ -23,8 +24,9 @@ import org.spf4j.base.Json;
 public final class AvroParameterConverterProvider implements ParamConverterProvider {
 
 
-  private final  ParamConverter<Schema> schemaConv;
+  private final ParamConverter<Schema> schemaConv;
 
+  @Inject
   public AvroParameterConverterProvider(final SchemaResolver client) {
     this.schemaConv = new SchemaParamConverter(client);
   }

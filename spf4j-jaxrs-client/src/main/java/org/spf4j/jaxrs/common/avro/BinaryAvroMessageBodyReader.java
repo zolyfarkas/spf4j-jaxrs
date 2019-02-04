@@ -5,7 +5,6 @@ import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
-import org.apache.avro.SchemaResolver;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 
@@ -18,8 +17,8 @@ public final class BinaryAvroMessageBodyReader extends AvroMessageBodyReader {
 
 
   @Inject
-  public BinaryAvroMessageBodyReader(final SchemaResolver client) {
-    super(client);
+  public BinaryAvroMessageBodyReader(final SchemaProtocol protocol) {
+    super(protocol);
   }
 
   @Override

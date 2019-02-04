@@ -9,15 +9,12 @@ import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
-import org.apache.avro.AvroNamesRefResolver;
 import org.apache.avro.Schema;
-import org.apache.avro.SchemaResolver;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.reflect.ExtendedReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
-import org.spf4j.http.Headers;
 import org.spf4j.io.MemorizingBufferedInputStream;
 
 /**
@@ -25,11 +22,11 @@ import org.spf4j.io.MemorizingBufferedInputStream;
  */
 public abstract class AvroMessageBodyReader implements MessageBodyReader<Object> {
 
-  private final SchemaResolver client;
+  private final SchemaProtocol protocol;
 
   @Inject
-  public AvroMessageBodyReader(final SchemaResolver client) {
-    this.client = client;
+  public AvroMessageBodyReader(final SchemaProtocol protocol) {
+    this.protocol = protocol;
   }
 
   /**
@@ -65,22 +62,14 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
           final MediaType mediaType, final MultivaluedMap<String, String> httpHeaders,
           final InputStream pentityStream)
           throws IOException {
-    String writerSchemaStr = httpHeaders.getFirst(Headers.CONTENT_SCHEMA);
-    Schema readerSchema = null;
-    Schema schema = ExtendedReflectData.get().getSchema(genericType != null ? genericType : type);
-    if (schema != null) {
-      readerSchema = schema;
-    }
-    Schema writerSchema;
-    if (writerSchemaStr != null) {
-      writerSchema = new Schema.Parser(new AvroNamesRefResolver(client)).parse(writerSchemaStr);
-      if (readerSchema == null) {
-        readerSchema = writerSchema;
-      }
-    } else if (readerSchema != null) { //no writer schema, will try to recode with the reader schema.
+    Schema writerSchema = protocol.deserialize(httpHeaders::getFirst, type, genericType);
+    Schema readerSchema = ExtendedReflectData.get().getSchema(genericType != null ? genericType : type);
+    if (writerSchema  == null && readerSchema == null) {
+        throw new UnsupportedOperationException("Unable to deserialize " + type);
+    } else if (readerSchema != null) {
       writerSchema = readerSchema;
     } else {
-      throw new UnsupportedOperationException("Unable to deserialize " + type);
+      readerSchema = writerSchema;
     }
     DatumReader reader = new ReflectDatumReader(writerSchema, readerSchema);
     InputStream entityStream = wrapInputStream(pentityStream);

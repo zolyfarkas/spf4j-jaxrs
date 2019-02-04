@@ -18,35 +18,38 @@ public final class AvroFeature implements Feature {
     org.apache.avro.Schema.FACTORY.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
   }
 
-  private final SchemaClient client;
+  private final SchemaProtocol protocol;
+
+  private final SchemaClient schemaClient;
 
   @Inject
-  public AvroFeature(final SchemaClient client) {
-    this.client = client;
+  public AvroFeature(final SchemaProtocol protocol, final SchemaClient client) {
+    this.protocol = protocol;
+    this.schemaClient = client;
   }
 
 
 
   @Override
   public boolean configure(final FeatureContext context) {
-    context.register(new JsonAvroMessageBodyReader(client));
-    context.register(new JsonAvroMessageBodyWriter(client));
-    context.register(new XJsonAvroMessageBodyReader(client));
-    context.register(new XJsonAvroMessageBodyWriter(client));
-    context.register(new CsvAvroMessageBodyReader(client));
-    context.register(new CsvAvroMessageBodyWriter(client));
-    context.register(new BinaryAvroMessageBodyReader(client));
-    context.register(new BinaryAvroMessageBodyWriter(client));
-    context.register(new CsvAvroArrayMessageBodyReader(client));
+    context.register(new JsonAvroMessageBodyReader(protocol));
+    context.register(new JsonAvroMessageBodyWriter(protocol));
+    context.register(new XJsonAvroMessageBodyReader(protocol));
+    context.register(new XJsonAvroMessageBodyWriter(protocol));
+    context.register(new CsvAvroMessageBodyReader(protocol));
+    context.register(new CsvAvroMessageBodyWriter(protocol));
+    context.register(new BinaryAvroMessageBodyReader(protocol));
+    context.register(new BinaryAvroMessageBodyWriter(protocol));
+    context.register(new CsvAvroArrayMessageBodyReader(protocol));
     context.register(new SchemaMessageBodyReader());
     context.register(new SchemaMessageBodyWriter());
-    context.register(new AvroParameterConverterProvider(client));
+    context.register(new AvroParameterConverterProvider(schemaClient));
     return true;
   }
 
   @Override
   public String toString() {
-    return "AvroFeature{" + "client=" + client + '}';
+    return "AvroFeature{" + "protocol=" + protocol + '}';
   }
 
 }

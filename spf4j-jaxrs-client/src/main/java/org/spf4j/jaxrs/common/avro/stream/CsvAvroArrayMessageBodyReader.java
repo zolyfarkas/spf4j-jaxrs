@@ -22,11 +22,11 @@ import java.nio.charset.StandardCharsets;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
-import org.apache.avro.SchemaResolver;
 import org.apache.avro.io.Decoder;
 import org.spf4j.avro.csv.CsvDecoder;
 import org.spf4j.io.Csv;
 import org.spf4j.io.MemorizingBufferedInputStream;
+import org.spf4j.jaxrs.common.avro.SchemaProtocol;
 
 /**
  * @author Zoltan Farkas
@@ -35,8 +35,8 @@ import org.spf4j.io.MemorizingBufferedInputStream;
 @Consumes("text/csv")
 public final class CsvAvroArrayMessageBodyReader extends AvroArrayMessageBodyReader {
 
-  public CsvAvroArrayMessageBodyReader(final SchemaResolver client) {
-    super(client);
+  public CsvAvroArrayMessageBodyReader(final SchemaProtocol protocol) {
+    super(protocol);
   }
 
   @Override
