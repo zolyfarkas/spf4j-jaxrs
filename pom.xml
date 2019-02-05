@@ -27,14 +27,14 @@
     <artifactId>spf4j</artifactId>
     <version>8.6.2</version>
   </parent>
-  <name>${project.artifactId}</name>
+  <name>${project.artifactId}-${project.version}</name>
   <version>2.1.2-SNAPSHOT</version>
   <description>JAX-RS features and components</description>
   <properties>
     <findbugs.excludeFilterFile>${basedir}/../findbugs_exclude.xml</findbugs.excludeFilterFile>
     <checkstyle.configLocation>${basedir}/../checkstyle_checks.xml</checkstyle.configLocation>
     <jersey.version>2.28</jersey.version>
-    <spf4j.version>8.6.1</spf4j.version>
+    <spf4j.version>8.6.2</spf4j.version>
     <avro.version>1.8.1.44p</avro.version>
   </properties>
 
