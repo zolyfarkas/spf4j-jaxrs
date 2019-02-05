@@ -4,8 +4,8 @@ package org.spf4j.jaxrs.common.avro;
 import javax.inject.Inject;
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
+import org.apache.avro.SchemaResolver;
 import org.codehaus.jackson.JsonParser;
-import org.spf4j.avro.SchemaClient;
 import org.spf4j.jaxrs.common.avro.stream.CsvAvroArrayMessageBodyReader;
 
 /**
@@ -20,15 +20,13 @@ public final class AvroFeature implements Feature {
 
   private final SchemaProtocol protocol;
 
-  private final SchemaClient schemaClient;
+  private final SchemaResolver schemaClient;
 
   @Inject
-  public AvroFeature(final SchemaProtocol protocol, final SchemaClient client) {
+  public AvroFeature(final SchemaProtocol protocol, final SchemaResolver client) {
     this.protocol = protocol;
     this.schemaClient = client;
   }
-
-
 
   @Override
   public boolean configure(final FeatureContext context) {
