@@ -33,6 +33,7 @@ import org.spf4j.failsafe.AsyncRetryExecutor;
 import org.spf4j.http.Headers;
 import org.spf4j.log.ExecContextLogger;
 import org.spf4j.log.Level;
+import org.spf4j.ssdump2.Converter;
 
 /**
  * @author Zoltan Farkas
@@ -275,6 +276,7 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
         List<StackSampleElement> stackSamples = detail.getStackSamples();
         if (!stackSamples.isEmpty()) {
           LOG.debug("remoteProfileDetail", new StackSamples(stackSamples));
+          current.add(Converter.convert(stackSamples.iterator()));
         }
       }
     }
