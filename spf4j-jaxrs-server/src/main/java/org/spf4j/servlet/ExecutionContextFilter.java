@@ -62,7 +62,6 @@ public final class ExecutionContextFilter implements Filter {
     this(deadlineProtocol, 0.3f, 0.9f);
   }
 
-
   public ExecutionContextFilter(final DeadlineProtocol deadlineProtocol,
           final float warnThreshold, final float errorThreshold) {
     this.deadlineProtocol = deadlineProtocol;
@@ -105,8 +104,8 @@ public final class ExecutionContextFilter implements Filter {
         asyncContext.addListener(new AsyncListener() {
           @Override
           public void onComplete(final AsyncEvent event) {
-              logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp);
-              ctx.close();
+            logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp);
+            ctx.close();
           }
 
           @Override
@@ -116,7 +115,7 @@ public final class ExecutionContextFilter implements Filter {
           }
 
           @Override
-          public void onError(final AsyncEvent event)  {
+          public void onError(final AsyncEvent event) {
             ctx.put(ContextTags.LOG_LEVEL, Level.ERROR);
             ctx.add(ContextTags.LOG_ATTRIBUTES, event.getThrowable());
           }
@@ -137,7 +136,6 @@ public final class ExecutionContextFilter implements Filter {
       logRequestEnd(org.spf4j.log.Level.ERROR, ctx, httpReq, httpResp);
     }
   }
-
 
   @SuppressFBWarnings("UCC_UNRELATED_COLLECTION_CONTENTS")
   public void logRequestEnd(final Level plevel,
@@ -191,7 +189,7 @@ public final class ExecutionContextFilter implements Filter {
     if (logAttrs == null) {
       args = new Object[]{ctx.getName(),
         LogAttribute.traceId(ctx.getId()),
-        LogAttribute.of("clientHost", req.getRemoteHost()),
+        LogAttribute.of("clientHost", getRemoteHost(req)),
         LogAttribute.value("httpStatus", resp.getStatus()),
         LogAttribute.execTimeMicros(execTimeNanos, TimeUnit.NANOSECONDS),
         LogAttribute.value("inBytes", req.getBytesRead()), LogAttribute.value("outBytes", resp.getBytesWritten())
@@ -200,7 +198,7 @@ public final class ExecutionContextFilter implements Filter {
       args = new Object[7 + logAttrs.size()];
       args[0] = ctx.getName();
       args[1] = LogAttribute.traceId(ctx.getId());
-      args[2] = LogAttribute.of("clientHost", req.getRemoteHost());
+      args[2] = LogAttribute.of("clientHost", getRemoteHost(req));
       args[3] = LogAttribute.value("httpStatus", resp.getStatus());
       args[4] = LogAttribute.execTimeMicros(execTimeNanos, TimeUnit.NANOSECONDS);
       args[5] = LogAttribute.value("inBytes", req.getBytesRead());
@@ -211,9 +209,24 @@ public final class ExecutionContextFilter implements Filter {
       }
     }
     if (!clientWarning && level.getIntValue() >= Level.WARN.getIntValue()) {
-       logContextLogs(log, ctx);
+      logContextLogs(log, ctx);
     }
     log.log(level.getJulLevel(), "Done {0}", args);
+  }
+
+  private String getRemoteHost(final HttpServletRequest req) {
+    try { // see https://github.com/eclipse-ee4j/grizzly/issues/2042
+      return req.getRemoteHost();
+    } catch (RuntimeException ex) {
+      log.log(java.util.logging.Level.FINE, "Unable to obtain remote host", ex);
+      try {
+        return req.getRemoteAddr();
+      } catch (RuntimeException ex2) {
+        ex2.addSuppressed(ex);
+        log.log(java.util.logging.Level.FINE, "Unable to obtain remote add", ex2);
+        return "Unknown";
+      }
+    }
   }
 
   private static void logContextLogs(final Logger logger, final ExecutionContext ctx) {
@@ -231,7 +244,7 @@ public final class ExecutionContextFilter implements Filter {
     }
     StackSamples stackSamples = ctx.getStackSamples();
     if (stackSamples != null) {
-      logger.log(java.util.logging.Level.INFO, "profileDetail", new Object[] {traceId, stackSamples});
+      logger.log(java.util.logging.Level.INFO, "profileDetail", new Object[]{traceId, stackSamples});
     }
   }
 
@@ -246,7 +259,5 @@ public final class ExecutionContextFilter implements Filter {
             + idHeaderName + ", warnThreshold=" + warnThreshold + ", errorThreshold="
             + errorThreshold + '}';
   }
-
-
 
 }
