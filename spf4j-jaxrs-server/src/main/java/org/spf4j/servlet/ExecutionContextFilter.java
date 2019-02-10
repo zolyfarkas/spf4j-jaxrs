@@ -22,10 +22,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
+import org.spf4j.base.Methods;
 import org.spf4j.base.StackSamples;
 import org.spf4j.base.SysExits;
 import org.spf4j.base.Throwables;
 import org.spf4j.base.TimeSource;
+import org.spf4j.base.avro.StackSampleElement;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.http.DefaultDeadlineProtocol;
 import org.spf4j.http.Headers;
@@ -34,6 +36,7 @@ import org.spf4j.log.Level;
 import org.spf4j.log.LogAttribute;
 import org.spf4j.log.LogUtils;
 import org.spf4j.log.Slf4jLogRecord;
+import org.spf4j.ssdump2.Converter;
 
 /**
  * A Filter for REST services
@@ -213,7 +216,7 @@ public final class ExecutionContextFilter implements Filter {
         logContextLogs(log, ctx);
       }
     } catch (Exception ex) {
-       log.log(Level.ERROR.getJulLevel(), "Execption while dumping context detail", ex);
+      log.log(Level.ERROR.getJulLevel(), "Exception while dumping context detail", ex);
     } finally {
       log.log(level.getJulLevel(), "Done {0}", args);
     }
@@ -249,7 +252,11 @@ public final class ExecutionContextFilter implements Filter {
     }
     StackSamples stackSamples = ctx.getStackSamples();
     if (stackSamples != null) {
-      logger.log(java.util.logging.Level.INFO, "profileDetail", new Object[]{traceId, stackSamples});
+        final List<StackSampleElement> samples = new ArrayList<>();
+        Converter.convert(Methods.ROOT, stackSamples, -1, 0, (final StackSampleElement object, final long deadline) -> {
+          samples.add(object);
+        });
+      logger.log(java.util.logging.Level.INFO, "profileDetail", new Object[]{traceId, samples});
     }
   }
 

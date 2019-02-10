@@ -1,5 +1,6 @@
 package org.spf4j.jaxrs.server;
 
+import com.google.common.collect.ImmutableSet;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URI;
@@ -8,9 +9,12 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
@@ -37,13 +41,32 @@ import org.spf4j.jaxrs.Config;
 @Provider
 public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>, ResponseErrorMapper {
 
+  private static final Set<MediaType> SUPPORTED =  ImmutableSet.of(MediaType.valueOf("application/json"),
+            MediaType.valueOf("application/avro+json"),
+            MediaType.valueOf("application/avro"),
+            MediaType.valueOf("text/plain"));
+
   private final String host;
 
+  private final ContainerRequestContext reqCtx;
+
+  private final DebugDetailEntitlement allowClientDebug;
+
   @Inject
-  public LoggingExceptionMapper(@Config("baseUri") final String uriStr)
-          throws URISyntaxException, UnknownHostException {
+  public LoggingExceptionMapper(@Config("baseUri") final String uriStr,
+         @Context final ContainerRequestContext reqCtx,
+         final DebugDetailEntitlement allowClientDebug)
+         throws URISyntaxException, UnknownHostException {
     URI uri = new URI(uriStr);
     this.host = InetAddress.getByName(uri.getHost()).getHostName();
+    this.reqCtx = reqCtx;
+    if (allowClientDebug == null) {
+      Logger.getLogger(LoggingExceptionMapper.class.getName())
+              .warning("LoggingExceptionMapper will send debug detail to all clients");
+      this.allowClientDebug = ((x) -> true);
+    } else {
+      this.allowClientDebug = allowClientDebug;
+    }
   }
 
   @Override
@@ -75,14 +98,16 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
       Logger.getLogger("handling.error")
               .log(java.util.logging.Level.WARNING, "No request context available", exception);
       ServiceError.Builder errBuilder = ServiceError.newBuilder()
-              .setCode(status)
-              .setDetail(new DebugDetail(host,
-                      Collections.EMPTY_LIST, Converters.convert(exception), Collections.EMPTY_LIST))
-              .setType(exception.getClass().getName())
+              .setCode(status);
+      if (allowClientDebug.test(reqCtx.getSecurityContext())) {
+              errBuilder.setDetail(new DebugDetail(host,
+                      Collections.EMPTY_LIST, Converters.convert(exception), Collections.EMPTY_LIST));
+      }
+      errBuilder.setType(exception.getClass().getName())
               .setMessage(message).setPayload(payload);
       return Response.serverError()
               .entity(errBuilder.build())
-              .type(MediaType.APPLICATION_JSON_TYPE)
+              .type(getMediaType())
               .build();
     }
     if (status >= 500) {
@@ -108,10 +133,25 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
     }
     return Response.status(status)
             .entity(new ServiceError(status, exception.getClass().getName(),
-                    message, payload, new DebugDetail(host + '/' + ctx.getName(),
-                      Converters.convert("", ctx.getId().toString(), ctxLogs),
-                      Converters.convert(exception), sses)))
+                    message, payload,
+                    allowClientDebug.test(reqCtx.getSecurityContext())
+                            ? new DebugDetail(host + '/' + ctx.getName(),
+                              Converters.convert("", ctx.getId().toString(), ctxLogs),
+                              Converters.convert(exception), sses)
+                            : null))
+            .type(getMediaType())
             .build();
+  }
+
+
+  private MediaType getMediaType() {
+    List<MediaType> acceptableMediaTypes = reqCtx.getAcceptableMediaTypes();
+    for (MediaType mt : acceptableMediaTypes) {
+      if (SUPPORTED.contains(mt)) {
+        return mt;
+      }
+    }
+    return MediaType.APPLICATION_JSON_TYPE;
   }
 
   @Override
