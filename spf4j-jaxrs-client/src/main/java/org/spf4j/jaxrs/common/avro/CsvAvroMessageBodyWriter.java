@@ -30,6 +30,12 @@ public final class CsvAvroMessageBodyWriter extends  AvroMessageBodyWriter {
   }
 
   @Override
+  public boolean isWriteable(final Class<?> type, final Type genericType, final Annotation[] annotations,
+          final MediaType mediaType) {
+    return Iterable.class.isAssignableFrom(type);
+  }
+
+  @Override
   public Encoder getEncoder(final Schema writerSchema, final OutputStream os) throws IOException {
     CsvEncoder csvEncoder = new CsvEncoder(Csv.CSV.writer(new OutputStreamWriter(os, StandardCharsets.UTF_8)),
             writerSchema);
