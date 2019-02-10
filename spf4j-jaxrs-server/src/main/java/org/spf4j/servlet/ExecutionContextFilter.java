@@ -208,10 +208,15 @@ public final class ExecutionContextFilter implements Filter {
         args[i++] = obj;
       }
     }
-    if (!clientWarning && level.getIntValue() >= Level.WARN.getIntValue()) {
-      logContextLogs(log, ctx);
+    try {
+      if (!clientWarning && level.getIntValue() >= Level.WARN.getIntValue()) {
+        logContextLogs(log, ctx);
+      }
+    } catch (Exception ex) {
+       log.log(Level.ERROR.getJulLevel(), "Execption while dumping context detail", ex);
+    } finally {
+      log.log(level.getJulLevel(), "Done {0}", args);
     }
-    log.log(level.getJulLevel(), "Done {0}", args);
   }
 
   private String getRemoteHost(final HttpServletRequest req) {
