@@ -25,6 +25,7 @@ import org.glassfish.hk2.api.InjectionResolver;
 import org.glassfish.hk2.api.TypeLiteral;
 import org.spf4j.avro.SchemaClient;
 import org.spf4j.jaxrs.client.Spf4JClient;
+import org.spf4j.jaxrs.server.DebugDetailEntitlement;
 import org.spf4j.jaxrs.server.Spf4jInterceptionService;
 
 public final class Spf4jBinder extends AbstractBinder {
@@ -33,9 +34,13 @@ public final class Spf4jBinder extends AbstractBinder {
 
   private final Spf4JClient restClient;
 
-  public Spf4jBinder(final SchemaClient schemaClient, final Spf4JClient restClient) {
+  private final DebugDetailEntitlement ddEnt;
+
+  public Spf4jBinder(final SchemaClient schemaClient,
+          final Spf4JClient restClient, final DebugDetailEntitlement ddEnt) {
     this.schemaClient = schemaClient;
     this.restClient = restClient;
+    this.ddEnt = ddEnt;
   }
 
   @Override
@@ -43,6 +48,7 @@ public final class Spf4jBinder extends AbstractBinder {
   protected void configure() {
     bind(schemaClient).to(SchemaResolver.class);
     bind(restClient).to(Client.class);
+    bind(ddEnt).to(DebugDetailEntitlement.class);
     bind(Spf4jInterceptionService.class)
             .to(org.glassfish.hk2.api.InterceptionService.class)
             .in(Singleton.class);

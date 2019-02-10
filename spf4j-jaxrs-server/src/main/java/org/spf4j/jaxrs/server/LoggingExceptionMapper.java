@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.logging.Logger;
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
@@ -39,11 +41,25 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
 
   private final String host;
 
+  private final ContainerRequestContext reqCtx;
+
+  private final DebugDetailEntitlement allowClientDebug;
+
   @Inject
-  public LoggingExceptionMapper(@Config("baseUri") final String uriStr)
-          throws URISyntaxException, UnknownHostException {
+  public LoggingExceptionMapper(@Config("baseUri") final String uriStr,
+         @Context final ContainerRequestContext reqCtx,
+         final DebugDetailEntitlement allowClientDebug)
+         throws URISyntaxException, UnknownHostException {
     URI uri = new URI(uriStr);
     this.host = InetAddress.getByName(uri.getHost()).getHostName();
+    this.reqCtx = reqCtx;
+    if (allowClientDebug == null) {
+      Logger.getLogger(LoggingExceptionMapper.class.getName())
+              .warning("LoggingExceptionMapper will send debug detail to all clients");
+      this.allowClientDebug = ((x) -> true);
+    } else {
+      this.allowClientDebug = allowClientDebug;
+    }
   }
 
   @Override
@@ -75,10 +91,12 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
       Logger.getLogger("handling.error")
               .log(java.util.logging.Level.WARNING, "No request context available", exception);
       ServiceError.Builder errBuilder = ServiceError.newBuilder()
-              .setCode(status)
-              .setDetail(new DebugDetail(host,
-                      Collections.EMPTY_LIST, Converters.convert(exception), Collections.EMPTY_LIST))
-              .setType(exception.getClass().getName())
+              .setCode(status);
+      if (allowClientDebug.test(reqCtx.getSecurityContext())) {
+              errBuilder.setDetail(new DebugDetail(host,
+                      Collections.EMPTY_LIST, Converters.convert(exception), Collections.EMPTY_LIST));
+      }
+      errBuilder.setType(exception.getClass().getName())
               .setMessage(message).setPayload(payload);
       return Response.serverError()
               .entity(errBuilder.build())
@@ -108,9 +126,12 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
     }
     return Response.status(status)
             .entity(new ServiceError(status, exception.getClass().getName(),
-                    message, payload, new DebugDetail(host + '/' + ctx.getName(),
-                      Converters.convert("", ctx.getId().toString(), ctxLogs),
-                      Converters.convert(exception), sses)))
+                    message, payload,
+                    allowClientDebug.test(reqCtx.getSecurityContext())
+                            ? new DebugDetail(host + '/' + ctx.getName(),
+                              Converters.convert("", ctx.getId().toString(), ctxLogs),
+                              Converters.convert(exception), sses)
+                            : null))
             .build();
   }
 
