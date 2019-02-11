@@ -1,6 +1,5 @@
 package org.spf4j.jaxrs.server;
 
-import com.google.common.collect.ImmutableSet;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URI;
@@ -8,6 +7,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -41,10 +41,16 @@ import org.spf4j.jaxrs.Config;
 @Provider
 public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>, ResponseErrorMapper {
 
-  private static final Set<MediaType> SUPPORTED =  ImmutableSet.of(MediaType.valueOf("application/json"),
-            MediaType.valueOf("application/avro+json"),
-            MediaType.valueOf("application/avro"),
-            MediaType.valueOf("text/plain"));
+  private static final Set<MediaType> SUPPORTED;
+
+  static {
+    Set<MediaType> linkedHs = new LinkedHashSet<>(7);
+    linkedHs.add(MediaType.valueOf("application/json"));
+    linkedHs.add(MediaType.valueOf("application/avro+json"));
+    linkedHs.add(MediaType.valueOf("application/avro"));
+    linkedHs.add(MediaType.valueOf("text/plain"));
+    SUPPORTED = linkedHs;
+  }
 
   private final String host;
 
@@ -146,12 +152,7 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
 
   private MediaType getMediaType() {
     List<MediaType> acceptableMediaTypes = reqCtx.getAcceptableMediaTypes();
-    for (MediaType mt : acceptableMediaTypes) {
-      if (SUPPORTED.contains(mt)) {
-        return mt;
-      }
-    }
-    return MediaType.APPLICATION_JSON_TYPE;
+    return MediaTypes.getMatch(acceptableMediaTypes, SUPPORTED);
   }
 
   @Override
