@@ -25,6 +25,7 @@ import java.math.BigInteger;
 import java.util.function.BiFunction;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Context;
 import org.glassfish.hk2.api.Injectee;
@@ -63,22 +64,34 @@ public final class ConfigurationInjector implements InjectionResolver<Config> {
             .safePut(BigDecimal.class, this::resolveBigDecimal);
   }
 
+  String getConfig(final String param, @Nullable final String defaultValue) {
+    Object result = configuration.getProperty(param);
+    if (result == null) {
+      return defaultValue;
+    } else {
+      return result.toString();
+    }
+  }
+
+
   @Nullable
   private Object resolveString(final Injectee injectee, final ServiceHandle<?> handle) {
-    Config annotation = getConfigAnnotation(injectee);
-    if (annotation != null) {
-      String prop = annotation.value();
-      return configuration.getProperty(prop).toString();
+    ConfigurationParam param = getConfigAnnotation(injectee);
+    if (param != null) {
+      return getConfig(param.getPropertyName(), param.getDefaultValue());
     }
     return null;
   }
 
   @Nullable
   private Object resolveInt(final Injectee injectee, final ServiceHandle<?> handle) {
-    Config annotation = getConfigAnnotation(injectee);
-    if (annotation != null) {
-      String prop = annotation.value();
+    ConfigurationParam param = getConfigAnnotation(injectee);
+    if (param != null) {
+      String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
+      if (val == null) {
+        val = param.getDefaultValue();
+      }
       if (val instanceof Integer) {
         return val;
       } else if (val instanceof Number) {
@@ -96,10 +109,13 @@ public final class ConfigurationInjector implements InjectionResolver<Config> {
 
   @Nullable
   private Object resolveLong(final Injectee injectee, final ServiceHandle<?> handle) {
-    Config annotation = getConfigAnnotation(injectee);
-    if (annotation != null) {
-      String prop = annotation.value();
+    ConfigurationParam param = getConfigAnnotation(injectee);
+    if (param != null) {
+      String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
+      if (val == null) {
+        val = param.getDefaultValue();
+      }
       if (val instanceof Long) {
         return val;
       } else if (val instanceof Number) {
@@ -117,10 +133,13 @@ public final class ConfigurationInjector implements InjectionResolver<Config> {
 
   @Nullable
   private Object resolveDouble(final Injectee injectee, final ServiceHandle<?> handle) {
-    Config annotation = getConfigAnnotation(injectee);
-    if (annotation != null) {
-      String prop = annotation.value();
+    ConfigurationParam param = getConfigAnnotation(injectee);
+    if (param != null) {
+      String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
+      if (val == null) {
+        val = param.getDefaultValue();
+      }
       if (val instanceof Double) {
         return val;
       } else if (val instanceof Number) {
@@ -138,10 +157,13 @@ public final class ConfigurationInjector implements InjectionResolver<Config> {
 
   @Nullable
   private Object resolveFloat(final Injectee injectee, final ServiceHandle<?> handle) {
-    Config annotation = getConfigAnnotation(injectee);
-    if (annotation != null) {
-      String prop = annotation.value();
+    ConfigurationParam param = getConfigAnnotation(injectee);
+    if (param != null) {
+      String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
+      if (val == null) {
+        val = param.getDefaultValue();
+      }
       if (val instanceof Float) {
         return val;
       } else if (val instanceof Number) {
@@ -159,10 +181,13 @@ public final class ConfigurationInjector implements InjectionResolver<Config> {
 
   @Nullable
   private Object resolveBigDecimal(final Injectee injectee, final ServiceHandle<?> handle) {
-    Config annotation = getConfigAnnotation(injectee);
-    if (annotation != null) {
-      String prop = annotation.value();
+    ConfigurationParam param = getConfigAnnotation(injectee);
+    if (param != null) {
+      String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
+      if (val == null) {
+        val = param.getDefaultValue();
+      }
       if (val instanceof BigDecimal) {
         return val;
       }
@@ -177,10 +202,13 @@ public final class ConfigurationInjector implements InjectionResolver<Config> {
 
   @Nullable
   private Object resolveBigInteger(final Injectee injectee, final ServiceHandle<?> handle) {
-    Config annotation = getConfigAnnotation(injectee);
-    if (annotation != null) {
-      String prop = annotation.value();
+    ConfigurationParam param = getConfigAnnotation(injectee);
+    if (param != null) {
+      String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
+      if (val == null) {
+        val = param.getDefaultValue();
+      }
       if (val instanceof BigInteger) {
         return val;
       }
@@ -195,10 +223,13 @@ public final class ConfigurationInjector implements InjectionResolver<Config> {
 
   @Nullable
   private Object resolveBoolean(final Injectee injectee, final ServiceHandle<?> handle) {
-    Config annotation = getConfigAnnotation(injectee);
-    if (annotation != null) {
-      String prop = annotation.value();
+    ConfigurationParam param = getConfigAnnotation(injectee);
+    if (param != null) {
+      String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
+      if (val == null) {
+        val = param.getDefaultValue();
+      }
       if (val instanceof Boolean) {
         return val;
       }
@@ -222,22 +253,34 @@ public final class ConfigurationInjector implements InjectionResolver<Config> {
     return exact.apply(injectee, handle);
   }
 
-  private static Config getConfigAnnotation(final Injectee injectee) {
-    Config annotation = null;
+  @Nullable
+  private static ConfigurationParam getConfigAnnotation(final Injectee injectee) {
+    ConfigurationParam result = null;
     AnnotatedElement elem = injectee.getParent();
     if (elem instanceof Constructor) {
       Constructor ctor = (Constructor) elem;
       Annotation[] parameterAnnotation = ctor.getParameterAnnotations()[injectee.getPosition()];
+      String paramName = null;
+      String paramDefaultValue = null;
       for (Annotation ann : parameterAnnotation) {
-        if (ann instanceof Config) {
-          annotation = (Config) ann;
-          break;
+        Class<? extends Annotation> annotationType = ann.annotationType();
+        if (annotationType == Config.class) {
+          paramName = ((Config) ann).value();
+        } else if (annotationType == DefaultValue.class) {
+          paramDefaultValue = ((DefaultValue) ann).value();
         }
       }
+      if (paramName != null) {
+        result = new ConfigurationParam(paramName, paramDefaultValue);
+      }
     } else {
-      annotation = elem.getAnnotation(Config.class);
+      Config cfg = elem.getAnnotation(Config.class);
+      if (cfg != null) {
+        DefaultValue defVal = elem.getAnnotation(DefaultValue.class);
+        result = new ConfigurationParam(cfg.value(), defVal == null ? null : defVal.value());
+      }
     }
-    return annotation;
+    return result;
   }
 
   @Override
