@@ -256,7 +256,8 @@ public final class ExecutionContextFilter implements Filter {
         Converter.convert(Methods.ROOT, stackSamples, -1, 0, (final StackSampleElement object, final long deadline) -> {
           samples.add(object);
         });
-      logger.log(java.util.logging.Level.INFO, "profileDetail", new Object[]{traceId, samples});
+      logger.log(java.util.logging.Level.INFO, "profileDetail", new Object[]{traceId,
+        new org.spf4j.base.avro.StackSamples(samples)});
     }
   }
 
