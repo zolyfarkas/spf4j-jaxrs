@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 import javax.inject.Inject;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
@@ -49,7 +50,8 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
   private final DebugDetailEntitlement allowClientDebug;
 
   @Inject
-  public LoggingExceptionMapper(@Config("spf4j.jaxrs.serverHost") final String host,
+  public LoggingExceptionMapper(
+         @Config("spf4j.jaxrs.serverHost") @DefaultValue("spf4j.jaxrs.serverHost") final String host,
          @Context final ContainerRequestContext reqCtx,
          final DebugDetailEntitlement allowClientDebug) {
     this.host = host;
