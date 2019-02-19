@@ -1,10 +1,6 @@
 package org.spf4j.jaxrs.server;
 
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -53,12 +49,10 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
   private final DebugDetailEntitlement allowClientDebug;
 
   @Inject
-  public LoggingExceptionMapper(@Config("baseUri") final String uriStr,
+  public LoggingExceptionMapper(@Config("spf4j.jaxrs.serverHost") final String host,
          @Context final ContainerRequestContext reqCtx,
-         final DebugDetailEntitlement allowClientDebug)
-         throws URISyntaxException, UnknownHostException {
-    URI uri = new URI(uriStr);
-    this.host = InetAddress.getByName(uri.getHost()).getHostName();
+         final DebugDetailEntitlement allowClientDebug) {
+    this.host = host;
     this.reqCtx = reqCtx;
     if (allowClientDebug == null) {
       Logger.getLogger(LoggingExceptionMapper.class.getName())
