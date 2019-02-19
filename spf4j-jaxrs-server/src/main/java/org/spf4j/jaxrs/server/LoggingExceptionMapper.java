@@ -5,7 +5,6 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,17 +21,12 @@ import javax.ws.rs.ext.Provider;
 import org.glassfish.jersey.server.spi.ResponseErrorMapper;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
-import org.spf4j.base.StackSamples;
 import org.spf4j.base.Throwables;
-import org.spf4j.base.Methods;
 import org.spf4j.base.avro.Converters;
 import org.spf4j.base.avro.DebugDetail;
 import org.spf4j.base.avro.ServiceError;
-import org.spf4j.base.avro.StackSampleElement;
 import org.spf4j.log.Level;
-import org.spf4j.log.Slf4jLogRecord;
 import org.spf4j.http.ContextTags;
-import org.spf4j.ssdump2.Converter;
 import org.spf4j.jaxrs.Config;
 
 /**
@@ -120,30 +114,11 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
       ctx.putToRootParent(ContextTags.LOG_LEVEL, Level.ERROR);
     }
     ctx.addToRootParent(ContextTags.LOG_ATTRIBUTES, exception);
-    List<Slf4jLogRecord> ctxLogs = new ArrayList<>();
-    ExecutionContext curr = ctx;
-    while (curr != null) {
-      curr.streamLogs((log) -> {
-        ctxLogs.add(log);
-      });
-      curr = curr.getSource();
-    }
-    Collections.sort(ctxLogs, Slf4jLogRecord::compareByTimestamp);
-    StackSamples ss = ctx.getAndClearStackSamples();
-    List<StackSampleElement> sses;
-    if (ss == null) {
-      sses = Collections.EMPTY_LIST;
-    } else {
-      sses = new ArrayList<>(64);
-      Converter.convert(Methods.ROOT, ss, -1, 0, (a, b) -> sses.add(a));
-    }
     return Response.status(status)
             .entity(new ServiceError(status, exception.getClass().getName(),
                     message, payload,
                     allowClientDebug.test(reqCtx.getSecurityContext())
-                            ? new DebugDetail(host + '/' + ctx.getName(),
-                              Converters.convert("", ctx.getId().toString(), ctxLogs),
-                              Converters.convert(exception), sses)
+                            ? ctx.getDebugDetail(host, exception)
                             : null))
             .type(getMediaType())
             .build();

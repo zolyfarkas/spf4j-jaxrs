@@ -27,6 +27,7 @@ import org.spf4j.base.StackSamples;
 import org.spf4j.base.SysExits;
 import org.spf4j.base.Throwables;
 import org.spf4j.base.TimeSource;
+import org.spf4j.base.avro.Converters;
 import org.spf4j.base.avro.StackSampleElement;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.http.DefaultDeadlineProtocol;
@@ -36,7 +37,6 @@ import org.spf4j.log.Level;
 import org.spf4j.log.LogAttribute;
 import org.spf4j.log.LogUtils;
 import org.spf4j.log.Slf4jLogRecord;
-import org.spf4j.ssdump2.Converter;
 
 /**
  * A Filter for REST services
@@ -253,7 +253,8 @@ public final class ExecutionContextFilter implements Filter {
     StackSamples stackSamples = ctx.getStackSamples();
     if (stackSamples != null) {
         final List<StackSampleElement> samples = new ArrayList<>();
-        Converter.convert(Methods.ROOT, stackSamples, -1, 0, (final StackSampleElement object, final long deadline) -> {
+        Converters.convert(Methods.ROOT, stackSamples, -1, 0,
+                (final StackSampleElement object, final long deadline) -> {
           samples.add(object);
         });
       logger.log(java.util.logging.Level.INFO, "profileDetail", new Object[]{traceId,
