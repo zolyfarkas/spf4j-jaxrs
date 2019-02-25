@@ -21,6 +21,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Annotation for Query,Path parameters that are comma (or other char) separated values.
+ *
+ * the values will be automatically parsed correctly into a collection.
+ *
+ * Example:
+ *
+ * <li>
+ * public List&lt;Integer&gt; echoList(@CsvParam @QueryParam("lp") List&lt;Integer&gt; param)
+ * </li>
+ * 
  * @author Zoltan Farkas
  */
 @Target({ElementType.FIELD, ElementType.PARAMETER})
