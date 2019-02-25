@@ -31,15 +31,16 @@ import javax.ws.rs.core.Context;
 import org.glassfish.hk2.api.Injectee;
 import org.glassfish.hk2.api.InjectionResolver;
 import org.glassfish.hk2.api.ServiceHandle;
-import org.spf4j.jaxrs.Config;
 import org.spf4j.reflect.CachingTypeMapWrapper;
 import org.spf4j.reflect.GraphTypeMap;
+import org.spf4j.jaxrs.ConfigProperty;
+import org.spf4j.jaxrs.SystemConfiguration;
 
 /**
  * @author Zoltan Farkas
  */
 @SuppressFBWarnings({"URV_UNRELATED_RETURN_VALUES", "UP_UNUSED_PARAMETER"})
-public final class ConfigurationInjector implements InjectionResolver<Config> {
+public final class ConfigurationInjector implements InjectionResolver<ConfigProperty> {
 
   private final Configuration configuration;
 
@@ -47,7 +48,7 @@ public final class ConfigurationInjector implements InjectionResolver<Config> {
 
   @Inject
   public ConfigurationInjector(@Context final Configuration configuration) {
-    this.configuration = configuration;
+    this.configuration = new SystemConfiguration(configuration);
     this.typeResolvers = new CachingTypeMapWrapper<>(new GraphTypeMap());
     this.typeResolvers.safePut(CharSequence.class, this::resolveString)
             .safePut(Integer.class, this::resolveInt)
@@ -264,8 +265,8 @@ public final class ConfigurationInjector implements InjectionResolver<Config> {
       String paramDefaultValue = null;
       for (Annotation ann : parameterAnnotation) {
         Class<? extends Annotation> annotationType = ann.annotationType();
-        if (annotationType == Config.class) {
-          paramName = ((Config) ann).value();
+        if (annotationType == ConfigProperty.class) {
+          paramName = ((ConfigProperty) ann).value();
         } else if (annotationType == DefaultValue.class) {
           paramDefaultValue = ((DefaultValue) ann).value();
         }
@@ -274,7 +275,7 @@ public final class ConfigurationInjector implements InjectionResolver<Config> {
         result = new ConfigurationParam(paramName, paramDefaultValue);
       }
     } else {
-      Config cfg = elem.getAnnotation(Config.class);
+      ConfigProperty cfg = elem.getAnnotation(ConfigProperty.class);
       if (cfg != null) {
         DefaultValue defVal = elem.getAnnotation(DefaultValue.class);
         result = new ConfigurationParam(cfg.value(), defVal == null ? null : defVal.value());

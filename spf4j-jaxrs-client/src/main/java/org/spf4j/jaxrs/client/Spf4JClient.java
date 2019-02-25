@@ -90,6 +90,9 @@ public final class Spf4JClient implements Client {
   }
 
   public static List<ParamConverterProvider> getParamConverters(final Configuration pconfig) {
+    if (!(pconfig instanceof ClientConfig)) {
+      throw new IllegalArgumentException("Not a Jerjey Client Config: " + pconfig);
+    }
     ClientExecutor clientExecutor = ((ClientConfig) pconfig).getClientExecutor();
     Configuration config;
     try {

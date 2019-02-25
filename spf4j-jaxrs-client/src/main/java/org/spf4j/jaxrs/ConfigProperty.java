@@ -21,11 +21,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Annotation to inject configuration properties.
+ * Works in conjunction with @DefaultValue
  * @author Zoltan Farkas
  */
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Config {
+public @interface ConfigProperty {
     /** the property name */
     String value();
 }

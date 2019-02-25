@@ -23,7 +23,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
-import org.spf4j.jaxrs.Config;
+import org.spf4j.jaxrs.ConfigProperty;
 
 /**
  * @author Zoltan Farkas
@@ -34,7 +34,7 @@ public final class HeaderOverwriteRequestFilter implements ContainerRequestFilte
 
   private final String prefix;
 
-  public HeaderOverwriteRequestFilter(@Config(value = "spf4j.jaxrs.qpHeaderOverwritePrefix")
+  public HeaderOverwriteRequestFilter(@ConfigProperty(value = "spf4j.jaxrs.qpHeaderOverwritePrefix")
           @DefaultValue("_") final String prefix) {
     this.prefix = prefix;
   }

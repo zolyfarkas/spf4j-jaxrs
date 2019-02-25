@@ -24,7 +24,7 @@ import org.spf4j.base.avro.DebugDetail;
 import org.spf4j.base.avro.ServiceError;
 import org.spf4j.log.Level;
 import org.spf4j.http.ContextTags;
-import org.spf4j.jaxrs.Config;
+import org.spf4j.jaxrs.ConfigProperty;
 
 /**
  * @author Zoltan Farkas
@@ -51,7 +51,7 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
 
   @Inject
   public LoggingExceptionMapper(
-         @Config("spf4j.jaxrs.serverHost") @DefaultValue("spf4j.jaxrs.serverHost") final String host,
+         @ConfigProperty("spf4j.jaxrs.serverHost") @DefaultValue("spf4j.jaxrs.serverHost") final String host,
          @Context final ContainerRequestContext reqCtx,
          final DebugDetailEntitlement allowClientDebug) {
     this.host = host;
