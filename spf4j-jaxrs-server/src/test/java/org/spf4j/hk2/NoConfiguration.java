@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nullable;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Feature;
@@ -27,7 +28,7 @@ import javax.ws.rs.core.Feature;
  *
  * @author Zoltan Farkas
  */
-public class NoConfiguration implements Configuration {
+public final class NoConfiguration implements Configuration {
 
   @Override
   public RuntimeType getRuntimeType() {
@@ -40,7 +41,8 @@ public class NoConfiguration implements Configuration {
   }
 
   @Override
-  public Object getProperty(String name) {
+  @Nullable
+  public Object getProperty(final String name) {
     return null;
   }
 
@@ -50,27 +52,27 @@ public class NoConfiguration implements Configuration {
   }
 
   @Override
-  public boolean isEnabled(Feature feature) {
+  public boolean isEnabled(final Feature feature) {
     return false;
   }
 
   @Override
-  public boolean isEnabled(Class<? extends Feature> featureClass) {
+  public boolean isEnabled(final Class<? extends Feature> featureClass) {
     return false;
   }
 
   @Override
-  public boolean isRegistered(Object component) {
+  public boolean isRegistered(final Object component) {
     return false;
   }
 
   @Override
-  public boolean isRegistered(Class<?> componentClass) {
+  public boolean isRegistered(final Class<?> componentClass) {
     return false;
   }
 
   @Override
-  public Map<Class<?>, Integer> getContracts(Class<?> componentClass) {
+  public Map<Class<?>, Integer> getContracts(final Class<?> componentClass) {
     return Collections.EMPTY_MAP;
   }
 

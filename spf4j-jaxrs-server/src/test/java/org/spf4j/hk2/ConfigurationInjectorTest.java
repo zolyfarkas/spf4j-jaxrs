@@ -41,7 +41,7 @@ public class ConfigurationInjectorTest {
  public static final class TestClass {
    private final String value;
 
-    public TestClass(@ConfigProperty("myProp")  @DefaultValue("bubu") String value) {
+    public TestClass(@ConfigProperty("myProp")  @DefaultValue("bubu") final  String value) {
       this.value = value;
     }
 
@@ -54,7 +54,7 @@ public class ConfigurationInjectorTest {
 
 
   @Test
-  public void testSomeMethod() {
+  public void testConfigInjection() {
     ServiceLocator loc = ServiceLocatorFactory.getInstance().create("test");
     ServiceLocatorUtilities.bind(loc, new AbstractBinder() {
       @Override
