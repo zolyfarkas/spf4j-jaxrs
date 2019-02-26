@@ -47,6 +47,7 @@
 
   <modules>
     <module>spf4j-jaxrs-codegen-extension</module>
+    <module>spf4j-jaxrs-kube</module>
     <module>spf4j-jaxrs-client</module>
     <module>spf4j-jaxrs-server</module>
   </modules>
