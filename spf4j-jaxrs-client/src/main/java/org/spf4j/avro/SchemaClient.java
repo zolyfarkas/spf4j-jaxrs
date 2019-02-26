@@ -35,6 +35,7 @@ import javax.ws.rs.core.MediaType;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
 import org.glassfish.jersey.client.ClientProperties;
+import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.io.Streams;
 import org.spf4j.http.DefaultDeadlineProtocol;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
@@ -76,7 +77,7 @@ public final class SchemaClient implements SchemaResolver {
             .newBuilder()
             .connectTimeout(2, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
-            .register(new ExecutionContextClientFilter(new DefaultDeadlineProtocol()))
+            .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE))
             .register(ClientCustomExecutorServiceProvider.class)
             .register(ClientCustomScheduledExecutionServiceProvider.class)
             .property(ClientProperties.USE_ENCODING, "gzip")
