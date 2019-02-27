@@ -27,11 +27,19 @@ import org.spf4j.base.ExecutionContexts;
 import org.spf4j.http.ContextTags;
 import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
+import org.spf4j.jaxrs.Timeout;
 import org.spf4j.log.ExecContextLogger;
 import org.spf4j.servlet.CountingHttpServletResponse;
 
 /**
  * Based on  https://blog.dejavu.sk/intercepting-jersey-resource-method-calls/
+ *
+ * <p>Implements the following:</p>
+ *
+ * <li>Handles @Deprecated annotations, to return a HTTP warning to the client</li>
+ * <li>Handles @Timeout annotations to set/overwrite the context deadline</li>
+ * <li>Detects uses of AsyncResponse and sets the context timeout</li>
+ *
  * @author Zoltan Farkas
  */
 public final class Spf4jInterceptionService implements InterceptionService {
@@ -88,6 +96,13 @@ public final class Spf4jInterceptionService implements InterceptionService {
       }
       extra.add(new WarningsInterceptor(warnings));
     }
+    Timeout tannot = method.getAnnotation(Timeout.class);
+    if (tannot != null) {
+      if (extra == null) {
+        extra = new ArrayList<>(2);
+      }
+      extra.add(0, new ContextTimeoutSetterInterceptor(tannot.unit().toNanos(tannot.value())));
+    }
     if (extra == null) {
       return  Collections.singletonList(new LoggingInterceptor(method));
     } else {
@@ -120,6 +135,24 @@ public final class Spf4jInterceptionService implements InterceptionService {
     }
 
   }
+
+  private static class ContextTimeoutSetterInterceptor implements MethodInterceptor {
+
+    private final long  timeoutNanos;
+
+    ContextTimeoutSetterInterceptor(final long timeoutNanos) {
+      this.timeoutNanos = timeoutNanos;
+    }
+
+    @Override
+    public Object invoke(final MethodInvocation invocation) throws Throwable {
+      try (ExecutionContext ec = ExecutionContexts.start(invocation.getMethod().getName(),
+              timeoutNanos, TimeUnit.NANOSECONDS)) {
+        return invocation.proceed();
+      }
+    }
+  }
+
 
 
   private static class AsycResponseTimeoutSetterInterceptor implements MethodInterceptor {
