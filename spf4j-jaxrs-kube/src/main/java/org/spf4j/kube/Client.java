@@ -73,6 +73,7 @@ public final class Client {
             .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE))
             .register(ClientCustomExecutorServiceProvider.class)
             .register(ClientCustomScheduledExecutionServiceProvider.class)
+//            .register(new JsonAvroMessageBodyReader2(SchemaProtocol.NONE))
             .register(new XJsonAvroMessageBodyReader(SchemaProtocol.NONE))
             .property(ClientProperties.USE_ENCODING, "gzip")
             .build()).target(kubernetesMaster).path("api/v1");

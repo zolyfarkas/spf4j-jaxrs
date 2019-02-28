@@ -16,7 +16,7 @@ import org.spf4j.io.MemorizingBufferedInputStream;
  */
 @Provider
 @Consumes({"application/avro+json"})
-public final class JsonAvroMessageBodyReader extends AvroMessageBodyReader {
+public class JsonAvroMessageBodyReader extends AvroMessageBodyReader {
 
 
   @Inject
@@ -25,11 +25,11 @@ public final class JsonAvroMessageBodyReader extends AvroMessageBodyReader {
   }
 
   @Override
-  public Decoder getDecoder(final Schema writerSchema, final InputStream is) throws IOException {
+  public final Decoder getDecoder(final Schema writerSchema, final InputStream is) throws IOException {
     return DecoderFactory.get().jsonDecoder(writerSchema, is);
   }
 
-  public  InputStream wrapInputStream(final InputStream pentityStream) {
+  public final InputStream wrapInputStream(final InputStream pentityStream) {
     return new MemorizingBufferedInputStream(pentityStream, StandardCharsets.UTF_8);
   }
 

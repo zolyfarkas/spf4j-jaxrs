@@ -81,7 +81,7 @@ public final class Endpoints {
     return subsets;
   }
 
-  public void setSubsets(List<SubSet> subsets) {
+  public void setSubsets(final List<SubSet> subsets) {
     this.subsets = subsets;
   }
 
@@ -93,7 +93,7 @@ public final class Endpoints {
       return ip;
     }
 
-    public void setIp(String ip) {
+    public void setIp(final String ip) {
       this.ip = ip;
     }
   }
@@ -105,7 +105,7 @@ public final class Endpoints {
       return port;
     }
 
-    public void setPort(int port) {
+    public void setPort(final int port) {
       this.port = port;
     }
 
@@ -121,7 +121,7 @@ public final class Endpoints {
       return addresses;
     }
 
-    public void setAddresses(List<Address> addresses) {
+    public void setAddresses(final List<Address> addresses) {
       this.addresses = addresses;
     }
 
@@ -129,7 +129,7 @@ public final class Endpoints {
       return ports;
     }
 
-    public void setPorts(List<Port> ports) {
+    public void setPorts(final List<Port> ports) {
       this.ports = ports;
     }
 
