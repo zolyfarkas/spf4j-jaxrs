@@ -73,7 +73,7 @@ import java.util.List;
  *
  * @author Zoltan Farkas
  */
-public class Endpoints {
+public final class Endpoints {
 
   private List<SubSet> subsets;
 

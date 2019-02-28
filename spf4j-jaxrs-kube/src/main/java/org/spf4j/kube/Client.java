@@ -116,7 +116,7 @@ public final class Client {
       SSLContext context = SSLContext.getInstance("TLSv1.2");
       context.init(null, tmf.getTrustManagers(), null);
       return context;
-    } catch (KeyStoreException | KeyManagementException |IOException
+    } catch (KeyStoreException | KeyManagementException | IOException
             | NoSuchAlgorithmException | CertificateException ex) {
       throw new RuntimeException(ex);
     }
