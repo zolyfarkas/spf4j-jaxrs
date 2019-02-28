@@ -15,6 +15,7 @@
  */
 package org.spf4j.kube;
 
+import com.google.common.net.HostAndPort;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,47 +27,76 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.client.ClientProperties;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.jaxrs.client.Spf4JClient;
+import org.spf4j.jaxrs.client.providers.BearerAuthClientFilter;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
 import org.spf4j.jaxrs.common.avro.SchemaProtocol;
 import org.spf4j.jaxrs.common.avro.XJsonAvroMessageBodyReader;
+import org.spf4j.kube.Endpoints.Address;
+import org.spf4j.kube.Endpoints.Port;
+import org.spf4j.kube.Endpoints.SubSet;
 
 /**
  * @author Zoltan Farkas
  */
-public class Client {
-
-  private final String kubernetesMaster;
-  private final String apiToken;
+public final class Client {
 
   private final WebTarget apiTarget;
 
-  public Client(String kubernetesMaster, String apiToken, String caCertificate) {
-    this.kubernetesMaster = kubernetesMaster;
-    this.apiToken = apiToken;
-    apiTarget = new Spf4JClient(ClientBuilder
+  public Client(final String kubernetesMaster,
+          @Nullable final String apiToken,
+          @Nullable final String caCertificate) {
+    ClientBuilder clBuilder = ClientBuilder
             .newBuilder()
             .connectTimeout(2, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .sslContext(buildSslContext(caCertificate))
+            .readTimeout(30, TimeUnit.SECONDS);
+    if (caCertificate != null) {
+      clBuilder = clBuilder.sslContext(buildSslContext(caCertificate));
+    }
+    if (apiToken != null) {
+      clBuilder = clBuilder.register(new BearerAuthClientFilter((hv) -> hv.append(apiToken)));
+    }
+    apiTarget = new Spf4JClient(clBuilder
             .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE))
             .register(ClientCustomExecutorServiceProvider.class)
             .register(ClientCustomScheduledExecutionServiceProvider.class)
             .register(new XJsonAvroMessageBodyReader(SchemaProtocol.NONE))
             .property(ClientProperties.USE_ENCODING, "gzip")
-            .build()).target("api/v1");
+            .build()).target(kubernetesMaster).path("api/v1");
   }
 
-  private Certificate generateCertificate(String caCertificate)
+
+  public List<HostAndPort> getEndpoints(final String namesSpace, final String endpointName) {
+    Endpoints endpoints = apiTarget.path("namespaces/{namespace}/endpoints/{endpointName}")
+            .resolveTemplate("namespace", namesSpace)
+            .resolveTemplate("endpointName", endpointName)
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .get(Endpoints.class);
+    List<HostAndPort> result = new ArrayList<>();
+    for (SubSet ss : endpoints.getSubsets()) {
+      for (Address adr : ss.getAddresses()) {
+        for (Port port : ss.getPorts()) {
+          result.add(HostAndPort.fromParts(adr.getIp(), port.getPort()));
+        }
+      }
+    }
+    return result;
+  }
+
+  private Certificate generateCertificate(final String caCertificate)
           throws IOException, CertificateException {
     try (InputStream caInput = new ByteArrayInputStream(caCertificate.getBytes(StandardCharsets.UTF_8))) {
       CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -74,7 +104,7 @@ public class Client {
     }
   }
 
-  private SSLContext buildSslContext(String caCertificate) {
+  private SSLContext buildSslContext(final String caCertificate) {
     try {
       KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
       keyStore.load(null, null);
