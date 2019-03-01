@@ -1,7 +1,9 @@
 
 package org.spf4j.http;
 
+import java.util.ArrayList;
 import java.util.List;
+import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContext.Tag;
 import org.spf4j.log.Level;
 import org.spf4j.servlet.CountingHttpServletRequest;
@@ -23,6 +25,23 @@ public final class ContextTags {
     public String toString() {
       return "LA";
     }
+
+    @Override
+    public List<Object> combine(List<Object> existing, List<Object> current) {
+      if (existing == null) {
+        return current;
+      } else {
+        List<Object> result = new ArrayList<>(existing.size() + current.size());
+        result.addAll(existing);
+        result.addAll(current);
+        return result;
+      }
+    }
+
+    @Override
+    public boolean pushOnClose(ExecutionContext.Relation relation) {
+      return relation == ExecutionContext.Relation.CHILD_OF;
+    }
   };
 
   /**
@@ -33,6 +52,25 @@ public final class ContextTags {
     public String toString() {
       return "HW";
     }
+
+    @Override
+    public List<HttpWarning> combine(List<HttpWarning> existing, List<HttpWarning> current) {
+      if (existing == null) {
+        return current;
+      } else {
+        List<HttpWarning> result = new ArrayList<>(existing.size() + current.size());
+        result.addAll(existing);
+        result.addAll(current);
+        return result;
+      }
+    }
+
+    @Override
+    public boolean pushOnClose(ExecutionContext.Relation relation) {
+      return relation == ExecutionContext.Relation.CHILD_OF;
+    }
+
+
   };
 
   /**
@@ -43,6 +81,20 @@ public final class ContextTags {
     public String toString() {
       return "LL";
     }
+
+    @Override
+    public Level combine(Level existing, Level current) {
+      if (existing == null) {
+        return current;
+      }
+      return (existing.ordinal() < current.ordinal()) ? current : existing;
+    }
+
+    @Override
+    public boolean pushOnClose(ExecutionContext.Relation relation) {
+      return relation == ExecutionContext.Relation.CHILD_OF;
+    }
+
   };
 
 

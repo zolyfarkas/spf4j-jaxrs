@@ -107,9 +107,9 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
               .build();
     }
     if (status >= 500) {
-      ctx.putToRootParent(ContextTags.LOG_LEVEL, Level.ERROR);
+      ctx.combine(ContextTags.LOG_LEVEL, Level.ERROR);
     }
-    ctx.addToRootParent(ContextTags.LOG_ATTRIBUTES, exception);
+    ctx.add(ContextTags.LOG_ATTRIBUTES, exception);
     return Response.status(status)
             .entity(new ServiceError(status, exception.getClass().getName(),
                     message, payload,

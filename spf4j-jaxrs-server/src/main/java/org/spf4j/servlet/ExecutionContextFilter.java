@@ -113,13 +113,13 @@ public final class ExecutionContextFilter implements Filter {
 
           @Override
           public void onTimeout(final AsyncEvent event) {
-            ctx.put(ContextTags.LOG_LEVEL, Level.ERROR);
+            ctx.combine(ContextTags.LOG_LEVEL, Level.ERROR);
             ctx.add(ContextTags.LOG_ATTRIBUTES, LogAttribute.of("warning", "Request timed out"));
           }
 
           @Override
           public void onError(final AsyncEvent event) {
-            ctx.put(ContextTags.LOG_LEVEL, Level.ERROR);
+            ctx.combine(ContextTags.LOG_LEVEL, Level.ERROR);
             ctx.add(ContextTags.LOG_ATTRIBUTES, event.getThrowable());
           }
 

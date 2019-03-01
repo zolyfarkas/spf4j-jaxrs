@@ -15,7 +15,6 @@
  */
 package org.spf4j.kube.client;
 
-import org.spf4j.kube.client.Client;
 import com.google.common.net.HostAndPort;
 import java.util.List;
 import org.junit.Assert;
