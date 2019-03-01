@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.kube;
+package org.spf4j.kube.client;
 
 import com.google.common.net.HostAndPort;
 import java.io.ByteArrayInputStream;
@@ -45,9 +45,9 @@ import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServicePro
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
 import org.spf4j.jaxrs.common.avro.SchemaProtocol;
 import org.spf4j.jaxrs.common.avro.XJsonAvroMessageBodyReader;
-import org.spf4j.kube.Endpoints.Address;
-import org.spf4j.kube.Endpoints.Port;
-import org.spf4j.kube.Endpoints.SubSet;
+import org.spf4j.kube.client.Endpoints.Address;
+import org.spf4j.kube.client.Endpoints.Port;
+import org.spf4j.kube.client.Endpoints.SubSet;
 
 /**
  * @author Zoltan Farkas

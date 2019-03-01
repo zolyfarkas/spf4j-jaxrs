@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.kube;
+package org.spf4j.kube.client;
 
+import org.spf4j.kube.client.Client;
 import com.google.common.net.HostAndPort;
 import java.util.List;
 import org.junit.Assert;

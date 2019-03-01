@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.kube;
+package org.spf4j.kube.client;
 
 import java.util.List;
 

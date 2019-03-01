@@ -23,6 +23,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 import org.spf4j.base.avro.NetworkService;
+import org.spf4j.cluster.Cluster;
 
 /**
  * @author Zoltan Farkas
