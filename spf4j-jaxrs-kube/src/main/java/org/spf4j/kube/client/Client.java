@@ -18,7 +18,6 @@ package org.spf4j.kube.client;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -44,11 +43,21 @@ import org.spf4j.jaxrs.common.avro.SchemaProtocol;
 import org.spf4j.jaxrs.common.avro.XJsonAvroMessageBodyReader;
 
 /**
+ * A mini kubernetes client that implements "discovery" and is meant to be used within a
+ * kubernetes pod.
+ *
+ * @see https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/#accessing-the-api-from-a-pod
+ *
  * @author Zoltan Farkas
  */
 public final class Client {
 
   private final WebTarget apiTarget;
+
+  public Client(@Nullable final String apiToken,
+          @Nullable final byte[] caCertificate) {
+    this("kubernetes.default.svc", apiToken, caCertificate);
+  }
 
   public Client(final String kubernetesMaster,
           @Nullable final String apiToken,
@@ -70,7 +79,8 @@ public final class Client {
 //            .register(new JsonAvroMessageBodyReader2(SchemaProtocol.NONE))
             .register(new XJsonAvroMessageBodyReader(SchemaProtocol.NONE))
             .property(ClientProperties.USE_ENCODING, "gzip")
-            .build()).target(kubernetesMaster).path("api/v1");
+            .build()).target((caCertificate == null ? "http://" : "https://")
+                    + kubernetesMaster).path("api/v1");
   }
 
 
