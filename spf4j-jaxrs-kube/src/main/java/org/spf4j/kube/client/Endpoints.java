@@ -17,6 +17,7 @@ package org.spf4j.kube.client;
 
 import java.util.List;
 import org.apache.avro.reflect.AvroDefault;
+import org.spf4j.base.avro.NetworkProtocol;
 
 /**
  * kubernetes endpoints:
@@ -111,6 +112,8 @@ public final class Endpoints {
     @AvroDefault("\"\"")
     private String name;
 
+    private NetworkProtocol protocol;
+
     public int getPort() {
       return port;
     }
@@ -127,9 +130,17 @@ public final class Endpoints {
       this.name = name;
     }
 
+    public NetworkProtocol getProtocol() {
+      return protocol;
+    }
+
+    public void setProtocol(final NetworkProtocol protocol) {
+      this.protocol = protocol;
+    }
+
     @Override
     public String toString() {
-      return "Port{" + "port=" + port + ", name=" + name + '}';
+      return "Port{" + "port=" + port + ", name=" + name + ", protocol=" + protocol + '}';
     }
 
   }

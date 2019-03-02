@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.spf4j.base.TimeSource;
-import org.spf4j.base.avro.NetworkProtocol;
 import org.spf4j.base.avro.NetworkService;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
@@ -107,7 +106,7 @@ public final class KubeCluster implements Cluster {
         }
       }
       for (Endpoints.Port port : ss.getPorts()) {
-        svcs.add(new NetworkService(port.getName(), port.getPort(), NetworkProtocol.tcp));
+        svcs.add(new NetworkService(port.getName(), port.getPort(), port.getProtocol()));
       }
     }
     return new ClusterInfoBean(addrs, localAddresses, svcs);
