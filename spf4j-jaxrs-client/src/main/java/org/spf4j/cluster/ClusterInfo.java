@@ -18,6 +18,7 @@ package org.spf4j.cluster;
 import com.google.common.collect.Sets;
 import java.net.InetAddress;
 import java.util.Set;
+import javax.annotation.Nullable;
 import org.spf4j.base.avro.NetworkService;
 
 /**
@@ -35,5 +36,15 @@ public interface ClusterInfo {
   }
 
   Set<NetworkService> getServices();
+
+  @Nullable
+  default NetworkService getService(final String name) {
+    for (NetworkService svc : getServices()) {
+      if (name.equals(svc.getName())) {
+        return svc;
+      }
+    }
+    return null;
+  }
 
 }
