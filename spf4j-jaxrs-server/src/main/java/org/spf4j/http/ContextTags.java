@@ -27,7 +27,7 @@ public final class ContextTags {
     }
 
     @Override
-    public List<Object> combine(List<Object> existing, List<Object> current) {
+    public List<Object> combine(final List<Object> existing, final List<Object> current) {
       if (existing == null) {
         return current;
       } else {
@@ -39,7 +39,7 @@ public final class ContextTags {
     }
 
     @Override
-    public boolean pushOnClose(ExecutionContext.Relation relation) {
+    public boolean pushOnClose(final ExecutionContext.Relation relation) {
       return relation == ExecutionContext.Relation.CHILD_OF;
     }
   };
@@ -54,7 +54,7 @@ public final class ContextTags {
     }
 
     @Override
-    public List<HttpWarning> combine(List<HttpWarning> existing, List<HttpWarning> current) {
+    public List<HttpWarning> combine(final List<HttpWarning> existing, final List<HttpWarning> current) {
       if (existing == null) {
         return current;
       } else {
@@ -66,7 +66,7 @@ public final class ContextTags {
     }
 
     @Override
-    public boolean pushOnClose(ExecutionContext.Relation relation) {
+    public boolean pushOnClose(final ExecutionContext.Relation relation) {
       return relation == ExecutionContext.Relation.CHILD_OF;
     }
 
@@ -83,7 +83,7 @@ public final class ContextTags {
     }
 
     @Override
-    public Level combine(Level existing, Level current) {
+    public Level combine(final Level existing, final Level current) {
       if (existing == null) {
         return current;
       }
@@ -91,7 +91,7 @@ public final class ContextTags {
     }
 
     @Override
-    public boolean pushOnClose(ExecutionContext.Relation relation) {
+    public boolean pushOnClose(final ExecutionContext.Relation relation) {
       return relation == ExecutionContext.Relation.CHILD_OF;
     }
 
