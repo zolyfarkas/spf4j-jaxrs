@@ -52,7 +52,7 @@ public final class Client {
 
   public Client(final String kubernetesMaster,
           @Nullable final String apiToken,
-          @Nullable final String caCertificate) {
+          @Nullable final byte[] caCertificate) {
     ClientBuilder clBuilder = ClientBuilder
             .newBuilder()
             .connectTimeout(2, TimeUnit.SECONDS)
@@ -82,15 +82,15 @@ public final class Client {
             .get(Endpoints.class);
   }
 
-  private Certificate generateCertificate(final String caCertificate)
+  private Certificate generateCertificate(final byte[] caCertificate)
           throws IOException, CertificateException {
-    try (InputStream caInput = new ByteArrayInputStream(caCertificate.getBytes(StandardCharsets.UTF_8))) {
+    try (InputStream caInput = new ByteArrayInputStream(caCertificate)) {
       CertificateFactory cf = CertificateFactory.getInstance("X.509");
       return cf.generateCertificate(caInput);
     }
   }
 
-  private SSLContext buildSslContext(final String caCertificate) {
+  private SSLContext buildSslContext(final byte[] caCertificate) {
     try {
       KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
       keyStore.load(null, null);
