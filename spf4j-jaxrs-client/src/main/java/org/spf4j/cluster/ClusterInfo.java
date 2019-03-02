@@ -15,36 +15,25 @@
  */
 package org.spf4j.cluster;
 
+import com.google.common.collect.Sets;
 import java.net.InetAddress;
-import java.util.Collections;
 import java.util.Set;
 import org.spf4j.base.avro.NetworkService;
 
 /**
+ *
  * @author Zoltan Farkas
  */
-public final class SingleNodeCluster implements Cluster {
+public interface ClusterInfo {
 
-  private final ClusterInfoBean clusterInfo;
+  Set<InetAddress> getAddresses();
 
-  public SingleNodeCluster(final Set<NetworkService> services) {
-    this(Collections.unmodifiableSet(Cluster.getLocalAddresses()), services);
+  Set<InetAddress> getLocalAddresses();
+
+  default Set<InetAddress> getPeerAddresses() {
+    return Sets.difference(getAddresses(), getLocalAddresses());
   }
 
-  public SingleNodeCluster(final Set<InetAddress> localAddresses, final Set<NetworkService> services) {
-    this.clusterInfo = new ClusterInfoBean(localAddresses, localAddresses, services);
-  }
-
-
-
-  @Override
-  public ClusterInfo getClusterInfo() {
-    return this.clusterInfo;
-  }
-
-  @Override
-  public String toString() {
-    return "SingleNodeCluster{" + "clusterInfo=" + clusterInfo + '}';
-  }
+  Set<NetworkService> getServices();
 
 }

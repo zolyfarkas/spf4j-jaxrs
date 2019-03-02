@@ -1,24 +1,38 @@
 
 package org.spf4j.cluster;
 
-import com.google.common.collect.Sets;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Set;
-import org.spf4j.base.avro.NetworkService;
 
 /**
  * @author Zoltan Farkas
  */
 public interface Cluster {
 
-  Set<InetAddress> getNodes();
+  ClusterInfo getClusterInfo();
 
-  Set<InetAddress> getLocalNodes();
-
-  default Set<InetAddress> getOtherNodes() {
-    return Sets.difference(getNodes(), getLocalNodes());
+  static Set<InetAddress> getLocalAddresses() {
+    Set<InetAddress> result = new HashSet<>(4);
+    try {
+      Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+      while (interfaces.hasMoreElements()) {
+        NetworkInterface iface = interfaces.nextElement();
+        // filters out 127.0.0.1 and inactive interfaces
+        if (iface.isLoopback() || !iface.isUp()) {
+          continue;
+        }
+        Enumeration<InetAddress> addresses = iface.getInetAddresses();
+        while (addresses.hasMoreElements()) {
+          result.add(addresses.nextElement());
+        }
+      }
+      return result;
+    } catch (SocketException e) {
+      throw new RuntimeException(e);
+    }
   }
-
-  Set<NetworkService> getServices();
-
 }

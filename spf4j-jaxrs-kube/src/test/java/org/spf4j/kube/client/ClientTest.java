@@ -15,12 +15,12 @@
  */
 package org.spf4j.kube.client;
 
-import com.google.common.net.HostAndPort;
-import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spf4j.cluster.ClusterInfo;
+import org.spf4j.kube.cluster.KubeCluster;
 
 /**
  *
@@ -33,10 +33,13 @@ public class ClientTest {
   @Test
   public void testKubeClient() {
     Client kubeCl = new Client("http://127.0.0.1:32768", null, null);
-    List<HostAndPort> endpoints = kubeCl.getEndpoints("default", "jaxrs-spf4j-demo");
+    Endpoints endpoints = kubeCl.getEndpoints("default", "jaxrs-spf4j-demo");
     LOG.debug("Endpoints: {} ", endpoints);
-    Assert.assertFalse(endpoints.isEmpty());
-
+    Assert.assertNotNull(endpoints);
+    KubeCluster cluster = new KubeCluster(kubeCl, "default", "jaxrs-spf4j-demo");
+    ClusterInfo clusterInfo = cluster.getClusterInfo();
+    LOG.debug("Endpoints: {} ", clusterInfo);
+    Assert.assertNotNull(clusterInfo);
   }
 
 }

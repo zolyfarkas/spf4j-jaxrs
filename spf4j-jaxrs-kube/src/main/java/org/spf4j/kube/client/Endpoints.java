@@ -16,6 +16,7 @@
 package org.spf4j.kube.client;
 
 import java.util.List;
+import org.apache.avro.reflect.AvroDefault;
 
 /**
  * kubernetes endpoints:
@@ -96,10 +97,19 @@ public final class Endpoints {
     public void setIp(final String ip) {
       this.ip = ip;
     }
+
+    @Override
+    public String toString() {
+      return "Address{" + "ip=" + ip + '}';
+    }
+
   }
 
   public static final class Port {
     private int port;
+
+    @AvroDefault("\"\"")
+    private String name;
 
     public int getPort() {
       return port;
@@ -107,6 +117,19 @@ public final class Endpoints {
 
     public void setPort(final int port) {
       this.port = port;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public void setName(final String name) {
+      this.name = name;
+    }
+
+    @Override
+    public String toString() {
+      return "Port{" + "port=" + port + ", name=" + name + '}';
     }
 
   }
@@ -131,6 +154,11 @@ public final class Endpoints {
 
     public void setPorts(final List<Port> ports) {
       this.ports = ports;
+    }
+
+    @Override
+    public String toString() {
+      return "SubSet{" + "addresses=" + addresses + ", ports=" + ports + '}';
     }
 
   }

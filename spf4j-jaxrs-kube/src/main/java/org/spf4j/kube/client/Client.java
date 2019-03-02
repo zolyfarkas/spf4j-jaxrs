@@ -15,7 +15,6 @@
  */
 package org.spf4j.kube.client;
 
-import com.google.common.net.HostAndPort;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,8 +26,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
@@ -45,9 +42,6 @@ import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServicePro
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
 import org.spf4j.jaxrs.common.avro.SchemaProtocol;
 import org.spf4j.jaxrs.common.avro.XJsonAvroMessageBodyReader;
-import org.spf4j.kube.client.Endpoints.Address;
-import org.spf4j.kube.client.Endpoints.Port;
-import org.spf4j.kube.client.Endpoints.SubSet;
 
 /**
  * @author Zoltan Farkas
@@ -80,21 +74,12 @@ public final class Client {
   }
 
 
-  public List<HostAndPort> getEndpoints(final String namesSpace, final String endpointName) {
-    Endpoints endpoints = apiTarget.path("namespaces/{namespace}/endpoints/{endpointName}")
+  public Endpoints getEndpoints(final String namesSpace, final String endpointName) {
+    return apiTarget.path("namespaces/{namespace}/endpoints/{endpointName}")
             .resolveTemplate("namespace", namesSpace)
             .resolveTemplate("endpointName", endpointName)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .get(Endpoints.class);
-    List<HostAndPort> result = new ArrayList<>();
-    for (SubSet ss : endpoints.getSubsets()) {
-      for (Address adr : ss.getAddresses()) {
-        for (Port port : ss.getPorts()) {
-          result.add(HostAndPort.fromParts(adr.getIp(), port.getPort()));
-        }
-      }
-    }
-    return result;
   }
 
   private Certificate generateCertificate(final String caCertificate)
