@@ -56,7 +56,7 @@ public final class Client {
 
   public Client(@Nullable final String apiToken,
           @Nullable final byte[] caCertificate) {
-    this("kubernetes.default.svc", apiToken, caCertificate);
+    this("kubernetes.default", apiToken, caCertificate);
   }
 
   public Client(final String kubernetesMaster,
