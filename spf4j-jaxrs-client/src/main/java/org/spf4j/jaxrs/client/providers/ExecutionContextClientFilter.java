@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.annotation.Priority;
 import javax.inject.Inject;
@@ -18,12 +16,15 @@ import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import org.glassfish.jersey.client.ClientProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.TimeSource;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
+import org.spf4j.log.ExecContextLogger;
 import org.spf4j.log.LogAttribute;
 
 /**
@@ -39,7 +40,8 @@ import org.spf4j.log.LogAttribute;
 public final class ExecutionContextClientFilter implements ClientRequestFilter,
         ClientResponseFilter {
 
-  private static final Logger LOG = Logger.getLogger("org.spf4j.jaxrs.client");
+  private static final Logger LOG =
+          new ExecContextLogger(LoggerFactory.getLogger(ExecutionContextClientFilter.class));
 
   private final DeadlineProtocol protocol;
 
@@ -57,10 +59,7 @@ public final class ExecutionContextClientFilter implements ClientRequestFilter,
     headers.add(Headers.REQ_ID, reqCtx.getId());
     int readTimeoutMs = (int) (timeoutNanos / 1000000);
     requestContext.setProperty(ClientProperties.READ_TIMEOUT, readTimeoutMs);
-    if (LOG.isLoggable(Level.FINE)) {
-      LOG.log(Level.FINE, "Invoking {0}", new Object[] {requestContext.getUri(),
-        LogAttribute.of("headers", headers)});
-    }
+    LOG.debug("Invoking {}", new Object[] {requestContext.getUri(), LogAttribute.of("headers", headers)});
   }
 
   @Override
@@ -72,17 +71,17 @@ public final class ExecutionContextClientFilter implements ClientRequestFilter,
       List<HttpWarning> pws = warnings.stream().map((w) ->  HttpWarning.parse(w))
               .collect(Collectors.toCollection(() -> new ArrayList<>(warnings.size())));
       ExecutionContext reqCtx = ExecutionContexts.current();
-      LOG.log(Level.WARNING, "Done {0}", new Object[] {reqCtx.getName(),
+      LOG.warn("Done {}", requestContext.getUri(),
         LogAttribute.traceId(reqCtx.getId()),
         LogAttribute.of("warnings", pws),
         LogAttribute.value("httpStatus", responseContext.getStatus()),
-        LogAttribute.execTimeMicros(TimeSource.nanoTime() - reqCtx.getStartTimeNanos(), TimeUnit.NANOSECONDS)});
-    } else if (LOG.isLoggable(Level.FINE)) {
+        LogAttribute.execTimeMicros(TimeSource.nanoTime() - reqCtx.getStartTimeNanos(), TimeUnit.NANOSECONDS));
+    } else if (LOG.isDebugEnabled()) {
       ExecutionContext reqCtx = ExecutionContexts.current();
-      LOG.log(Level.FINE, "Done {0}", new Object[] {reqCtx.getName(),
+      LOG.debug("Done {}", requestContext.getUri(),
         LogAttribute.traceId(reqCtx.getId()),
         LogAttribute.value("httpStatus", responseContext.getStatus()),
-        LogAttribute.execTimeMicros(TimeSource.nanoTime() - reqCtx.getStartTimeNanos(), TimeUnit.NANOSECONDS)});
+        LogAttribute.execTimeMicros(TimeSource.nanoTime() - reqCtx.getStartTimeNanos(), TimeUnit.NANOSECONDS));
     }
   }
 
