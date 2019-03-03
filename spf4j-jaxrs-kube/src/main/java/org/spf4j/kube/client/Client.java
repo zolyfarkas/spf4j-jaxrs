@@ -46,6 +46,11 @@ import org.spf4j.jaxrs.common.avro.XJsonAvroMessageBodyReader;
  * A mini kubernetes client that implements "discovery" and is meant to be used within a
  * kubernetes pod.
  *
+ * example invocation:
+ * curl --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+ * -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+ * https://kubernetes.default.svc/api/v1/namespaces/default/endpoints/jaxrs-spf4j-demo
+ *
  * @see https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/#accessing-the-api-from-a-pod
  *
  * @author Zoltan Farkas
