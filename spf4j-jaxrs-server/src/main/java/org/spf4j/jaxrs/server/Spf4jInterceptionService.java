@@ -1,6 +1,7 @@
 package org.spf4j.jaxrs.server;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -50,7 +51,19 @@ public final class Spf4jInterceptionService implements InterceptionService {
   }
 
   @Override
+  @Nullable
   public List<MethodInterceptor> getMethodInterceptors(final Method method) {
+    boolean hasJaxRs = false;
+    Annotation[] annotations = method.getAnnotations();
+    for (Annotation ann : annotations) {
+      if (ann.annotationType().getName().startsWith("javax.ws.rs")) {
+        hasJaxRs = true;
+        break;
+      }
+    }
+    if (!hasJaxRs) {
+      return null;
+    }
     int i  = 0;
     Deprecated dannot = method.getAnnotation(Deprecated.class);
     List<HttpWarning> warnings = null;
