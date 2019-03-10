@@ -36,7 +36,7 @@ import static org.spf4j.http.multi.MultiURLs.parseURLs;
 /**
  * @author Zoltan Farkas
  */
-@SuppressFBWarnings({"URLCONNECTION_SSRF_FD", "INCONSISTENT_SYNC",  "IS2_INCONSISTENT_SYNC"})
+@SuppressFBWarnings({"URLCONNECTION_SSRF_FD"})
 public final class MultiHttpsURLConnection extends HttpsURLConnection {
 
   private final URL[] urls;
@@ -405,68 +405,68 @@ public final class MultiHttpsURLConnection extends HttpsURLConnection {
 
   @Override
   @Nullable
-  public String getHeaderField(final String name) {
+  public synchronized String getHeaderField(final String name) {
     return current.getHeaderField(name);
   }
 
   @Override
-  public long getLastModified() {
+  public synchronized long getLastModified() {
     return current.getLastModified();
   }
 
   @Override
-  public long getDate() {
+  public synchronized long getDate() {
     return current.getDate();
   }
 
   @Override
-  public long getExpiration() {
+  public synchronized long getExpiration() {
     return current.getExpiration();
   }
 
   @Override
-  public String getContentEncoding() {
+  public synchronized String getContentEncoding() {
     return current.getContentEncoding();
   }
 
   @Override
-  public String getContentType() {
+  public synchronized String getContentType() {
     return current.getContentType();
   }
 
   @Override
-  public long getContentLengthLong() {
+  public synchronized long getContentLengthLong() {
     return current.getContentLengthLong();
   }
 
   @Override
-  public int getContentLength() {
+  public synchronized int getContentLength() {
     return current.getContentLength();
   }
 
   @Override
-  public String toString() {
+  public synchronized String toString() {
     return "MultiHttpURLConnection{" + "urls=" + Arrays.toString(urls) + ", choice=" + choice + ", current="
             + current + ", isConnected=" + isConnected + '}';
   }
 
   @Override
-  public String getCipherSuite() {
+  public synchronized String getCipherSuite() {
     return current.getCipherSuite();
   }
 
   @Override
-  public Certificate[] getLocalCertificates() {
+  public synchronized Certificate[] getLocalCertificates() {
     return current.getLocalCertificates();
   }
 
   @Override
-  public Certificate[] getServerCertificates() throws SSLPeerUnverifiedException {
+  public synchronized Certificate[] getServerCertificates() throws SSLPeerUnverifiedException {
     return current.getServerCertificates();
   }
 
   @Override
-  public long getHeaderFieldDate(final String name, final long pDefault) {
+  public synchronized long getHeaderFieldDate(final String name, final long pDefault) {
     return current.getHeaderFieldDate(name, pDefault);
   }
 

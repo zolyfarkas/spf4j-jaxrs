@@ -34,7 +34,7 @@ import static org.spf4j.http.multi.MultiURLs.parseURLs;
 /**
  * @author Zoltan Farkas
  */
-@SuppressFBWarnings({"URLCONNECTION_SSRF_FD", "INCONSISTENT_SYNC",  "IS2_INCONSISTENT_SYNC"})
+@SuppressFBWarnings({"URLCONNECTION_SSRF_FD"})
 public final class MultiHttpURLConnection extends HttpURLConnection {
 
   private final URL[] urls;
@@ -441,15 +441,12 @@ public final class MultiHttpURLConnection extends HttpURLConnection {
   }
 
   @Override
-  public long getHeaderFieldDate(final String name, final long pDefault) {
+  public synchronized long getHeaderFieldDate(final String name, final long pDefault) {
     return current.getHeaderFieldDate(name, pDefault);
   }
 
-
-
-
   @Override
-  public String toString() {
+  public synchronized String toString() {
     return "MultiHttpURLConnection{" + "urls=" + Arrays.toString(urls) + ", choice=" + choice + ", current="
             + current + ", isConnected=" + isConnected + '}';
   }
