@@ -8,3 +8,5 @@
 /spf4j-jaxrs-server/nbproject/
 /spf4j-jaxrs-kube/target/
 /spf4j-jaxrs-kube/nbproject/
+/spf4j-jaxrs-client/.idea/
+/spf4j-jaxrs-client/spf4j-jaxrs-client.iml

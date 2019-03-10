@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Invocation;
@@ -31,6 +32,7 @@ import org.spf4j.base.avro.StackSamples;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
 import org.spf4j.failsafe.AsyncRetryExecutor;
 import org.spf4j.http.Headers;
+import org.spf4j.http.RequestContextTags;
 import org.spf4j.log.ExecContextLogger;
 import org.spf4j.log.Level;
 import org.spf4j.ssdump2.Converter;
@@ -132,6 +134,8 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
 
     private final long callableTimeoutNanos;
 
+    private final AtomicInteger tryCount;
+
     InvocationHandler(final Callable<T> task, final ExecutionContext current,
             @Nullable final String name, final long deadlineNanos, final long callableTimeoutNanos) {
       this.task = task;
@@ -139,6 +143,7 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
       this.name = name;
       this.deadlineNanos = deadlineNanos;
       this.callableTimeoutNanos = callableTimeoutNanos;
+      this.tryCount = new AtomicInteger(1);
     }
 
     @Override
@@ -154,6 +159,7 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
         }
       }
       try (ExecutionContext ctx = start(toString(), current, aDeadlineNanos)) {
+        ctx.put(RequestContextTags.TRY_COUNT, tryCount.getAndIncrement());
         return task.call();
       } catch (Exception ex) {
         Throwable rex = com.google.common.base.Throwables.getRootCause(ex);

@@ -14,6 +14,8 @@ import org.spf4j.base.avro.DebugDetail;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spf4j.http.multi.MultiURLs;
+import org.spf4j.http.Spf4jURLStreamHandlerFactoryTest;
 
 /**
  *
@@ -36,6 +38,18 @@ public class SchemaClientTest {
     Files.deleteIfExists(Paths.get(org.spf4j.base.Runtime.USER_HOME,
             ".m2/repository/org/spf4j/avro/core-schema/0.2/core-schema-0.2.jar"));
     SchemaClient client = new SchemaClient(new URI("https://dl.bintray.com/zolyfarkas/core"));
+    Schema resolveSchema = client.resolveSchema(mvnId);
+    Assert.assertEquals("ServiceError", resolveSchema.getName());
+  }
+
+  @Test
+  public void testArbitrarySchemaMulti() throws IOException, URISyntaxException, ClassNotFoundException {
+    Class.forName(Spf4jURLStreamHandlerFactoryTest.class.getName());
+    String mvnId = "org.spf4j.avro:core-schema:0.2:6";
+    Files.deleteIfExists(Paths.get(org.spf4j.base.Runtime.USER_HOME,
+            ".m2/repository/org/spf4j/avro/core-schema/0.2/core-schema-0.2.jar"));
+    SchemaClient client = new SchemaClient(MultiURLs.newURL(MultiURLs.Protocol.mhttps, "https://repo1.maven.org/maven2",
+            "https://dl.bintray.com/zolyfarkas/core").toURI());
     Schema resolveSchema = client.resolveSchema(mvnId);
     Assert.assertEquals("ServiceError", resolveSchema.getName());
   }

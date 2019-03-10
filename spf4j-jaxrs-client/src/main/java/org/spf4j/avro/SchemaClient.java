@@ -24,28 +24,38 @@ import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.ZipError;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
 import org.glassfish.jersey.client.ClientProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.spf4j.failsafe.HedgePolicy;
+import org.spf4j.failsafe.RetryDecision;
+import org.spf4j.failsafe.concurrent.DefaultFailSafeExecutor;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.io.Streams;
+import org.spf4j.jaxrs.Utils;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
 import org.spf4j.jaxrs.client.Spf4JClient;
+import org.spf4j.log.ExecContextLogger;
 
 /**
  * @author Zoltan Farkas
  */
 public final class SchemaClient implements SchemaResolver {
+
+  private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(SchemaClient.class));
 
   private final String schemaArtifactClassifier;
 
@@ -80,7 +90,14 @@ public final class SchemaClient implements SchemaResolver {
             .register(ClientCustomExecutorServiceProvider.class)
             .register(ClientCustomScheduledExecutionServiceProvider.class)
             .property(ClientProperties.USE_ENCODING, "gzip")
-            .build()));
+            .build(),
+            Utils.createHttpRetryPolicy((WebApplicationException ex, Callable<? extends Object> c) -> {
+                      Response response = ex.getResponse();
+                      if (404 == response.getStatus()) {
+                        return RetryDecision.retryDefault(c);
+                      }
+                      return null;
+            }, 10), HedgePolicy.NONE, DefaultFailSafeExecutor.instance()));
   }
 
   public SchemaClient(final URI remoteMavenRepo, final Path localMavenRepo,
@@ -95,8 +112,8 @@ public final class SchemaClient implements SchemaResolver {
               : new URI(remoteMavenRepo.getScheme(),
                       remoteMavenRepo.getUserInfo(),
                       remoteMavenRepo.getHost(),
-                      remoteMavenRepo.getPort(), remoteMavenRepo.getPath() + '/',
-                      remoteMavenRepo.getQuery(), remoteMavenRepo.getFragment());
+                      remoteMavenRepo.getPort(), remoteMavenRepo.getRawPath() + '/',
+                      remoteMavenRepo.getRawQuery(), remoteMavenRepo.getRawFragment());
     } catch (URISyntaxException ex) {
      throw new IllegalArgumentException("Invalid repo url: " +  remoteMavenRepo, ex);
     }
@@ -138,9 +155,7 @@ public final class SchemaClient implements SchemaResolver {
       } catch (FileSystemAlreadyExistsException ex) {
         zipFs = FileSystems.getFileSystem(zipUri);
       } catch (ZipError ze) {
-        Logger logger = Logger.getLogger(SchemaClient.class.getName());
-        logger.log(Level.FINE, "zip error with {0}", zipUri);
-        logger.log(Level.FINE, "zip error detail", ze);
+        LOG.debug("zip error with {}", zipUri, ze);
         Files.delete(schemaPackage);
         return loadSchema(id);
       }
@@ -209,13 +224,13 @@ public final class SchemaClient implements SchemaResolver {
     try {
       try (InputStream is = client.target(mUri).request(MediaType.WILDCARD_TYPE).get(InputStream.class);
               BufferedOutputStream bos = new BufferedOutputStream(Files.newOutputStream(tmpDownload))) {
-        Streams.copy(is, bos);
+        long nrb = Streams.copy(is, bos);
+        LOG.debug("Downloaded {} package to {}", nrb, tmpDownload);
       }
       Files.move(tmpDownload, result, StandardCopyOption.ATOMIC_MOVE);
+      LOG.debug("Renamed package to {}", result);
     } catch (IOException | RuntimeException ex) {
-      Logger logger = Logger.getLogger(SchemaClient.class.getName());
-      logger.log(Level.FINE, "Cannot download {0}", mUri);
-      logger.log(Level.FINE, "Exception detail", ex);
+      LOG.debug("Cannot download {}", mUri, ex);
       Files.write(tmpDownload, Collections.singletonList(Instant.now().toString()), StandardCharsets.UTF_8);
       Files.move(tmpDownload, folder.resolve(fileName + ".fts"), StandardCopyOption.ATOMIC_MOVE);
       throw ex;

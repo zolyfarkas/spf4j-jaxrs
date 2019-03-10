@@ -89,6 +89,14 @@ public final class Spf4JClient implements Client {
     this.executor = retryPolicy.async(hedgePolicy, fsExec);
   }
 
+  public RetryPolicy getRetryPolicy() {
+    return retryPolicy;
+  }
+
+  public HedgePolicy getHedgePolicy() {
+    return hedgePolicy;
+  }
+
   public static List<ParamConverterProvider> getParamConverters(final Configuration pconfig) {
     if (!(pconfig instanceof ClientConfig)) {
       throw new IllegalArgumentException("Not a Jerjey Client Config: " + pconfig);
@@ -333,11 +341,15 @@ public final class Spf4JClient implements Client {
           return (HttpURLConnection) url.openConnection();
         }
         URI uri = url.toURI();
-        InetAddress[] targets = InetAddress.getAllByName(uri.getHost());
+        String host = uri.getHost();
+        if (host == null) {
+          return (HttpURLConnection) url.openConnection();
+        }
+        InetAddress[] targets = InetAddress.getAllByName(host);
         InetAddress chosen = targets[ThreadLocalRandom.current().nextInt(targets.length)];
         URI newUri = new URI(uri.getScheme(), uri.getUserInfo(),
-                chosen.getHostAddress(), uri.getPort(), uri.getPath(),
-                uri.getQuery(), uri.getFragment());
+                chosen.getHostAddress(), uri.getPort(), uri.getRawPath(),
+                uri.getRawQuery(), uri.getRawFragment());
         return (HttpURLConnection) newUri.toURL().openConnection();
       } catch (URISyntaxException ex) {
         throw new RuntimeException(ex);
