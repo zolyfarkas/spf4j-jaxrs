@@ -93,7 +93,7 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
     long deadlineNanos = ExecutionContexts.computeDeadline(current, timeoutNanos, TimeUnit.NANOSECONDS);
     try {
       return executor.call(
-              propagatingServiceExceptionHandlingCallable(current, what, getName(),
+              invocationHandler(current, what, getName(),
                       deadlineNanos, httpReqTimeoutNanos),
                RuntimeException.class, nanoTime, deadlineNanos);
     } catch (InterruptedException ex) {
@@ -108,20 +108,20 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
     long nanoTime = TimeSource.nanoTime();
     ExecutionContext current = ExecutionContexts.current();
     long deadlineNanos = ExecutionContexts.computeDeadline(current, timeoutNanos, TimeUnit.NANOSECONDS);
-    Callable<T> pc = propagatingServiceExceptionHandlingCallable(current, what, getName(),
+    Callable<T> pc = invocationHandler(current, what, getName(),
             deadlineNanos, httpReqTimeoutNanos);
     return executor.submitRx(pc, nanoTime, deadlineNanos,
             () -> new ContextPropagatingCompletableFuture<>(current, deadlineNanos));
   }
 
-  static <T> Callable<T> propagatingServiceExceptionHandlingCallable(
+  static <T> Callable<T> invocationHandler(
           final ExecutionContext ctx,
           final Callable<T> callable, @Nullable final String name, final long deadlineNanos,
           final long callableTimeoutNanos) {
-    return new PropagatingServiceExceptionHandler(callable, ctx, name, deadlineNanos, callableTimeoutNanos);
+    return new InvocationHandler(callable, ctx, name, deadlineNanos, callableTimeoutNanos);
   }
 
-  private static final class PropagatingServiceExceptionHandler<T> implements Callable<T>, Wrapper<Callable<T>> {
+  private static final class InvocationHandler<T> implements Callable<T>, Wrapper<Callable<T>> {
 
     private final Callable<T> task;
     private final ExecutionContext current;
@@ -132,7 +132,7 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
 
     private final long callableTimeoutNanos;
 
-    PropagatingServiceExceptionHandler(final Callable<T> task, final ExecutionContext current,
+    InvocationHandler(final Callable<T> task, final ExecutionContext current,
             @Nullable final String name, final long deadlineNanos, final long callableTimeoutNanos) {
       this.task = task;
       this.current = current;
