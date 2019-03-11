@@ -5,7 +5,6 @@ import javax.inject.Inject;
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
 import org.apache.avro.SchemaResolver;
-import org.codehaus.jackson.JsonParser;
 import org.spf4j.jaxrs.common.avro.stream.CsvAvroArrayMessageBodyReader;
 
 /**
@@ -13,10 +12,6 @@ import org.spf4j.jaxrs.common.avro.stream.CsvAvroArrayMessageBodyReader;
  * @author Zoltan Farkas
  */
 public final class AvroFeature implements Feature {
-
-  static {
-    org.apache.avro.Schema.FACTORY.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
-  }
 
   private final SchemaProtocol protocol;
 
