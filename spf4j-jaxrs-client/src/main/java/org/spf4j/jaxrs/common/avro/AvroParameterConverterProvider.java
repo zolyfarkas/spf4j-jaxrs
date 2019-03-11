@@ -1,5 +1,6 @@
 package org.spf4j.jaxrs.common.avro;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
@@ -14,7 +15,6 @@ import org.apache.avro.AvroNamesRefResolver;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
 import org.apache.avro.reflect.ReflectData;
-import org.codehaus.jackson.JsonGenerator;
 import org.spf4j.base.Json;
 
 /**

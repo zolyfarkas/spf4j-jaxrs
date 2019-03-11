@@ -15,6 +15,7 @@
  */
 package org.spf4j.jaxrs.common.avro;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -26,7 +27,6 @@ import javax.annotation.Nullable;
 import org.apache.avro.AvroNamesRefResolver;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
-import org.codehaus.jackson.JsonGenerator;
 import org.spf4j.base.Json;
 import org.spf4j.http.Headers;
 
@@ -62,7 +62,7 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
     } else {
       try {
         StringWriter sw = new StringWriter();
-        JsonGenerator jgen = Json.FACTORY.createJsonGenerator(sw);
+        JsonGenerator jgen = Json.FACTORY.createGenerator(sw);
         schema.toJson(new AvroNamesRefResolver(client), jgen);
         jgen.flush();
         headers.accept(Headers.CONTENT_SCHEMA, sw.toString());
