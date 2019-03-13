@@ -3,8 +3,6 @@ package org.spf4j.servlet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.spf4j.http.ContextTags;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -58,7 +56,7 @@ import org.spf4j.log.Slf4jLogRecord;
  * <li>Execution time, timeout relative access log level upgrade.</li>
  * <li>Execution context creation/closing.</li>
  * <li>Context log level overwrites.</li>
- * <ul>
+ * </ul>
  */
 @WebFilter(asyncSupported = true)
 public final class ExecutionContextFilter implements Filter {
@@ -113,17 +111,13 @@ public final class ExecutionContextFilter implements Filter {
   }
 
 
-  private HttpServletRequest overwriteHeadersIfNeeded(final HttpServletRequest request) throws ServletException {
-    String requestURI = request.getRequestURI();
-    if (!requestURI.contains(headerOverwriteQueryParamPrefix)) {
+  @SuppressFBWarnings("SERVLET_QUERY_STRING")
+  private HttpServletRequest overwriteHeadersIfNeeded(final HttpServletRequest request) {
+    String queryStr = request.getQueryString();
+    if (queryStr == null || !queryStr.contains(headerOverwriteQueryParamPrefix)) {
       return request;
     }
-    MultivaluedMap<String, String> qPS;
-    try {
-      qPS = UriComponent.decodeQuery(new URI(requestURI), true);
-    } catch (URISyntaxException ex) {
-     throw new ServletException("Invalid URI: " + requestURI, ex);
-    }
+    MultivaluedMap<String, String> qPS = UriComponent.decodeQuery(queryStr, true);
     MultivaluedMap<String, String> overwrites = null;
     for (Map.Entry<String, List<String>> entry : qPS.entrySet()) {
       String key = entry.getKey();
@@ -137,7 +131,7 @@ public final class ExecutionContextFilter implements Filter {
     if (overwrites == null) {
       return request;
     } else {
-      return new  HeaderOverwriteHttpServletRequest(request, overwrites);
+      return new HeaderOverwriteHttpServletRequest(request, overwrites);
     }
   }
 
