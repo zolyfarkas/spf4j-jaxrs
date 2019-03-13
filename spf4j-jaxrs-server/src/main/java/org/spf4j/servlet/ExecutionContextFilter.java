@@ -3,9 +3,12 @@ package org.spf4j.servlet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.spf4j.http.ContextTags;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import javax.servlet.AsyncContext;
@@ -20,6 +23,9 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+import org.glassfish.jersey.uri.UriComponent;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.Methods;
@@ -45,7 +51,9 @@ import org.spf4j.log.Slf4jLogRecord;
 @WebFilter(asyncSupported = true)
 public final class ExecutionContextFilter implements Filter {
 
-  public static final String CFG_ID_HEADER_NAME = "spf4j.jax-rs.idHeaderName";
+  public static final String CFG_ID_HEADER_NAME = "spf4j.jaxrs.idHeaderName";
+
+  public static final String CFG_HEADER_OVERWRITE_QP_PREFIX = "spf4j.jaxrs.headerOverwriteQueryParamPrefix";
 
   private DeadlineProtocol deadlineProtocol;
 
@@ -56,6 +64,8 @@ public final class ExecutionContextFilter implements Filter {
   private float warnThreshold;
 
   private float errorThreshold;
+
+  private String headerOverwriteQueryParamPrefix;
 
   public ExecutionContextFilter() {
     this(new DefaultDeadlineProtocol());
@@ -70,6 +80,7 @@ public final class ExecutionContextFilter implements Filter {
     this.deadlineProtocol = deadlineProtocol;
     this.warnThreshold = warnThreshold;
     this.errorThreshold = errorThreshold;
+    this.headerOverwriteQueryParamPrefix = "_";
   }
 
   public DeadlineProtocol getDeadlineProtocol() {
@@ -80,7 +91,38 @@ public final class ExecutionContextFilter implements Filter {
   public void init(final FilterConfig filterConfig) {
     log = Logger.getLogger("org.spf4j.servlet." + filterConfig.getFilterName());
     idHeaderName = Filters.getStringParameter(filterConfig, CFG_ID_HEADER_NAME, Headers.REQ_ID);
+    headerOverwriteQueryParamPrefix = Filters.getStringParameter(filterConfig, CFG_HEADER_OVERWRITE_QP_PREFIX, "_");
   }
+
+
+  private HttpServletRequest overwriteHeadersIfNeeded(final HttpServletRequest request) throws ServletException {
+    String requestURI = request.getRequestURI();
+    if (!requestURI.contains(headerOverwriteQueryParamPrefix)) {
+      return request;
+    }
+    MultivaluedMap<String, String> qPS;
+    try {
+      qPS = UriComponent.decodeQuery(new URI(requestURI), true);
+    } catch (URISyntaxException ex) {
+     throw new ServletException("Invalid URI: " + requestURI, ex);
+    }
+    MultivaluedMap<String, String> overwrites = null;
+    for (Map.Entry<String, List<String>> entry : qPS.entrySet()) {
+      String key = entry.getKey();
+      if (key.startsWith(headerOverwriteQueryParamPrefix)) {
+        if (overwrites == null) {
+          overwrites = new MultivaluedHashMap<>(4);
+        }
+        overwrites.put(key.substring(headerOverwriteQueryParamPrefix.length()), entry.getValue());
+      }
+    }
+    if (overwrites == null) {
+      return request;
+    } else {
+      return new  HeaderOverwriteHttpServletRequest(request, overwrites);
+    }
+  }
+
 
   @Override
   public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
@@ -89,7 +131,8 @@ public final class ExecutionContextFilter implements Filter {
       chain.doFilter(request, response);
       return;
     }
-    CountingHttpServletRequest httpReq = new CountingHttpServletRequest((HttpServletRequest) request);
+    CountingHttpServletRequest httpReq = new CountingHttpServletRequest(
+            overwriteHeadersIfNeeded((HttpServletRequest) request));
     CountingHttpServletResponse httpResp = new CountingHttpServletResponse((HttpServletResponse) response);
     long startTimeNanos = TimeSource.nanoTime();
     long deadlineNanos = deadlineProtocol.deserialize(httpReq::getHeader, startTimeNanos);
