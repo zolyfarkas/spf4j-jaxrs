@@ -31,8 +31,19 @@ public final class Headers {
    */
   public static final String REQ_ID = "request-id";
 
+  /**
+   * the avro schema of the content.
+   */
   public static final String CONTENT_SCHEMA = "content-schema";
 
+  /**
+   * Overwrite the log level of the context to make logs be persisted by the backend.
+   */
+  public static final String CTX_LOG_LEVEL = "log-level";
+
+  /**
+   * see https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html for detail.
+   */
   public static final String WARNING = "Warning";
 
 }

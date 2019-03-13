@@ -45,19 +45,35 @@ import org.spf4j.log.LogUtils;
 import org.spf4j.log.Slf4jLogRecord;
 
 /**
- * A Filter for REST services
+ * A Filter for REST services.
  *
+ * This filter implements the following:
+ * <ul>
+ * <li>Deadline propagation, fully customizable via:
+ * DeadlineProtocol and the DefaultDeadlineProtocol implementation.</li>
+ * <li>Configurable header overwrite via query Parameters.</li>
+ * <li>Standard access log</li>
+ * <li>Debug logs on error.</li>
+ * <li>Profiling information on error.</li>
+ * <li>Execution time, timeout relative access log level upgrade.</li>
+ * <li>Execution context creation/closing.</li>
+ * <li>Context log level overwrites.</li>
+ * <ul>
  */
 @WebFilter(asyncSupported = true)
 public final class ExecutionContextFilter implements Filter {
 
   public static final String CFG_ID_HEADER_NAME = "spf4j.jaxrs.idHeaderName";
 
+  public static final String CFG_CTX_LOG_LEVEL_HEADER_NAME = "spf4j.jaxrs.ctxLogLevelHeaderName";
+
   public static final String CFG_HEADER_OVERWRITE_QP_PREFIX = "spf4j.jaxrs.headerOverwriteQueryParamPrefix";
 
   private DeadlineProtocol deadlineProtocol;
 
   private String idHeaderName;
+
+  private String ctxLogLevelHeaderName;
 
   private Logger log;
 
@@ -90,6 +106,8 @@ public final class ExecutionContextFilter implements Filter {
   @Override
   public void init(final FilterConfig filterConfig) {
     log = Logger.getLogger("org.spf4j.servlet." + filterConfig.getFilterName());
+    ctxLogLevelHeaderName = Filters.getStringParameter(filterConfig,
+            CFG_CTX_LOG_LEVEL_HEADER_NAME, Headers.CTX_LOG_LEVEL);
     idHeaderName = Filters.getStringParameter(filterConfig, CFG_ID_HEADER_NAME, Headers.REQ_ID);
     headerOverwriteQueryParamPrefix = Filters.getStringParameter(filterConfig, CFG_HEADER_OVERWRITE_QP_PREFIX, "_");
   }
@@ -141,6 +159,10 @@ public final class ExecutionContextFilter implements Filter {
             httpReq.getHeader(idHeaderName), null, startTimeNanos, deadlineNanos);
     ctx.put(ContextTags.HTTP_REQ, httpReq);
     ctx.put(ContextTags.HTTP_RESP, httpResp);
+    String ctxLoglevel = httpReq.getHeader(ctxLogLevelHeaderName);
+    if (ctxLoglevel != null) {
+      ctx.setBackendMinLogLevel("", Level.valueOf(ctxLoglevel));
+    }
     try {
       chain.doFilter(httpReq, httpResp);
       if (request.isAsyncStarted()) {
