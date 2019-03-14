@@ -17,12 +17,16 @@ import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.reflect.ExtendedReflectData;
 import org.apache.avro.reflect.ExtendedReflectDatumWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.spf4j.log.ExecContextLogger;
 
 /**
  * @author Zoltan Farkas
  */
 public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object> {
 
+  private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(AvroMessageBodyWriter.class));
 
   private final SchemaProtocol protocol;
 
@@ -68,7 +72,8 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
       writer.write(t, encoder);
       encoder.flush();
     } catch (IOException | RuntimeException e) {
-      throw new RuntimeException("Serialization failed for " + t, e);
+      LOG.debug("failed to write", t);
+      throw new RuntimeException("Serialization failed for " + t.getClass(), e);
     }
   }
 
