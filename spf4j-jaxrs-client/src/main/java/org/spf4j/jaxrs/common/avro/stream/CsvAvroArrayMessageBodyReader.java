@@ -18,6 +18,7 @@ package org.spf4j.jaxrs.common.avro.stream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.annotation.Annotation;
 import java.nio.charset.StandardCharsets;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ext.Provider;
@@ -26,6 +27,8 @@ import org.apache.avro.io.Decoder;
 import org.spf4j.avro.csv.CsvDecoder;
 import org.spf4j.io.Csv;
 import org.spf4j.io.MemorizingBufferedInputStream;
+import org.spf4j.jaxrs.common.avro.CsvAvroMessageBodyReader;
+import org.spf4j.jaxrs.common.avro.DecodedSchema;
 import org.spf4j.jaxrs.common.avro.SchemaProtocol;
 
 /**
@@ -37,6 +40,12 @@ public final class CsvAvroArrayMessageBodyReader extends AvroArrayMessageBodyRea
 
   public CsvAvroArrayMessageBodyReader(final SchemaProtocol protocol) {
     super(protocol);
+  }
+
+  @Override
+  public DecodedSchema tryDecodeSchema(final Schema readerSchema, final InputStream is, final Annotation[] annotations)
+          throws IOException {
+    return CsvAvroMessageBodyReader.tryDecodeSchema(is, readerSchema);
   }
 
   @Override

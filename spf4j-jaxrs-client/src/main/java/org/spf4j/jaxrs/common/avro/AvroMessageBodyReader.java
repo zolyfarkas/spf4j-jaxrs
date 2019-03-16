@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -42,6 +43,15 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
             && !Reader.class.isAssignableFrom(type));
   }
 
+  /** Overwrite for decoders that are capable of decoding schema from stream  */
+  @Nullable
+  public DecodedSchema tryDecodeSchema(@Nullable final Schema readerSchema,
+          final InputStream is, final Annotation[] annotations)
+          throws IOException {
+    return null;
+  }
+
+
   public abstract Decoder getDecoder(Schema writerSchema, InputStream is)
           throws IOException;
 
@@ -64,6 +74,15 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
           throws IOException {
     Schema writerSchema = protocol.deserialize(httpHeaders::getFirst, type, genericType);
     Schema readerSchema = ExtendedReflectData.get().getSchema(genericType != null ? genericType : type);
+    InputStream entityStream = wrapInputStream(pentityStream);
+    Decoder decoder = null;
+    if (writerSchema == null) {
+      DecodedSchema tryDecodeSchema = tryDecodeSchema(readerSchema, entityStream, annotations);
+      if (tryDecodeSchema != null) {
+        decoder = tryDecodeSchema.getDecoder();
+        writerSchema = tryDecodeSchema.getSchema();
+      }
+    }
     if (writerSchema  == null && readerSchema == null) {
         throw new UnsupportedOperationException("Unable to deserialize " + type);
     } else if (readerSchema != null) {
@@ -72,9 +91,10 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
       readerSchema = writerSchema;
     }
     DatumReader reader = new ReflectDatumReader(writerSchema, readerSchema);
-    InputStream entityStream = wrapInputStream(pentityStream);
     try {
-      Decoder decoder = getDecoder(writerSchema, entityStream);
+      if (decoder == null) {
+        decoder = getDecoder(writerSchema, entityStream);
+      }
       return reader.read(null, decoder);
     } catch (IOException | RuntimeException ex) {
       throw new RuntimeException(this + " parsing failed for " + writerSchema + ", from " + entityStream, ex);
