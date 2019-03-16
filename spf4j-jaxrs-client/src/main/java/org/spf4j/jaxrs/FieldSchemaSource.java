@@ -21,7 +21,7 @@ import org.apache.avro.Schema;
  *
  * @author Zoltan Farkas
  */
-public interface FieldSchemaProvider {
+public interface FieldSchemaSource {
 
   Schema get(String fieldName);
 

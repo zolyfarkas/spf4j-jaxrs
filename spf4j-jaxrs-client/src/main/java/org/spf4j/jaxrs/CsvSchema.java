@@ -37,5 +37,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CsvSchema {
     /** the separator character */
-    Class<? extends FieldSchemaProvider> value();
+    Class<? extends FieldSchemaSource> value();
 }
