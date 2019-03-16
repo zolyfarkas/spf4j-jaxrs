@@ -53,7 +53,7 @@ public final class CsvAvroArrayMessageBodyReader extends AvroArrayMessageBodyRea
 
   @Override
   public Decoder getDecoder(final Schema writerSchema, final InputStream is) throws IOException {
-    CsvDecoder decoder = new CsvDecoder(Csv.CSV.reader(new InputStreamReader(is, StandardCharsets.UTF_8)),
+    CsvDecoder decoder = new CsvDecoder(Csv.CSV.readerILEL(new InputStreamReader(is, StandardCharsets.UTF_8)),
             writerSchema);
     try {
       decoder.skipHeader();

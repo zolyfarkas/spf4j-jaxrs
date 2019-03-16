@@ -41,7 +41,7 @@ public final class CsvAvroMessageBodyReader extends AvroMessageBodyReader {
   public static DecodedSchema tryDecodeSchema(final InputStream is, final Schema readerSchema)
           throws IOException {
     try {
-      CsvReader reader = Csv.CSV.reader(new InputStreamReader(is, StandardCharsets.UTF_8));
+      CsvReader reader = Csv.CSV.readerILEL(new InputStreamReader(is, StandardCharsets.UTF_8));
       SchemaBuilder.FieldAssembler<Schema> fieldAssembler = SchemaBuilder.record("DynCsv")
               .fields();
       if (readerSchema == null) {
@@ -78,7 +78,7 @@ public final class CsvAvroMessageBodyReader extends AvroMessageBodyReader {
 
   @Override
   public Decoder getDecoder(final Schema writerSchema, final InputStream is) throws IOException {
-    CsvReader reader = Csv.CSV.reader(new InputStreamReader(is, StandardCharsets.UTF_8));
+    CsvReader reader = Csv.CSV.readerILEL(new InputStreamReader(is, StandardCharsets.UTF_8));
     try {
       reader.skipRow(); // skip headers
     } catch (CsvParseException ex) {
