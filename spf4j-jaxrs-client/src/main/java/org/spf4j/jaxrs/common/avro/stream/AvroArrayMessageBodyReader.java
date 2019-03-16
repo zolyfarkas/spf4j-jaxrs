@@ -102,8 +102,6 @@ public abstract class AvroArrayMessageBodyReader implements MessageBodyReader<It
     private final Decoder decoder;
     private final DatumReader reader;
     private long l;
-    private long i = 0;
-    private boolean hasNext;
 
     ArrayIterator(final Decoder decoder, final DatumReader reader) {
       this.decoder = decoder;
@@ -113,32 +111,23 @@ public abstract class AvroArrayMessageBodyReader implements MessageBodyReader<It
       } catch (IOException ex) {
         throw new UncheckedIOException(ex);
       }
-      if (l == 0) {
-        hasNext = false;
-      } else {
-        hasNext = true;
-      }
     }
 
     @Override
     public boolean hasNext() {
-      return hasNext;
+      return l > 0;
     }
 
     @Override
     public Object next() {
       try {
-        if (!hasNext) {
+        if (l <= 0) {
           throw new NoSuchElementException();
         }
         Object read = reader.read(null, decoder);
-        i++;
-        if (i >= l) {
+        l--;
+        if (l <= 0) {
           l = decoder.arrayNext();
-          i = 0;
-          if (l == 0) {
-            hasNext = false;
-          }
         }
         return read;
       } catch (IOException ex) {
