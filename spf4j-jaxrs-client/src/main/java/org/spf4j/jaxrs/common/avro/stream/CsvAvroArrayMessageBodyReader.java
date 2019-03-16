@@ -20,6 +20,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
@@ -27,6 +29,7 @@ import org.apache.avro.io.Decoder;
 import org.spf4j.avro.csv.CsvDecoder;
 import org.spf4j.io.Csv;
 import org.spf4j.io.MemorizingBufferedInputStream;
+import org.spf4j.io.csv.CsvParseException;
 import org.spf4j.jaxrs.common.avro.CsvAvroMessageBodyReader;
 import org.spf4j.jaxrs.common.avro.DecodedSchema;
 import org.spf4j.jaxrs.common.avro.SchemaProtocol;
@@ -52,7 +55,11 @@ public final class CsvAvroArrayMessageBodyReader extends AvroArrayMessageBodyRea
   public Decoder getDecoder(final Schema writerSchema, final InputStream is) throws IOException {
     CsvDecoder decoder = new CsvDecoder(Csv.CSV.reader(new InputStreamReader(is, StandardCharsets.UTF_8)),
             writerSchema);
-    decoder.skipHeader();
+    try {
+      decoder.skipHeader();
+    } catch (CsvParseException ex) {
+      throw new RuntimeException(ex);
+    }
     return decoder;
   }
 

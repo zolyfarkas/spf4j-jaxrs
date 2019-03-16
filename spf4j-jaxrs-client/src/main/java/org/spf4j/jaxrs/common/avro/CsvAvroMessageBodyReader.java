@@ -5,12 +5,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.io.Decoder;
+import org.glassfish.jersey.internal.guava.Maps;
 import org.spf4j.io.Csv;
 import org.spf4j.avro.csv.CsvDecoder;
 import org.spf4j.io.MemorizingBufferedInputStream;
@@ -39,23 +42,31 @@ public final class CsvAvroMessageBodyReader extends AvroMessageBodyReader {
           throws IOException {
     try {
       CsvReader reader = Csv.CSV.reader(new InputStreamReader(is, StandardCharsets.UTF_8));
-      SchemaBuilder.FieldAssembler<Schema> fields = SchemaBuilder.record("DynCsv")
+      SchemaBuilder.FieldAssembler<Schema> fieldAssembler = SchemaBuilder.record("DynCsv")
               .fields();
       if (readerSchema == null) {
-        reader.readRow((cs) -> fields.requiredString(cs.toString()));
+        reader.readRow((cs) -> fieldAssembler.requiredString(cs.toString()));
       } else {
+        Schema elementType = readerSchema.getElementType();
+        List<Schema.Field> fields = elementType.getFields();
+        Map<String, Schema.Field> fieldMap = Maps.newHashMapWithExpectedSize(fields.size() + 2);
+        for (Schema.Field field : fields) {
+          fieldMap.put(field.name(), field);
+          for (String alias : field.aliases()) {
+            fieldMap.put(alias, field);
+          }
+        }
         reader.readRow((cs) -> {
           String name = cs.toString();
-          //todo should consider field aliasses.
-          Schema.Field field = readerSchema.getField(name);
+          Schema.Field field = fieldMap.get(name);
           if (field == null) {
-            fields.requiredString(name);
+            fieldAssembler.requiredString(name);
           } else {
-            fields.name(name).type(field.schema()).noDefault();
+            fieldAssembler.name(name).type(field.schema()).noDefault();
           }
         });
       }
-      Schema schema = fields.endRecord();
+      Schema schema = fieldAssembler.endRecord();
       return new DecodedSchema(schema, new CsvDecoder(reader, schema));
     } catch (CsvParseException ex) {
       throw new RuntimeException(ex);
