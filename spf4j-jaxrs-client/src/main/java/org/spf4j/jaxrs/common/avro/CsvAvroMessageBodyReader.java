@@ -67,7 +67,8 @@ public final class CsvAvroMessageBodyReader extends AvroMessageBodyReader {
         });
       }
       Schema schema = fieldAssembler.endRecord();
-      return new DecodedSchema(schema, new CsvDecoder(reader, Schema.createArray(schema)));
+      Schema arraySchema = Schema.createArray(schema);
+      return new DecodedSchema(arraySchema, new CsvDecoder(reader, arraySchema));
     } catch (CsvParseException ex) {
       throw new RuntimeException(ex);
     }
