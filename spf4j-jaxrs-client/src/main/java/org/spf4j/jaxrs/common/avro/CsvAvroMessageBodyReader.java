@@ -5,13 +5,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
-import org.apache.avro.SchemaBuilder;
 import org.apache.avro.io.Decoder;
 import org.glassfish.jersey.internal.guava.Maps;
 import org.spf4j.io.Csv;
@@ -42,10 +42,12 @@ public final class CsvAvroMessageBodyReader extends AvroMessageBodyReader {
           throws IOException {
     try {
       CsvReader reader = Csv.CSV.readerILEL(new InputStreamReader(is, StandardCharsets.UTF_8));
-      SchemaBuilder.FieldAssembler<Schema> fieldAssembler = SchemaBuilder.record("DynCsv")
-              .fields();
+      Schema record = Schema.createRecord("DynCsv", "Infered schema", "org.spf4j.avro", false);
+      List<Schema.Field> bfields = new ArrayList<>();
       if (readerSchema == null) {
-        reader.readRow((cs) -> fieldAssembler.requiredString(cs.toString()));
+        reader.readRow((cs) -> {
+          bfields.add(new Schema.Field(validateName(cs), Schema.create(Schema.Type.STRING), cs.toString(), null));
+        });
       } else {
         Schema elementType = readerSchema.getElementType();
         List<Schema.Field> fields = elementType.getFields();
@@ -57,17 +59,17 @@ public final class CsvAvroMessageBodyReader extends AvroMessageBodyReader {
           }
         }
         reader.readRow((cs) -> {
-          String name = cs.toString();
-          Schema.Field field = fieldMap.get(name);
+          String validatedName = validateName(cs);
+          Schema.Field field = fieldMap.get(validatedName);
           if (field == null) {
-            fieldAssembler.requiredString(name);
+             bfields.add(new Schema.Field(validatedName, Schema.create(Schema.Type.STRING), cs.toString(), null));
           } else {
-            fieldAssembler.name(name).type(field.schema()).noDefault();
+            bfields.add(new Schema.Field(validatedName, field.schema(), cs.toString(), null));
           }
         });
       }
-      Schema schema = fieldAssembler.endRecord();
-      Schema arraySchema = Schema.createArray(schema);
+      record.setFields(bfields);
+      Schema arraySchema = Schema.createArray(record);
       return new DecodedSchema(arraySchema, new CsvDecoder(reader, arraySchema));
     } catch (CsvParseException ex) {
       throw new RuntimeException(ex);
@@ -90,6 +92,31 @@ public final class CsvAvroMessageBodyReader extends AvroMessageBodyReader {
 
   public InputStream wrapInputStream(final InputStream pentityStream) {
     return new MemorizingBufferedInputStream(pentityStream, StandardCharsets.UTF_8);
+  }
+
+
+  private static String validateName(final CharSequence name) {
+    int length = name.length();
+    if (length == 0) {
+      return "_";
+    }
+    StringBuilder result = null;
+    char first = name.charAt(0);
+    if (first != '_' && !Character.isLetter(first)) {
+      result = new StringBuilder(length);
+      result.append('_');
+    }
+    for (int i = 1; i < length; i++) {
+      char c = name.charAt(i);
+      if (c != '_' && !Character.isLetterOrDigit(c)) {
+        if (result == null) {
+           result = new StringBuilder(length);
+           result.append(name, 0, i);
+        }
+        result.append('_');
+      }
+    }
+    return result == null ? name.toString() : result.toString();
   }
 
 }
