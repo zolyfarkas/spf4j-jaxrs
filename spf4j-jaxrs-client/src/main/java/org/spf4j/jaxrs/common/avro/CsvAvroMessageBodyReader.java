@@ -116,6 +116,8 @@ public final class CsvAvroMessageBodyReader extends AvroMessageBodyReader {
            result.append(name, 0, i);
         }
         result.append('_');
+      } else  if (result != null) {
+        result.append(c);
       }
     }
     return result == null ? name.toString() : result.toString();
