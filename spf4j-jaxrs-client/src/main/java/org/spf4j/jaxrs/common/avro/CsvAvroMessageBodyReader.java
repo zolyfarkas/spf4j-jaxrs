@@ -46,7 +46,8 @@ public final class CsvAvroMessageBodyReader extends AvroMessageBodyReader {
       List<Schema.Field> bfields = new ArrayList<>();
       if (readerSchema == null) {
         reader.readRow((cs) -> {
-          bfields.add(new Schema.Field(validateName(cs), Schema.create(Schema.Type.STRING), cs.toString(), null));
+          bfields.add(new Schema.Field(validateName(cs), Schema.create(Schema.Type.STRING),
+                  cs.toString(), (Object) null));
         });
       } else {
         Schema elementType = readerSchema.getElementType();
@@ -62,9 +63,10 @@ public final class CsvAvroMessageBodyReader extends AvroMessageBodyReader {
           String validatedName = validateName(cs);
           Schema.Field field = fieldMap.get(validatedName);
           if (field == null) {
-             bfields.add(new Schema.Field(validatedName, Schema.create(Schema.Type.STRING), cs.toString(), null));
+             bfields.add(new Schema.Field(validatedName, Schema.create(Schema.Type.STRING),
+                     cs.toString(), (Object) null));
           } else {
-            bfields.add(new Schema.Field(validatedName, field.schema(), cs.toString(), null));
+            bfields.add(new Schema.Field(validatedName, field.schema(), cs.toString(), (Object) null));
           }
         });
       }
