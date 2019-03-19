@@ -346,10 +346,11 @@ public final class Spf4JClient implements Client {
           return (HttpURLConnection) url.openConnection();
         }
         InetAddress[] targets = InetAddress.getAllByName(host);
+        if (targets.length <= 1) {
+           return (HttpURLConnection) url.openConnection();
+        }
         InetAddress chosen = targets[ThreadLocalRandom.current().nextInt(targets.length)];
-        URI newUri = new URI(uri.getScheme(), uri.getUserInfo(),
-                chosen.getHostAddress(), uri.getPort(), uri.getRawPath(),
-                uri.getRawQuery(), uri.getRawFragment());
+        URI newUri = UriBuilder.fromUri(uri).host(chosen.getHostAddress()).build();
         return (HttpURLConnection) newUri.toURL().openConnection();
       } catch (URISyntaxException ex) {
         throw new RuntimeException(ex);
