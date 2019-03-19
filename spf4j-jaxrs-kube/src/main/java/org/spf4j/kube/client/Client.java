@@ -39,8 +39,8 @@ import org.spf4j.jaxrs.client.providers.BearerAuthClientFilter;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
-import org.spf4j.jaxrs.common.avro.SchemaProtocol;
-import org.spf4j.jaxrs.common.avro.XJsonAvroMessageBodyReader;
+import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
+import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyReader;
 
 /**
  * A mini kubernetes client that implements "discovery" and is meant to be used within a
