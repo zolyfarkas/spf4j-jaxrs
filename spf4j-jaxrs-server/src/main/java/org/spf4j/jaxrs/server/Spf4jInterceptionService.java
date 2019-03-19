@@ -14,6 +14,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import org.aopalliance.intercept.ConstructorInterceptor;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -58,7 +59,6 @@ public final class Spf4jInterceptionService implements InterceptionService {
     for (Annotation ann : annotations) {
       if (ann.annotationType().getName().startsWith("javax.ws.rs")) {
         hasJaxRs = true;
-        break;
       }
     }
     if (!hasJaxRs) {
@@ -78,7 +78,9 @@ public final class Spf4jInterceptionService implements InterceptionService {
         if (extra == null) {
           extra = new ArrayList<>(2);
         }
-        extra.add(new AsycResponseTimeoutSetterInterceptor(i));
+        if (param.getAnnotation(Suspended.class) != null) {
+          extra.add(new AsycResponseTimeoutSetterInterceptor(i));
+        }
         continue;
       }
       Deprecated dp = param.getAnnotation(Deprecated.class);
@@ -178,8 +180,10 @@ public final class Spf4jInterceptionService implements InterceptionService {
 
     @Override
     public Object invoke(final MethodInvocation invocation) throws Throwable {
-      ((AsyncResponse) invocation.getArguments()[loc])
-              .setTimeout(ExecutionContexts.getTimeToDeadline(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
+      AsyncResponse ar = (AsyncResponse) invocation.getArguments()[loc];
+      if (!ar.setTimeout(ExecutionContexts.getTimeToDeadline(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS)) {
+        throw new IllegalStateException("Async Response must be suspended " + ar);
+      }
       return invocation.proceed();
     }
   }
