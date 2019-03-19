@@ -1,5 +1,6 @@
 package org.spf4j.avro;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -10,8 +11,11 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemAlreadyExistsException;
@@ -22,12 +26,18 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipError;
+import javax.annotation.Nullable;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.ClientBuilder;
@@ -83,21 +93,21 @@ public final class SchemaClient implements SchemaResolver {
           final String schemaArtifactClassifier, final String schemaArtifactExtension) {
     this(remoteMavenRepo, localMavenRepo, schemaArtifactClassifier, schemaArtifactExtension,
             new Spf4JClient(ClientBuilder
-            .newBuilder()
-            .connectTimeout(2, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE))
-            .register(ClientCustomExecutorServiceProvider.class)
-            .register(ClientCustomScheduledExecutionServiceProvider.class)
-            .property(ClientProperties.USE_ENCODING, "gzip")
-            .build(),
-            Utils.createHttpRetryPolicy((WebApplicationException ex, Callable<? extends Object> c) -> {
+                    .newBuilder()
+                    .connectTimeout(2, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE))
+                    .register(ClientCustomExecutorServiceProvider.class)
+                    .register(ClientCustomScheduledExecutionServiceProvider.class)
+                    .property(ClientProperties.USE_ENCODING, "gzip")
+                    .build(),
+                    Utils.createHttpRetryPolicy((WebApplicationException ex, Callable<? extends Object> c) -> {
                       Response response = ex.getResponse();
                       if (404 == response.getStatus()) {
                         return RetryDecision.retryDefault(c);
                       }
                       return null;
-            }, 10), HedgePolicy.NONE, DefaultFailSafeExecutor.instance()));
+                    }, 10), HedgePolicy.NONE, DefaultFailSafeExecutor.instance()));
   }
 
   public SchemaClient(final URI remoteMavenRepo, final Path localMavenRepo,
@@ -115,7 +125,7 @@ public final class SchemaClient implements SchemaResolver {
                       remoteMavenRepo.getPort(), remoteMavenRepo.getRawPath() + '/',
                       remoteMavenRepo.getRawQuery(), remoteMavenRepo.getRawFragment());
     } catch (URISyntaxException ex) {
-     throw new IllegalArgumentException("Invalid repo url: " +  remoteMavenRepo, ex);
+      throw new IllegalArgumentException("Invalid repo url: " + remoteMavenRepo, ex);
     }
     this.localMavenRepo = localMavenRepo;
     this.client = client;
@@ -144,9 +154,12 @@ public final class SchemaClient implements SchemaResolver {
 
   @SuppressFBWarnings("PCAIL_POSSIBLE_CONSTANT_ALLOCATION_IN_LOOP")
   Schema loadSchema(final String id) throws IOException {
+    Schema fromClassPath = getFromClassPath(id);
+    if (fromClassPath != null) {
+      return fromClassPath;
+    }
     SchemaRef sr = new SchemaRef(id);
     Path schemaPackage = getSchemaPackage(sr);
-
     URI zipUri = URI.create("jar:" + schemaPackage.toUri().toURL());
     FileSystem zipFs;
     synchronized (zipUri.toString().intern()) { // newFileSystem fails if already one there...
@@ -178,6 +191,68 @@ public final class SchemaClient implements SchemaResolver {
       }
     }
     throw new IOException("unable to resolve schema: " + id);
+  }
+
+  @Nullable
+  @VisibleForTesting
+  Schema getFromClassPath(final String ref) {
+    String name = Lazy.SCHEMA_CP_INDEX.get(ref);
+    if (name == null) {
+      return null;
+    }
+    try {
+      Class<?> genClass = Class.forName(name);
+      return (Schema) genClass.getField("SCHEMA$").get(null);
+    } catch (ClassNotFoundException | NoSuchFieldException | SecurityException | IllegalAccessException ex) {
+      LOG.warn("Exception while loading and extracting avro schema from class " + name, ex);
+      return null;
+    }
+  }
+
+  private static class Lazy {
+
+    private static final Map<String, String> SCHEMA_CP_INDEX;
+
+    static {
+      try {
+        SCHEMA_CP_INDEX = loadSchemaIndexes();
+      } catch (IOException ex) {
+        throw new ExceptionInInitializerError(ex);
+      }
+    }
+  }
+
+  @SuppressFBWarnings("STT_TOSTRING_MAP_KEYING") // on purpose, lookups do not concatente anything.
+  private static Map<String, String> loadSchemaIndexes() throws IOException {
+    Map<String, String> idToSchemafile = new HashMap<>();
+    Enumeration<URL> resEnum = ClassLoader.getSystemResources("schema_index.properties");
+    List<URL> urls = new ArrayList<>();
+    while (resEnum.hasMoreElements()) {
+      URL elem = resEnum.nextElement();
+      urls.add(elem);
+      Properties props = new Properties();
+      try (Reader reader = new BufferedReader(new InputStreamReader(elem.openStream(), StandardCharsets.UTF_8))) {
+        props.load(reader);
+      }
+      //_pkg=org.spf4j.avro:core-schema:0.15-SNAPSHOT
+      String pkgInfo = props.getProperty("_pkg");
+      if (pkgInfo == null) {
+        continue;
+      }
+      for (Map.Entry<Object, Object> entry : props.entrySet()) {
+        String key = (String) entry.getKey();
+        if (!"_pkg".equals(key)) {
+          String val = entry.getValue().toString();
+          String mvnId = pkgInfo + ':' + key;
+          String ex = idToSchemafile.put(mvnId, val);
+          if (ex != null && !val.equals(ex)) {
+            throw new IllegalStateException("Invalid indexes in your classpath (" + urls + ")  for "
+                    + mvnId + ", " + ex + " != " + val);
+          }
+        }
+      }
+    }
+    return idToSchemafile;
   }
 
   /**
@@ -251,7 +326,5 @@ public final class SchemaClient implements SchemaResolver {
             + remoteMavenRepo + ", localMavenRepo=" + localMavenRepo + ", memoryCache=" + memoryCache
             + ", client=" + client + '}';
   }
-
-
 
 }

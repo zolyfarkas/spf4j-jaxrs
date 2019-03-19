@@ -42,6 +42,16 @@ public class SchemaClientTest {
     Assert.assertEquals("ServiceError", resolveSchema.getName());
   }
 
+   @Test
+  public void testCPSchema() throws IOException, URISyntaxException {
+    SchemaClient client = new SchemaClient(new URI("https://dl.bintray.com/zolyfarkas/core"));
+    Schema resolveSchema = client.getFromClassPath("org.spf4j.avro:core-schema:0.15:6");
+    Assert.assertNotNull(resolveSchema);
+    Assert.assertEquals("org.spf4j.avro:core-schema:0.15:6", resolveSchema.getProp("mvnId"));
+    resolveSchema = client.getFromClassPath("org.spf4j.avro:core-schema:0.14:6");
+    Assert.assertNull(resolveSchema);
+  }
+
   @Test
   public void testArbitrarySchemaMulti() throws IOException, URISyntaxException, ClassNotFoundException {
     Class.forName(Spf4jURLStreamHandlerFactoryTest.class.getName());
