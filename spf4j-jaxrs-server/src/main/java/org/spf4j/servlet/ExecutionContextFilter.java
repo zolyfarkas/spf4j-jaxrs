@@ -155,7 +155,7 @@ public final class ExecutionContextFilter implements Filter {
     ctx.put(ContextTags.HTTP_RESP, httpResp);
     String ctxLoglevel = httpReq.getHeader(ctxLogLevelHeaderName);
     if (ctxLoglevel != null) {
-      ctx.setBackendMinLogLevel("", Level.valueOf(ctxLoglevel));
+      ctx.setBackendMinLogLevel(Level.valueOf(ctxLoglevel));
     }
     try {
       chain.doFilter(httpReq, httpResp);
