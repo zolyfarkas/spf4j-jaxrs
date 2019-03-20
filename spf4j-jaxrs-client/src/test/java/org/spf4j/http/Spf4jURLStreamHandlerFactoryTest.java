@@ -64,7 +64,7 @@ public class Spf4jURLStreamHandlerFactoryTest {
             .newBuilder()
             .connectTimeout(2, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
-            .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE))
+            .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE, false))
             .register(ClientCustomExecutorServiceProvider.class)
             .register(ClientCustomScheduledExecutionServiceProvider.class)
             .property(ClientProperties.USE_ENCODING, "gzip")

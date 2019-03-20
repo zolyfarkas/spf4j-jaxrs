@@ -1,5 +1,6 @@
 package org.spf4j.jaxrs.client.providers;
 
+import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,9 +46,13 @@ public final class ExecutionContextClientFilter implements ClientRequestFilter,
 
   private final DeadlineProtocol protocol;
 
+  private final boolean hideAuthorizationWhenLogging;
+
   @Inject
-  public ExecutionContextClientFilter(final DeadlineProtocol protocol) {
+  public ExecutionContextClientFilter(final DeadlineProtocol protocol,
+    final boolean hideAuthorizationWhenLogging) {
     this.protocol = protocol;
+    this.hideAuthorizationWhenLogging = hideAuthorizationWhenLogging;
   }
 
   @Override
@@ -59,7 +64,15 @@ public final class ExecutionContextClientFilter implements ClientRequestFilter,
     headers.add(Headers.REQ_ID, reqCtx.getId());
     int readTimeoutMs = (int) (timeoutNanos / 1000000);
     requestContext.setProperty(ClientProperties.READ_TIMEOUT, readTimeoutMs);
-    LOG.debug("Invoking {}", new Object[] {requestContext.getUri(), LogAttribute.of("headers", headers)});
+    LOG.debug("Invoking {}", new Object[]{requestContext.getUri(),
+      LogAttribute.of("headers", hideAuthorizationWhenLogging
+              ? Maps.transformEntries(headers, (final String k, final Object v) -> {
+        if ("Authorization".equalsIgnoreCase(k)) {
+          return "HIDDEN";
+        } else {
+          return v;
+        }
+    }) : headers)});
   }
 
   @Override

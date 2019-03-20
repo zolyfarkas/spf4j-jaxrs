@@ -96,7 +96,8 @@ public final class SchemaClient implements SchemaResolver {
                     .newBuilder()
                     .connectTimeout(2, TimeUnit.SECONDS)
                     .readTimeout(30, TimeUnit.SECONDS)
-                    .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE))
+                    .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE,
+                    Boolean.parseBoolean(System.getProperty("spf4j.http.client.hideAuthorizationWhenLogging", "true"))))
                     .register(ClientCustomExecutorServiceProvider.class)
                     .register(ClientCustomScheduledExecutionServiceProvider.class)
                     .property(ClientProperties.USE_ENCODING, "gzip")
