@@ -53,7 +53,7 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
 
   @Inject
   public LoggingExceptionMapper(
-         @ConfigProperty("spf4j.jaxrs.serverHost") @DefaultValue("spf4j.jaxrs.serverHost") final String host,
+         @ConfigProperty("hostName") @DefaultValue("hostName") final String host,
          @Context final ContainerRequestContext reqCtx,
          final DebugDetailEntitlement allowClientDebug) {
     this.host = host;
