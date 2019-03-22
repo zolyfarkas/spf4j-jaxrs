@@ -78,7 +78,7 @@ public final class Client {
       clBuilder = clBuilder.register(new BearerAuthClientFilter((hv) -> hv.append(apiToken)));
     }
     apiTarget = new Spf4JClient(clBuilder
-            .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE))
+            .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE, true))
             .register(ClientCustomExecutorServiceProvider.class)
             .register(ClientCustomScheduledExecutionServiceProvider.class)
 //            .register(new JsonAvroMessageBodyReader2(SchemaProtocol.NONE))
