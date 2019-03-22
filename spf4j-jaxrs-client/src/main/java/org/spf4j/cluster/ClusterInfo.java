@@ -47,4 +47,12 @@ public interface ClusterInfo {
     return null;
   }
 
+  default NetworkService getHttpService() {
+    NetworkService service = getService("http");
+    if (service == null) {
+      service = getService("https");
+    }
+    return service;
+  }
+
 }
