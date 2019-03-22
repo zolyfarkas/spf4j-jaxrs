@@ -22,7 +22,7 @@ public interface Cluster {
       while (interfaces.hasMoreElements()) {
         NetworkInterface iface = interfaces.nextElement();
         // filters out 127.0.0.1 and inactive interfaces
-        if (iface.isLoopback() || !iface.isUp()) {
+        if (iface.isLoopback() || !iface.isUp()  ||  iface.isVirtual() || iface.isPointToPoint()) {
           continue;
         }
         Enumeration<InetAddress> addresses = iface.getInetAddresses();

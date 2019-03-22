@@ -35,8 +35,6 @@ public final class SingleNodeCluster implements Cluster {
     this.clusterInfo = new ClusterInfoBean(localAddresses, localAddresses, services);
   }
 
-
-
   @Override
   public ClusterInfo getClusterInfo() {
     return this.clusterInfo;

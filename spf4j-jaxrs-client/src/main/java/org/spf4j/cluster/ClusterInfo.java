@@ -47,6 +47,7 @@ public interface ClusterInfo {
     return null;
   }
 
+  @Nullable
   default NetworkService getHttpService() {
     NetworkService service = getService("http");
     if (service == null) {
