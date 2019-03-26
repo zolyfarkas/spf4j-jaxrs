@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.spf4j</groupId>
     <artifactId>spf4j</artifactId>
-    <version>8.6.5</version>
+    <version>8.6.6-SNAPSHOT</version>
   </parent>
   <name>${project.artifactId}-${project.version}</name>
   <version>2.1.6-SNAPSHOT</version>
@@ -34,7 +34,7 @@
     <findbugs.excludeFilterFile>${basedir}/../findbugs_exclude.xml</findbugs.excludeFilterFile>
     <checkstyle.configLocation>${basedir}/../checkstyle_checks.xml</checkstyle.configLocation>
     <jersey.version>2.28</jersey.version>
-    <spf4j.version>8.6.5</spf4j.version>
+    <spf4j.version>8.6.6-SNAPSHOT</spf4j.version>
     <avro.version>1.9.0.3p</avro.version>
   </properties>
 
@@ -50,6 +50,7 @@
     <module>spf4j-jaxrs-kube</module>
     <module>spf4j-jaxrs-client</module>
     <module>spf4j-jaxrs-server</module>
+    <module>spf4j-jaxrs-actuator</module>
   </modules>
 
   <dependencyManagement>
