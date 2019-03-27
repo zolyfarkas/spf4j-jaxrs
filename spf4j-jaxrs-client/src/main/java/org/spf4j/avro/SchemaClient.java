@@ -315,6 +315,7 @@ public final class SchemaClient implements SchemaResolver {
   }
 
   @Override
+  @Nullable
   public String getId(final Schema schema) {
     return schema.getProp("mvnId");
   }

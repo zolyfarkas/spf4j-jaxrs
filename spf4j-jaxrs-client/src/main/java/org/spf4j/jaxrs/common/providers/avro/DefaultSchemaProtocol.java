@@ -23,10 +23,15 @@ import java.io.UncheckedIOException;
 import java.lang.reflect.Type;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.apache.avro.AvroNamesRefResolver;
+import org.apache.avro.LogicalType;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
+import org.spf4j.avro.schema.CloningVisitor;
+import org.spf4j.avro.schema.SchemaUtils;
+import org.spf4j.avro.schema.Schemas;
 import org.spf4j.base.Json;
 import org.spf4j.http.Headers;
 
@@ -58,7 +63,7 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
   public void serialize(final BiConsumer<String, String> headers, final Schema schema) {
     String id = schema.getProp("mvnId");
     if (id  == null || id.contains("SNAPSHOT")) {
-      headers.accept(Headers.CONTENT_SCHEMA, schema.toString());
+      headers.accept(Headers.CONTENT_SCHEMA, stripNonSerializationAttrs(schema).toString());
     } else {
       try {
         StringWriter sw = new StringWriter();
@@ -69,6 +74,24 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
       } catch (IOException ex) {
         throw new UncheckedIOException(ex);
       }
+    }
+  }
+
+  @Nonnull
+  @SuppressFBWarnings("AI_ANNOTATION_ISSUES_NEEDS_NULLABLE")
+  private static Schema stripNonSerializationAttrs(final Schema schema) {
+    return Schemas.visit(schema, new CloningVisitor(SchemaUtils.FIELD_ESENTIALS,
+            DefaultSchemaProtocol::copyLogicalTypeAndAliasses, false, schema));
+  }
+
+  private static void copyLogicalTypeAndAliasses(final Schema from, final Schema to) {
+    LogicalType logicalType = from.getLogicalType();
+    if (logicalType != null) {
+      logicalType.addToSchema(to);
+    }
+    SchemaUtils.copyAliases(from, to);
+    if (from.getType() == Schema.Type.ENUM) {
+      SchemaUtils.copyProperties(from, to);
     }
   }
 
