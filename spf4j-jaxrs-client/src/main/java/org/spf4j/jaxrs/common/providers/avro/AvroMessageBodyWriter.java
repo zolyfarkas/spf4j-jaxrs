@@ -67,7 +67,7 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
       writer.write(t, encoder);
       encoder.flush();
     } catch (IOException | RuntimeException e) {
-      throw new RuntimeException("Serialization failed for " + t.getClass(), e);
+      throw new RuntimeException("Serialization failed for " + schema.getName(), e);
     }
   }
 

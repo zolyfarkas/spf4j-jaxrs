@@ -97,7 +97,8 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
       }
       return reader.read(null, decoder);
     } catch (IOException | RuntimeException ex) {
-      throw new RuntimeException(this + " parsing failed for " + writerSchema + ", from " + entityStream, ex);
+      throw new RuntimeException(this + " parsing failed for " + writerSchema.getFullName()
+              + ", from " + entityStream, ex);
     }
   }
 
