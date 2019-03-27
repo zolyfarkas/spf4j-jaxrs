@@ -56,9 +56,9 @@ public final class ClusterAllNodesCheck implements HealthCheck {
 
   @Override
   @SuppressFBWarnings("EXS_EXCEPTION_SOFTENING_NO_CHECKED")
-  public HealthRecord getRecord(String name, String origin,
-          Logger logger, boolean isDebug,
-          boolean isDebugOnError) {
+  public HealthRecord getRecord(final String name, final String origin,
+          final Logger logger, final boolean isDebug,
+          final boolean isDebugOnError) {
     try (ExecutionContext ec = ExecutionContexts.start(name,
             timeout(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS)) {
       ClusterInfo clusterInfo = cluster.getClusterInfo();

@@ -13,7 +13,7 @@ import org.spf4j.base.avro.HealthStatus;
  */
 public interface HealthCheck {
 
-    enum Type {local, cluster, custom};
+    enum Type { local, cluster, custom };
 
 
     public interface Registration {
@@ -29,7 +29,7 @@ public interface HealthCheck {
      * @param logger
      * @throws Exception
      */
-    void test(final Logger logger) throws Exception;
+    void test(Logger logger) throws Exception;
 
     default HealthRecord getRecord(final String name, final String origin, final Logger logger,
             final boolean isDebug, final boolean isDebugOnError) {

@@ -53,6 +53,7 @@ import org.spf4j.zel.vm.Program;
  * @author Zoltan Farkas
  */
 @Path("logs")
+@SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 public class LogsResource {
 
   private static final Comparator<LogRecord> L_COMP = new Comparator<LogRecord>() {
@@ -134,7 +135,7 @@ public class LogsResource {
           throws IOException, URISyntaxException {
     getClusterLogs(limit, filter, resOrder, new AsyncResponseWrapper(ar) {
       @Override
-      public boolean resume(Object response) {
+      public boolean resume(final Object response) {
         return super.resume(new StreamingOutput() {
           @Override
           public void write(final OutputStream output) throws IOException, WebApplicationException {
@@ -161,23 +162,6 @@ public class LogsResource {
     getClusterLogs(limit, filter, resOrder, "default", ar);
   }
 
-  /**
-   * @Path("cluster/{appenderName}")
-   * @GET
-   * @Produces(value = {"application/avro-x+json", "application/json", "application/avro+json", "application/avro",
-   * "application/octet-stream"}) public List<LogRecord> getClusterLogs(@QueryParam("limit") @DefaultValue("1000")final
-   * int limit,
-   * @QueryParam("filter") @Nullable final String filter,
-   * @PathParam("appenderName") final String appender) throws IOException { ClusterInfo clusterInfo =
-   * cluster.getClusterInfo(); Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses(); List<LogRecord> result =
-   * new ArrayList(limit * peerAddresses.size()); result.addAll(getLocalLogs(0, limit, filter, appender));
-   * NetworkService service = getNetworkService(clusterInfo); for (InetAddress addr : peerAddresses) { String url =
-   * service.getName() + "://" + addr.getHostAddress() + ':' + service.getPort() + "/logs/local"; Spf4jWebTarget
-   * invTarget = httpClient.target(url) .path(appender) .queryParam("limit", limit); if (filter != null) { invTarget =
-   * invTarget.queryParam("filter", filter); } result.addAll(invTarget .request("application/avro").get(new
-   * GenericType<List<LogRecord>>() {})); } Collections.sort(result, L_COMP); int size = result.size(); return
-   * result.subList(Math.max(0, size - limit), size); }
-   */
   @Path("cluster/{appenderName}")
   @GET
   @Produces(value = {"application/avro-x+json", "application/json",
@@ -185,7 +169,8 @@ public class LogsResource {
   public void getClusterLogs(@QueryParam("limit") @DefaultValue("1000") final int limit,
           @QueryParam("filter") @Nullable final String filter,
            @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
-          @PathParam("appenderName") final String appender, @Suspended final AsyncResponse ar) throws IOException, URISyntaxException {
+          @PathParam("appenderName") final String appender, @Suspended final AsyncResponse ar)
+          throws IOException, URISyntaxException {
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
     CompletableFuture<PriorityQueue<LogRecord>> cf
@@ -232,9 +217,9 @@ public class LogsResource {
     });
   }
 
-  private static final void addAll(final int limit,
-          PriorityQueue<LogRecord> result,
-          Collection<LogRecord> records) {
+  private static void addAll(final int limit,
+          final PriorityQueue<LogRecord> result,
+          final Collection<LogRecord> records) {
     synchronized (result) {
       result.addAll(records);
       int removeCnt = result.size() - limit;

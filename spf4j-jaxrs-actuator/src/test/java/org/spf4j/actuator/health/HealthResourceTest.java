@@ -79,7 +79,7 @@ public class HealthResourceTest extends ServiceIntegrationBase {
             .request("application/json").get(InputStream.class);
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     Streams.copy(ai, bos);
-    System.out.println(new String(bos.toByteArray(), StandardCharsets.UTF_8));
+    LOG.debug(new String(bos.toByteArray(), StandardCharsets.UTF_8));
   }
 
 }

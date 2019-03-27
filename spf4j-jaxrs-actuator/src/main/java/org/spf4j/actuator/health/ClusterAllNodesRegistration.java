@@ -19,7 +19,7 @@ public final class ClusterAllNodesRegistration implements HealthCheck.Registrati
 
   @Override
   public String[] getPath() {
-    return new String [] {"allNodesHealth"};
+    return new String[] {"allNodesHealth"};
   }
 
   @Override

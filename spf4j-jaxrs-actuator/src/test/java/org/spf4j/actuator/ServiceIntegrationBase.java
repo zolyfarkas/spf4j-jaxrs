@@ -94,7 +94,7 @@ import org.spf4j.servlet.ExecutionContextFilter;
  * @author Zoltan Farkas
  */
 @SuppressFBWarnings("CE_CLASS_ENVY")
-public class ServiceIntegrationBase {
+public abstract class ServiceIntegrationBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(ServiceIntegrationBase.class);
 
@@ -118,12 +118,12 @@ public class ServiceIntegrationBase {
     servletRegistration.setInitParameter("servlet.protocol", "http");
     servletRegistration.setInitParameter(ServerProperties.PROCESSING_RESPONSE_ERRORS_ENABLED, "true");
     servletRegistration.setLoadOnStartup(0);
-    HttpServer server = new HttpServer();
-    server.getServerConfiguration()
+    HttpServer srv = new HttpServer();
+    srv.getServerConfiguration()
             .setDefaultErrorPageGenerator(new ErrorPageGenerator() {
               @Override
-              public String generate(Request request, int status,
-                      String reasonPhrase, String description, Throwable exception) {
+              public String generate(final Request request, final int status,
+                      final String reasonPhrase, final String description, final Throwable exception) {
                 ServiceError err = ServiceError.newBuilder()
                         .setCode(status)
                         .setMessage(reasonPhrase + ';' + description)
@@ -183,10 +183,10 @@ public class ServiceIntegrationBase {
             .withQueueSizeLimit(0)
             .enableJmx()
             .build());
-    server.addListener(listener);
-    webappContext.deploy(server);
-    server.start();
-    return server;
+    srv.addListener(listener);
+    webappContext.deploy(srv);
+    srv.start();
+    return srv;
   }
 
   @BeforeClass
@@ -213,7 +213,7 @@ public class ServiceIntegrationBase {
     private final Spf4JClient restClient;
 
     @Inject
-    public TestApplication(@Context ServletContext srvContext, ServiceLocator locator) {
+    TestApplication(@Context final ServletContext srvContext, final ServiceLocator locator) {
       ServiceLocatorUtilities.enableImmediateScope(locator);
       DefaultDeadlineProtocol dp = new DefaultDeadlineProtocol();
       FilterRegistration testFilterReg = srvContext.addFilter("server", new ExecutionContextFilter(dp));
@@ -298,7 +298,7 @@ public class ServiceIntegrationBase {
     private final int port;
 
     @Inject
-    public ClusterBinder(
+    ClusterBinder(
             @ConfigProperty("servlet.bindAddr") final String bindAddr,
             @ConfigProperty("servlet.port") final int port) {
       this.bindAddr = bindAddr;

@@ -29,7 +29,8 @@ import org.spf4j.jaxrs.ConfigProperty;
 @Path("health")
 @Produces(value = {"application/avro-x+json", "application/json",
   "application/avro+json", "application/avro", "application/octet-stream"})
-public final class HealthResource {
+@SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
+public class HealthResource {
 
   private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(HealthResource.class));
 
@@ -95,7 +96,7 @@ public final class HealthResource {
   public Response run(
           @QueryParam("debug") @DefaultValue("false") final boolean pisDebug,
           @QueryParam("debugOnError") @DefaultValue("true") final boolean pisDebugOnError,
-          @Context SecurityContext secCtx) {
+          @Context final SecurityContext secCtx) {
     return run(Collections.EMPTY_LIST, pisDebug, pisDebugOnError, secCtx);
   }
 
@@ -104,7 +105,7 @@ public final class HealthResource {
   public Response run(@PathParam("path") final List<String> path,
           @QueryParam("debug") @DefaultValue("false") final boolean pisDebug,
           @QueryParam("debugOnError") @DefaultValue("true") final boolean pisDebugOnError,
-          @Context SecurityContext secCtx) {
+          @Context final SecurityContext secCtx) {
     boolean isDebug = pisDebug;
     boolean isDebugOnError =  pisDebugOnError;
     if (!ddEnt.test(secCtx)) {

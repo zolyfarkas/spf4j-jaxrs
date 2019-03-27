@@ -1,4 +1,3 @@
-
 package org.spf4j.actuator.info;
 
 import com.google.common.collect.Sets;
@@ -33,6 +32,7 @@ import org.spf4j.jaxrs.client.Spf4JClient;
 @Produces(value = {"application/avro-x+json", "application/json",
   "application/avro+json", "application/avro", "application/octet-stream"})
 @Immediate
+@SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 public class InfoResource {
 
   private final Cluster cluster;
@@ -47,7 +47,7 @@ public class InfoResource {
     this.httpClient = httpClient;
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     this.hostName = Sets.intersection(clusterInfo.getLocalAddresses(), clusterInfo.getAddresses())
-                    .iterator().next().getHostName();
+            .iterator().next().getHostName();
   }
 
   @GET
@@ -85,10 +85,13 @@ public class InfoResource {
     NetworkService service = clusterInfo.getHttpService();
     for (InetAddress addr : peerAddresses) {
       URI uri = new URI(service.getName(), null,
-                  addr.getHostAddress(), service.getPort(), "/info/local", null, null);
+              addr.getHostAddress(), service.getPort(), "/info/local", null, null);
       cf = cf.thenCombine(httpClient.target(uri)
               .request("application/avro").rx().get(ProcessInfo.class),
-              (res, info) -> {res.add(info); return res;});
+              (res, info) -> {
+                res.add(info);
+                return res;
+              });
     }
     cf.whenComplete((res, t) -> {
       if (t != null) {
@@ -98,6 +101,5 @@ public class InfoResource {
       }
     });
   }
-
 
 }
