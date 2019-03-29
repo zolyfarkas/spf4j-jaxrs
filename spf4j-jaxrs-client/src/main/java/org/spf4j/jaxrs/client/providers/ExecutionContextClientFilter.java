@@ -85,14 +85,12 @@ public final class ExecutionContextClientFilter implements ClientRequestFilter,
               .collect(Collectors.toCollection(() -> new ArrayList<>(warnings.size())));
       ExecutionContext reqCtx = ExecutionContexts.current();
       LOG.warn("Done {}", requestContext.getUri(),
-        LogAttribute.traceId(reqCtx.getId()),
         LogAttribute.of("warnings", pws),
         LogAttribute.value("httpStatus", responseContext.getStatus()),
         LogAttribute.execTimeMicros(TimeSource.nanoTime() - reqCtx.getStartTimeNanos(), TimeUnit.NANOSECONDS));
     } else if (LOG.isDebugEnabled()) {
       ExecutionContext reqCtx = ExecutionContexts.current();
       LOG.debug("Done {}", requestContext.getUri(),
-        LogAttribute.traceId(reqCtx.getId()),
         LogAttribute.value("httpStatus", responseContext.getStatus()),
         LogAttribute.execTimeMicros(TimeSource.nanoTime() - reqCtx.getStartTimeNanos(), TimeUnit.NANOSECONDS));
     }
