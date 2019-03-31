@@ -85,6 +85,10 @@ public final class HttpWarning {
     return new HttpWarning(code, agent, zdt, text);
   }
 
+  public static HttpWarning valueOf(final String from) {
+    return parse(from);
+  }
+
   public HttpWarning(final int code, final String agent, @Nullable final  ZonedDateTime date,
           final String format, final Object... params) {
     this(code, agent, null, Slf4jMessageFormatter.toString(format, params));
