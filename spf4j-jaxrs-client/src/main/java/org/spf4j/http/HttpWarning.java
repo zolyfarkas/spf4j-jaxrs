@@ -47,7 +47,7 @@ public final class HttpWarning {
    */
   public static final int PERSISTENT_MISCELLANEOUS = 299;
 
-  private static final CharSeparatedValues CSV = new CharSeparatedValues(' ', ',');
+  private static final CharSeparatedValues SPACE_SEP = new CharSeparatedValues(' ', ',');
 
   private final int code;
   private final String agent;
@@ -68,7 +68,7 @@ public final class HttpWarning {
    * @return
    */
   public static HttpWarning parse(final CharSequence headerValue) {
-    Iterable<Iterable<String>> parsed = CSV.asIterable(CharSequences.reader(headerValue));
+    Iterable<Iterable<String>> parsed = SPACE_SEP.asIterable(CharSequences.reader(headerValue));
     Iterable<String> line = parsed.iterator().next();
     Iterator<String> lIt = line.iterator();
     String codeStr = lIt.next();
@@ -118,9 +118,9 @@ public final class HttpWarning {
     StringBuilder sb = new StringBuilder(32);
     try {
      if (date != null) {
-       CSV.writeCsvRowNoEOL(sb, code, agent, text, DateTimeFormatter.RFC_1123_DATE_TIME.format(date));
+       SPACE_SEP.writeCsvRowNoEOL(sb, code, agent, text, DateTimeFormatter.RFC_1123_DATE_TIME.format(date));
      } else {
-       CSV.writeCsvRowNoEOL(sb, code, agent, text);
+       SPACE_SEP.writeCsvRowNoEOL(sb, code, agent, text);
      }
     } catch (IOException ex) {
       throw new UncheckedIOException(ex);
