@@ -109,15 +109,15 @@ public final class HttpRange {
             ranges.add(Range.atLeast(Long.valueOf(start)));
           }
         } else {
-          throw new RuntimeException("Invalid range header: " + rangeHeader);
+          throw new IllegalArgumentException("Invalid range header: " + rangeHeader);
         }
       }
       if (ranges.isEmpty()) {
-        throw new RuntimeException("Invalid range header: " + rangeHeader);
+        throw new IllegalArgumentException("Invalid range header: " + rangeHeader);
       }
       return new HttpRange(unit, Collections.unmodifiableList(ranges));
     } else {
-      throw new RuntimeException("Invalid range header: " + rangeHeader);
+      throw new IllegalArgumentException("Invalid range header: " + rangeHeader);
     }
   }
 
