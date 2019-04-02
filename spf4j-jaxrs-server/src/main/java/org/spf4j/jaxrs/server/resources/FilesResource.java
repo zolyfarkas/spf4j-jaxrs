@@ -31,10 +31,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import org.spf4j.base.CharSequences;
+import org.spf4j.base.avro.FileEntry;
+import org.spf4j.base.avro.FileType;
 import org.spf4j.io.Streams;
 
 /**
- * A naive implementation of a file tree "browser"
+ * A naive implementation of a file tree REST "browser"
  * @author Zoltan Farkas
  */
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
@@ -58,14 +60,15 @@ public class FilesResource {
       target = target.resolve(part);
     }
     if (Files.isDirectory(target)) {
-      List<String> result = new ArrayList<>();
+      List<FileEntry> result = new ArrayList<>();
       try (DirectoryStream<Path> stream = Files.newDirectoryStream(target)) {
         for (Path elem : stream) {
           Path fileName = elem.getFileName();
           if (fileName == null) {
             throw new IllegalStateException("Dir entry should not be empty " + elem);
           }
-          result.add(fileName.toString());
+          result.add(new FileEntry(Files.isDirectory(elem) ? FileType.DIRECTORY : FileType.REGULAR,
+                  fileName.toString(), Files.size(elem), Files.getLastModifiedTime(elem).toInstant()));
         }
       }
       return Response.ok(result, MediaType.APPLICATION_JSON).build();
