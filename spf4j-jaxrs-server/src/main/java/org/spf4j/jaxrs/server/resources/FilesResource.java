@@ -28,6 +28,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import org.spf4j.base.CharSequences;
@@ -53,11 +54,12 @@ public class FilesResource {
   @GET
   @Produces({"application/json", "application/octet-stream"})
   @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // try-resources gen code
-  public Response get(@PathParam("path") final List<String> path) throws IOException {
+  public Response get(@PathParam("path") final List<PathSegment> path) throws IOException {
     Path target = base;
-    for (String part : path) {
-      CharSequences.validatedFileName(part);
-      target = target.resolve(part);
+    for (PathSegment part : path) {
+      String p = part.getPath();
+      CharSequences.validatedFileName(p);
+      target = target.resolve(p);
     }
     if (Files.isDirectory(target)) {
       List<FileEntry> result = new ArrayList<>();

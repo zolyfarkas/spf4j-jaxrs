@@ -11,6 +11,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import org.slf4j.Logger;
@@ -81,14 +82,23 @@ public class HealthResource {
 
   @GET
   @Path("info/{path:.*}")
-  public HealthCheckInfo list(@PathParam("path") final List<String> path,
+  public HealthCheckInfo list(@PathParam("path") final List<PathSegment> path,
           @QueryParam("maxDepth") @DefaultValue("10") final int maxDepth) {
-    String[] pathArr = path.toArray(new String[path.size()]);
+    String[] pathArr = toStrArray(path);
     HealthOrgNode hNode = checks.getHealthNode(pathArr);
     if (hNode == null) {
         throw new NotFoundException("No health checks at " + path);
     }
     return hNode.getHealthCheckInfo("", maxDepth);
+  }
+
+  private static String[] toStrArray(final List<PathSegment> path) {
+    String[] pathArr = new String[path.size()];
+    int i = 0;
+    for (PathSegment seg : path) {
+      pathArr[i++] = seg.getPath();
+    }
+    return pathArr;
   }
 
   @GET
@@ -102,7 +112,7 @@ public class HealthResource {
 
   @GET
   @Path("check/{path:.*}")
-  public Response run(@PathParam("path") final List<String> path,
+  public Response run(@PathParam("path") final List<PathSegment> path,
           @QueryParam("debug") @DefaultValue("false") final boolean pisDebug,
           @QueryParam("debugOnError") @DefaultValue("true") final boolean pisDebugOnError,
           @Context final SecurityContext secCtx) {
@@ -112,7 +122,7 @@ public class HealthResource {
       isDebug = false;
       isDebugOnError = false;
     }
-    String[] pathArr = path.toArray(new String[path.size()]);
+    String[] pathArr = toStrArray(path);
     HealthOrgNode hNode = checks.getHealthNode(pathArr);
     HealthRecord healthRecord = hNode.getHealthRecord("", host, LOG, isDebug, isDebugOnError);
     if (healthRecord.getStatus() == HealthStatus.HEALTHY) {
