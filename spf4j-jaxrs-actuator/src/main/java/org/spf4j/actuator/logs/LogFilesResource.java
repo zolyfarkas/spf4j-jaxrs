@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -69,6 +70,7 @@ public class LogFilesResource {
 
   @Produces("application/json")
   @Path("cluster")
+  @GET
   public List<String> getClusterNodes() {
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     Set<InetAddress> addresses = clusterInfo.getAddresses();
@@ -81,16 +83,17 @@ public class LogFilesResource {
 
   @Produces({ "application/json", "application/octet-stream" })
   @Path("cluster/{nodePath:.*}")
+  @GET
   public Response getNodesDetail(@PathParam("nodePath") final List<String> path) throws URISyntaxException {
     if (path == null || path.isEmpty()) {
       return Response.ok(getClusterNodes(), MediaType.APPLICATION_JSON).build();
     }
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     NetworkService service = clusterInfo.getHttpService();
-    String tPath = "/logFiles/local";
+    String tPath = "/logFiles/local/";
     if (path.size() > 1) {
       String restpath = path.subList(1, path.size()).stream().collect(Collectors.joining("/"));
-      tPath  = tPath + "/" + restpath;
+      tPath  = tPath + restpath;
     }
     URI uri = new URI(service.getName(), null,  path.get(0), service.getPort(), tPath, null, null);
     Response resp = httpClient.target(uri).request(MediaType.WILDCARD).get(Response.class);
