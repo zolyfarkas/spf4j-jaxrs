@@ -60,7 +60,7 @@ public final class ClientBuilderUtil {
 
 
   /**
-   * Create a JAX-RS client to call non-spf4j (no timeout propagation...) services.
+   * Create a JAX-RS client to call non-spf4j (no timeout propagation, no schema protocol ...) services.
    * @param connectTimeoutMillis
    * @param defaultReadTimeoutMillis
    * @return
