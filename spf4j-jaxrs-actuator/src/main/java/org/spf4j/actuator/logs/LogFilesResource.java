@@ -22,6 +22,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -35,6 +36,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+import org.spf4j.base.avro.FileEntry;
+import org.spf4j.base.avro.FileType;
 import org.spf4j.base.avro.NetworkService;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
@@ -69,15 +72,15 @@ public class LogFilesResource {
     return files;
   }
 
-  @Produces("application/json")
+  @Produces({ "application/json", "application/octet-stream" })
   @Path("cluster")
   @GET
-  public List<String> getClusterNodes() {
+  public List<FileEntry> getClusterNodes() {
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     Set<InetAddress> addresses = clusterInfo.getAddresses();
-    List<String> result = new ArrayList<>(addresses.size());
+    List<FileEntry> result = new ArrayList<>(addresses.size());
     for (InetAddress addr : addresses) {
-      result.add(addr.getHostAddress());
+      result.add(new FileEntry(FileType.DIRECTORY, addr.getHostAddress(), -1, null));
     }
     return result;
   }
