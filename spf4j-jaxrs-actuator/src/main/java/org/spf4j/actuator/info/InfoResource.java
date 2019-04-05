@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import javax.inject.Inject;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -22,6 +23,7 @@ import org.spf4j.base.avro.ProcessInfo;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
+import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.jaxrs.client.Spf4JClient;
 
 /**
@@ -42,12 +44,15 @@ public class InfoResource {
   private final String hostName;
 
   @Inject
-  public InfoResource(final Cluster cluster, final Spf4JClient httpClient) {
+  public InfoResource(@ConfigProperty("hostName") @DefaultValue("hostName") final String hostName,
+          final Cluster cluster, final Spf4JClient httpClient) {
     this.cluster = cluster;
     this.httpClient = httpClient;
     ClusterInfo clusterInfo = cluster.getClusterInfo();
-    this.hostName = Sets.intersection(clusterInfo.getLocalAddresses(), clusterInfo.getAddresses())
-            .iterator().next().getHostName();
+    this.hostName = "hostName".equals(hostName)
+            ? Sets.intersection(clusterInfo.getLocalAddresses(), clusterInfo.getAddresses())
+            .iterator().next().getHostName()
+            : hostName;
   }
 
   @GET
