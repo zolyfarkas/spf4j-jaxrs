@@ -18,6 +18,7 @@ package org.spf4j.kube.cluster;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.spf4j.base.TimeSource;
@@ -98,11 +99,14 @@ public final class KubeCluster implements Cluster {
     Set<InetAddress> addrs = new HashSet<>();
     Set<NetworkService> svcs = new HashSet<>(4);
     for (Endpoints.SubSet ss : client.getEndpoints(nameSpace, endpointName).getSubsets()) {
-      for (Endpoints.Address adr : ss.getAddresses()) {
-        try {
-          addrs.add(InetAddress.getByName(adr.getIp()));
-        } catch (UnknownHostException ex) {
-          throw new RuntimeException(ex);
+      List<Endpoints.Address> addresses = ss.getAddresses();
+      if (addresses != null) { // during setup addresses are listed as not ready.
+        for (Endpoints.Address adr : addresses) {
+          try {
+            addrs.add(InetAddress.getByName(adr.getIp()));
+          } catch (UnknownHostException ex) {
+            throw new RuntimeException(ex);
+          }
         }
       }
       for (Endpoints.Port port : ss.getPorts()) {
