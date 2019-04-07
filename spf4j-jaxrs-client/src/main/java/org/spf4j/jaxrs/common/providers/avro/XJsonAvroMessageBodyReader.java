@@ -30,7 +30,7 @@ public final class XJsonAvroMessageBodyReader extends AvroMessageBodyReader {
   }
 
   public  InputStream wrapInputStream(final InputStream pentityStream) {
-    return new MemorizingBufferedInputStream(pentityStream, StandardCharsets.UTF_8);
+    return new MemorizingBufferedInputStream(pentityStream, StandardCharsets.UTF_8, 32768);
   }
 
 }
