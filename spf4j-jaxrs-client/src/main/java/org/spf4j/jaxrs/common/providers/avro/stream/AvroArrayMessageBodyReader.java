@@ -134,18 +134,22 @@ public abstract class AvroArrayMessageBodyReader implements MessageBodyReader<It
         throw new UncheckedIOException(ex);
       }
     }
+
+    @Override
+    public String toString() {
+      return "ArrayIterator{" + "decoder=" + decoder + ", reader=" + reader + ", l=" + l + '}';
+    }
+
   }
 
   private static class CloseableIterableImpl implements CloseableIterable {
 
     private final InputStream pentityStream;
-    private final Decoder decoder;
-    private final DatumReader reader;
+    private final Iterator iterator;
 
     CloseableIterableImpl(final InputStream pentityStream, final Decoder decoder, final DatumReader reader) {
       this.pentityStream = pentityStream;
-      this.decoder = decoder;
-      this.reader = reader;
+      this.iterator = new ArrayIterator(decoder, reader);
     }
 
     @Override
@@ -155,8 +159,14 @@ public abstract class AvroArrayMessageBodyReader implements MessageBodyReader<It
 
     @Override
     public Iterator iterator() {
-      return new ArrayIterator(decoder, reader);
+      return iterator;
     }
+
+    @Override
+    public String toString() {
+      return "CloseableIterableImpl{" + "iterator=" + iterator + '}';
+    }
+
   }
 
 }
