@@ -17,8 +17,8 @@ import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.reflect.ExtendedReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
+import org.spf4j.avro.DecodedSchema;
 import org.spf4j.io.MemorizingBufferedInputStream;
-import org.spf4j.jaxrs.common.providers.avro.DecodedSchema;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 
 /**

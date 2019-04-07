@@ -25,11 +25,11 @@ import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
 import org.apache.avro.io.Decoder;
 import org.spf4j.avro.csv.CsvDecoder;
+import org.spf4j.avro.DecodedSchema;
 import org.spf4j.io.Csv;
 import org.spf4j.io.MemorizingBufferedInputStream;
 import org.spf4j.io.csv.CsvParseException;
-import org.spf4j.jaxrs.common.providers.avro.CsvAvroMessageBodyReader;
-import org.spf4j.jaxrs.common.providers.avro.DecodedSchema;
+import org.spf4j.io.csv.CsvReader;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 
 /**
@@ -46,19 +46,18 @@ public final class CsvAvroArrayMessageBodyReader extends AvroArrayMessageBodyRea
   @Override
   public DecodedSchema tryDecodeSchema(final Schema readerSchema, final InputStream is, final Annotation[] annotations)
           throws IOException {
-    return CsvAvroMessageBodyReader.tryDecodeSchema(is, readerSchema);
+    return CsvDecoder.tryDecodeSchema(is, readerSchema);
   }
 
   @Override
   public Decoder getDecoder(final Schema writerSchema, final InputStream is) throws IOException {
-    CsvDecoder decoder = new CsvDecoder(Csv.CSV.readerILEL(new InputStreamReader(is, StandardCharsets.UTF_8)),
-            writerSchema);
+    CsvReader reader = Csv.CSV.readerILEL(new InputStreamReader(is, StandardCharsets.UTF_8));
     try {
-      decoder.skipHeader();
+      reader.skipRow(); // skip headers
     } catch (CsvParseException ex) {
       throw new RuntimeException(ex);
     }
-    return decoder;
+    return new CsvDecoder(reader, writerSchema);
   }
 
   public  InputStream wrapInputStream(final InputStream pentityStream) {
