@@ -38,9 +38,9 @@
       <version>${spf4j.version}</version>
     </dependency>
     <dependency>
-      <groupId>javax.ws.rs</groupId>
-      <artifactId>javax.ws.rs-api</artifactId>
-      <version>2.1</version>
+      <groupId>jakarta.ws.rs</groupId>
+      <artifactId>jakarta.ws.rs-api</artifactId>
+      <version>2.1.5</version>
     </dependency>
     <dependency>
       <groupId>org.apache.avro</groupId>
