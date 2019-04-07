@@ -166,18 +166,21 @@ public final class ExecutionContextFilter implements Filter {
         asyncContext.addListener(new AsyncListener() {
           @Override
           public void onComplete(final AsyncEvent event) {
+            ExecutionContexts.current().closeAllButRoot();
             logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp);
             ctx.close();
           }
 
           @Override
           public void onTimeout(final AsyncEvent event) {
+            ExecutionContexts.current().closeAllButRoot();
             ctx.combine(ContextTags.LOG_LEVEL, Level.ERROR);
             ctx.add(ContextTags.LOG_ATTRIBUTES, LogAttribute.of("warning", "Request timed out"));
           }
 
           @Override
           public void onError(final AsyncEvent event) {
+            ExecutionContexts.current().closeAllButRoot();
             ctx.combine(ContextTags.LOG_LEVEL, Level.ERROR);
             ctx.add(ContextTags.LOG_ATTRIBUTES, event.getThrowable());
           }
