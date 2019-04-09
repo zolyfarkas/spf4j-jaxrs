@@ -1,5 +1,7 @@
 package org.spf4j.jaxrs.common.providers.avro;
 
+import org.spf4j.io.MemorizingBufferedInputStream;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -9,7 +11,6 @@ import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.ExtendedJsonDecoder;
-import org.spf4j.io.MemorizingBufferedInputStream;
 
 /**
  * @author Zoltan Farkas
@@ -29,8 +30,10 @@ public final class XJsonAvroMessageBodyReader extends AvroMessageBodyReader {
     return new ExtendedJsonDecoder(writerSchema, is);
   }
 
-  public  InputStream wrapInputStream(final InputStream pentityStream) {
-    return new MemorizingBufferedInputStream(pentityStream, StandardCharsets.UTF_8, 32768);
+  @SuppressFBWarnings("PATH_TRAVERSAL_IN")
+  public  InputStream wrapInputStream(final InputStream pentityStream)  {
+      return new MemorizingBufferedInputStream(pentityStream, StandardCharsets.UTF_8, 32768);
+     //return new DebugInputStream(pentityStream, new File(org.spf4j.base.Runtime.TMP_FOLDER));
   }
 
 }

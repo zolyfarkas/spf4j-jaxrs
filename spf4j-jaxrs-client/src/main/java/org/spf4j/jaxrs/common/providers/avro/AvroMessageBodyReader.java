@@ -61,7 +61,7 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
    * @param pentityStream
    * @return
    */
-  public  InputStream wrapInputStream(final InputStream pentityStream) {
+  public  InputStream wrapInputStream(final InputStream pentityStream) throws IOException {
     return new MemorizingBufferedInputStream(pentityStream);
   }
 
