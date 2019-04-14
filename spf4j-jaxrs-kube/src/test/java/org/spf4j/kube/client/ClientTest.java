@@ -97,4 +97,32 @@ public class ClientTest {
     Assert.assertNotNull(eps);
   }
 
+  private static final String RESP3 = "{\n"
+          + "\"kind\": \"Endpoints\",\n"
+          + "\"apiVersion\": \"v1\",\n"
+          + "\"metadata\": {\n"
+          + "\"name\": \"jaxrs-spf4j-demo\",\n"
+          + "\"namespace\": \"default\",\n"
+          + "\"selfLink\": \"/api/v1/namespaces/default/endpoints/jaxrs-spf4j-demo\",\n"
+          + "\"uid\": \"fb193e2e-5ea7-11e9-9d14-1269dff1685e\",\n"
+          + "\"resourceVersion\": \"3793\",\n"
+          + "\"creationTimestamp\": \"2019-04-14T11:25:17Z\",\n"
+          + "\"labels\": {\n"
+          + "\"app\": \"jaxrs-spf4j-demo\",\n"
+          + "\"version\": \"0.6-SNAPSHOT\"\n"
+          + "}\n"
+          + "}\n"
+          + "}";
+
+  @Test
+  public void testParse3() throws IOException {
+    ByteArrayInputStream bis = new ByteArrayInputStream(RESP3.getBytes(StandardCharsets.UTF_8));
+    XJsonAvroMessageBodyReader reader = new XJsonAvroMessageBodyReader(SchemaProtocol.NONE);
+    Endpoints eps = (Endpoints) reader.readFrom((Class) Endpoints.class,
+            Endpoints.class, Arrays.EMPTY_ANNOT_ARRAY,
+            null, new MultivaluedHashMap(), bis);
+    Assert.assertNotNull(eps);
+  }
+
+
 }

@@ -17,7 +17,6 @@ package org.spf4j.kube.client;
 
 import java.util.List;
 import org.apache.avro.reflect.AvroDefault;
-import org.apache.avro.reflect.Nullable;
 import org.spf4j.base.avro.NetworkProtocol;
 
 /**
@@ -78,6 +77,7 @@ import org.spf4j.base.avro.NetworkProtocol;
  */
 public final class Endpoints {
 
+  @AvroDefault("[]")
   private List<SubSet> subsets;
 
   public List<SubSet> getSubsets() {
@@ -148,12 +148,10 @@ public final class Endpoints {
 
   public static final class SubSet {
 
-    @Nullable
-    @AvroDefault("null")
+    @AvroDefault("[]")
     private List<Address> addresses;
 
-    @Nullable
-    @AvroDefault("null")
+    @AvroDefault("[]")
     private List<Address> notReadyAddresses;
 
     private List<Port> ports;
