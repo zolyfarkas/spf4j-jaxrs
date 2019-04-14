@@ -61,19 +61,14 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
   @Override
   @SuppressFBWarnings("EXS_EXCEPTION_SOFTENING_NO_CHECKED")
   public void serialize(final BiConsumer<String, String> headers, final Schema schema) {
-    String id = schema.getProp("mvnId");
-    if (id  == null || id.contains("SNAPSHOT")) {
-      headers.accept(Headers.CONTENT_SCHEMA, stripNonSerializationAttrs(schema).toString());
-    } else {
-      try {
-        StringWriter sw = new StringWriter();
-        JsonGenerator jgen = Json.FACTORY.createGenerator(sw);
-        schema.toJson(new AvroNamesRefResolver(client), jgen);
-        jgen.flush();
-        headers.accept(Headers.CONTENT_SCHEMA, sw.toString());
-      } catch (IOException ex) {
-        throw new UncheckedIOException(ex);
-      }
+    try {
+      StringWriter sw = new StringWriter();
+      JsonGenerator jgen = Json.FACTORY.createGenerator(sw);
+      schema.toJson(new AvroNamesRefResolver(client), jgen);
+      jgen.flush();
+      headers.accept(Headers.CONTENT_SCHEMA, sw.toString());
+    } catch (IOException ex) {
+      throw new UncheckedIOException(ex);
     }
   }
 
