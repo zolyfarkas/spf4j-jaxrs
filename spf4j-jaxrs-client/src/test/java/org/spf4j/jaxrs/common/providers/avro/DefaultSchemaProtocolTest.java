@@ -20,7 +20,6 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.avro.Schema;
-import org.apache.avro.SchemaResolver;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
@@ -41,8 +40,23 @@ public class DefaultSchemaProtocolTest {
     Map<String, String> headers = new HashMap<>();
     sprotocol.serialize(headers::put, Schema.createArray(DemoRecord.getClassSchema()));
     Assert.assertThat(headers, Matchers.hasEntry("content-schema",
-            "{\"type\":\"array\",\"items\":{\"$ref\":\"org.spf4j.demo:jaxrs-spf4j-demo-schema:0.2:0\"}}"));
+            "{\"type\":\"array\",\"items\":{\"$ref\":\"org.spf4j.demo:jaxrs-spf4j-demo-schema:0.3:0\"}}"));
   }
+
+  @Test
+  public void testSchemaProtocolRT() throws URISyntaxException {
+    SchemaClient client = new SchemaClient(new URI("https://dl.bintray.com/zolyfarkas/core"));
+    DefaultSchemaProtocol sprotocol = new DefaultSchemaProtocol(client);
+    Map<String, String> headers = new HashMap<>();
+    Schema schema = Schema.createArray(DemoRecord.getClassSchema());
+    sprotocol.serialize(headers::put, schema);
+    Assert.assertThat(headers, Matchers.hasEntry("content-schema",
+            "{\"type\":\"array\",\"items\":{\"$ref\":\"org.spf4j.demo:jaxrs-spf4j-demo-schema:0.3:0\"}}"));
+    Schema deserialize = sprotocol.deserialize(headers::get,
+            new DemoRecord[] {}.getClass(), new DemoRecord[] {}.getClass());
+    Assert.assertEquals(schema, deserialize);
+  }
+
 
   @Test
   public void testSchemaProtocol2() throws URISyntaxException {

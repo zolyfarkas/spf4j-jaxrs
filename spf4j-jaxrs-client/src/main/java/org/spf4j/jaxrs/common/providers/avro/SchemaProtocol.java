@@ -34,7 +34,7 @@ public interface SchemaProtocol {
    * @return the schema.
    */
   @Nullable
-  Schema deserialize(Function<String, String> headers, Class<Object> type, Type genericType);
+  Schema deserialize(Function<String, String> headers, Class<?> type, Type genericType);
 
 
   /**
@@ -48,7 +48,7 @@ public interface SchemaProtocol {
   SchemaProtocol NONE = new SchemaProtocol() {
     @Override
     public Schema deserialize(final Function<String, String> headers,
-            final Class<Object> type, final Type genericType) {
+            final Class<?> type, final Type genericType) {
       return null;
     }
 

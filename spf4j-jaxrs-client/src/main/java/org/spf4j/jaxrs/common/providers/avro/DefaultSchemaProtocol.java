@@ -51,7 +51,7 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
 
   @Override
   @Nullable
-  public Schema deserialize(final Function<String, String> headers, final Class<Object> type, final Type genericType) {
+  public Schema deserialize(final Function<String, String> headers, final Class<?> type, final Type genericType) {
     String schemaRefStr = headers.apply(Headers.CONTENT_SCHEMA);
     if (schemaRefStr == null) {
       return null;

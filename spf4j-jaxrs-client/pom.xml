@@ -64,7 +64,7 @@
       <groupId>org.spf4j.demo</groupId>
       <artifactId>jaxrs-spf4j-demo-schema</artifactId>
       <scope>test</scope>
-      <version>0.2</version>
+      <version>0.3</version>
     </dependency>
   </dependencies>
 
