@@ -1,6 +1,5 @@
 package org.spf4j.actuator.info;
 
-import com.google.common.collect.Sets;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -48,12 +47,10 @@ public class InfoResource {
           final Cluster cluster, final Spf4JClient httpClient) {
     this.cluster = cluster;
     this.httpClient = httpClient;
-    ClusterInfo clusterInfo = cluster.getClusterInfo();
-    this.hostName = "hostName".equals(hostName)
-            ? Sets.intersection(clusterInfo.getLocalAddresses(), clusterInfo.getAddresses())
-            .iterator().next().getHostName()
-            : hostName;
+    this.hostName = "hostName".equals(hostName) ? cluster.getLocalHostName() : hostName;
   }
+
+
 
   @GET
   public ApplicationInfo getApplicationInfo() {

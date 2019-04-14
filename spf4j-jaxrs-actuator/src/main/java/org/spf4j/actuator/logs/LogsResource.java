@@ -1,7 +1,6 @@
 package org.spf4j.actuator.logs;
 
 import org.spf4j.jaxrs.server.AsyncResponseWrapper;
-import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -40,6 +39,7 @@ import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
 import org.spf4j.concurrent.DefaultExecutor;
+import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
 import org.spf4j.log.AvroDataFileAppender;
@@ -74,10 +74,14 @@ public class LogsResource {
 
   private final Spf4JClient httpClient;
 
+  private final String hostName;
+
   @Inject
-  public LogsResource(final Cluster cluster, final Spf4JClient httpClient) {
+  public LogsResource(@ConfigProperty("hostName") @DefaultValue("hostName") final String hostName,
+          final Cluster cluster, final Spf4JClient httpClient) {
     this.cluster = cluster;
     this.httpClient = httpClient;
+    this.hostName = "hostName".equals(hostName) ? cluster.getLocalHostName() : hostName;
   }
 
   @Path("local")
@@ -106,9 +110,6 @@ public class LogsResource {
     if (fa == null) {
       throw new NotFoundException("Resource not available: " + appenderName);
     }
-    ClusterInfo clusterInfo = cluster.getClusterInfo();
-    String hostName = Sets.intersection(clusterInfo.getLocalAddresses(), clusterInfo.getAddresses())
-            .iterator().next().getHostName();
     List<LogRecord> result;
     if (filter != null) {
       try {
