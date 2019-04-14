@@ -74,7 +74,7 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
 
   @Nonnull
   @SuppressFBWarnings("AI_ANNOTATION_ISSUES_NEEDS_NULLABLE")
-  private static Schema stripNonSerializationAttrs(final Schema schema) {
+  public static Schema stripNonSerializationAttrs(final Schema schema) {
     return Schemas.visit(schema, new CloningVisitor(SchemaUtils.FIELD_ESENTIALS,
             DefaultSchemaProtocol::copyLogicalTypeAndAliasses, false, schema));
   }
@@ -87,6 +87,10 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
     SchemaUtils.copyAliases(from, to);
     if (from.getType() == Schema.Type.ENUM) {
       SchemaUtils.copyProperties(from, to);
+    }
+    String id = from.getProp("mvnId");
+    if (id != null) {
+      to.addProp("mvnId", id);
     }
   }
 
