@@ -16,6 +16,8 @@
 package org.spf4j.jaxrs.common.providers.avro;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.filter.FilteringGeneratorDelegate;
+import com.fasterxml.jackson.core.filter.TokenFilter;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -64,6 +66,7 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
     try {
       StringWriter sw = new StringWriter();
       JsonGenerator jgen = Json.FACTORY.createGenerator(sw);
+      jgen = new FilteringGeneratorDelegate(jgen, DocPropertyFilter.INSTANCE, true, true);
       schema.toJson(new AvroNamesRefResolver(client), jgen);
       jgen.flush();
       headers.accept(Headers.CONTENT_SCHEMA, sw.toString());
@@ -97,6 +100,21 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
   @Override
   public String toString() {
     return "DefaultSchemaProtocol{" + "client=" + client + '}';
+  }
+
+  private static class DocPropertyFilter extends TokenFilter {
+
+    private static final DocPropertyFilter INSTANCE = new DocPropertyFilter();
+
+    @Override
+    @Nullable
+    public TokenFilter includeProperty(final String name) {
+      if ("doc".equals(name)) {
+        return null;
+      } else {
+        return TokenFilter.INCLUDE_ALL;
+      }
+    }
   }
 
 
