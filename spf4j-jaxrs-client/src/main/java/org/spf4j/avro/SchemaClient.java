@@ -54,6 +54,7 @@ import org.spf4j.failsafe.concurrent.DefaultFailSafeExecutor;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.io.Streams;
 import org.spf4j.jaxrs.Utils;
+import org.spf4j.jaxrs.client.ClientBuilderUtil;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
@@ -91,24 +92,7 @@ public final class SchemaClient implements SchemaResolver {
 
   public SchemaClient(final URI remoteMavenRepo, final Path localMavenRepo,
           final String schemaArtifactClassifier, final String schemaArtifactExtension) {
-    this(remoteMavenRepo, localMavenRepo, schemaArtifactClassifier, schemaArtifactExtension,
-            new Spf4JClient(ClientBuilder
-                    .newBuilder()
-                    .connectTimeout(2, TimeUnit.SECONDS)
-                    .readTimeout(30, TimeUnit.SECONDS)
-                    .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE,
-                    Boolean.parseBoolean(System.getProperty("spf4j.http.client.hideAuthorizationWhenLogging", "true"))))
-                    .register(ClientCustomExecutorServiceProvider.class)
-                    .register(ClientCustomScheduledExecutionServiceProvider.class)
-                    .property(ClientProperties.USE_ENCODING, "gzip")
-                    .build(),
-                    Utils.createHttpRetryPolicy((WebApplicationException ex, Callable<? extends Object> c) -> {
-                      Response response = ex.getResponse();
-                      if (404 == response.getStatus()) {
-                        return RetryDecision.retryDefault(c);
-                      }
-                      return null;
-                    }, 10), HedgePolicy.NONE, DefaultFailSafeExecutor.instance()));
+    this(remoteMavenRepo, localMavenRepo, schemaArtifactClassifier, schemaArtifactExtension, createDefaultClient());
   }
 
   public SchemaClient(final URI remoteMavenRepo, final Path localMavenRepo,
@@ -137,6 +121,28 @@ public final class SchemaClient implements SchemaResolver {
       }
     });
   }
+
+  public static Spf4JClient createDefaultClient() {
+    ClientBuilder builder = ClientBuilder
+            .newBuilder();
+    ClientBuilderUtil.setConnectTimeout(builder, 2, TimeUnit.SECONDS);
+    ClientBuilderUtil.setReadTimeout(builder, 30, TimeUnit.SECONDS);
+    return new Spf4JClient(builder
+            .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE,
+                    Boolean.parseBoolean(System.getProperty("spf4j.http.client.hideAuthorizationWhenLogging", "true"))))
+            .register(ClientCustomExecutorServiceProvider.class)
+            .register(ClientCustomScheduledExecutionServiceProvider.class)
+            .property(ClientProperties.USE_ENCODING, "gzip")
+            .build(),
+            Utils.createHttpRetryPolicy((WebApplicationException ex, Callable<? extends Object> c) -> {
+              Response response = ex.getResponse();
+              if (404 == response.getStatus()) {
+                return RetryDecision.retryDefault(c);
+              }
+              return null;
+            }, 10), HedgePolicy.NONE, DefaultFailSafeExecutor.instance());
+  }
+
 
   @Override
   @SuppressFBWarnings("LEST_LOST_EXCEPTION_STACK_TRACE") // I am fine withit for now.
