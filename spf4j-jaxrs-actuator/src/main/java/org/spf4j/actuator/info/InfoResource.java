@@ -1,13 +1,18 @@
 package org.spf4j.actuator.info;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -16,6 +21,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import org.glassfish.hk2.api.Immediate;
+import org.slf4j.LoggerFactory;
+import org.spf4j.base.PackageInfo;
+import org.spf4j.base.Reflections;
 import org.spf4j.base.avro.ApplicationInfo;
 import org.spf4j.base.avro.NetworkService;
 import org.spf4j.base.avro.ProcessInfo;
@@ -24,6 +32,7 @@ import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
 import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.jaxrs.client.Spf4JClient;
+import org.spf4j.log.ExecContextLogger;
 
 /**
  *
@@ -35,6 +44,9 @@ import org.spf4j.jaxrs.client.Spf4JClient;
 @Immediate
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 public class InfoResource {
+
+  private static final org.slf4j.Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(InfoResource.class));
+
 
   private final Cluster cluster;
 
@@ -65,15 +77,39 @@ public class InfoResource {
   }
 
   private ProcessInfo getProcessInfo(final ClusterInfo clusterInfo) {
-    return ProcessInfo.newBuilder()
+    ProcessInfo.Builder builder = ProcessInfo.newBuilder()
             .setAppVersion(org.spf4j.base.Runtime.getAppVersionString())
             .setHostName(hostName)
             .setInstanceId(org.spf4j.base.Runtime.PROCESS_ID)
             .setName(org.spf4j.base.Runtime.PROCESS_NAME)
             .setJreVersion(org.spf4j.base.Runtime.JAVA_VERSION)
             .setNetworkServices(new ArrayList<>(clusterInfo.getServices()))
-            .setProcessId(org.spf4j.base.Runtime.PID)
-            .build();
+            .setProcessId(org.spf4j.base.Runtime.PID);
+    URL jarSourceUrl = PackageInfo.getJarSourceUrl(org.spf4j.base.Runtime.getMainClass());
+    if (jarSourceUrl != null) {
+      Manifest manifest;
+      try {
+        manifest = Reflections.getManifest(jarSourceUrl);
+        Attributes mainAttributes = manifest.getMainAttributes();
+        //        <Implementation-Build>${buildNumber}</Implementation-Build>
+        //        <Build-Time>${maven.build.timestamp}</Build-Time>
+        String buildId = mainAttributes.getValue("Implementation-Build");
+        if (buildId != null) {
+          builder.setBuildId(buildId);
+        }
+        String ts = mainAttributes.getValue("Build-Time");
+        if (ts != null) {
+          try {
+            builder.setBuildTimeStamp(Instant.parse(ts));
+          } catch (RuntimeException ex) {
+           LOG.warn("cannot parse build time {}", ts, ex);
+          }
+        }
+      } catch (IOException ex) {
+        LOG.warn("cannot read manifest for {}", jarSourceUrl, ex);
+      }
+    }
+    return builder.build();
   }
 
   @Path("cluster")
