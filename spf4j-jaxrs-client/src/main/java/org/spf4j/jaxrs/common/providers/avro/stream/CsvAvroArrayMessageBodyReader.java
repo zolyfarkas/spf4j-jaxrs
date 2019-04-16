@@ -60,6 +60,7 @@ public final class CsvAvroArrayMessageBodyReader extends AvroArrayMessageBodyRea
     return new CsvDecoder(reader, writerSchema);
   }
 
+  @Override
   public  InputStream wrapInputStream(final InputStream pentityStream) {
     return new MemorizingBufferedInputStream(pentityStream, StandardCharsets.UTF_8);
   }

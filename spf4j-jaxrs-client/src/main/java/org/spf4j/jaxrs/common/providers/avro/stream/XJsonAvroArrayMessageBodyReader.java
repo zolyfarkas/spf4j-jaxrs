@@ -42,6 +42,7 @@ public final class XJsonAvroArrayMessageBodyReader extends AvroArrayMessageBodyR
     return new ExtendedJsonDecoder(writerSchema, is);
   }
 
+  @Override
   public  InputStream wrapInputStream(final InputStream pentityStream) {
     return new MemorizingBufferedInputStream(pentityStream, StandardCharsets.UTF_8);
   }

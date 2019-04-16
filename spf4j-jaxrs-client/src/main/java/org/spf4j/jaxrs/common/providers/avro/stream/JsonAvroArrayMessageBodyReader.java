@@ -42,6 +42,7 @@ public final class JsonAvroArrayMessageBodyReader extends AvroArrayMessageBodyRe
     return DecoderFactory.get().jsonDecoder(writerSchema, is);
   }
 
+  @Override
   public  InputStream wrapInputStream(final InputStream pentityStream) {
     return new MemorizingBufferedInputStream(pentityStream, StandardCharsets.UTF_8);
   }
