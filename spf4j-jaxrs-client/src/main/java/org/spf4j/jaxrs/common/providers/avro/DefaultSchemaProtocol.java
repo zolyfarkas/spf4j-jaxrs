@@ -66,7 +66,7 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
     try {
       StringWriter sw = new StringWriter();
       JsonGenerator jgen = Json.FACTORY.createGenerator(sw);
-      jgen = new FilteringGeneratorDelegate(jgen, DocPropertyFilter.INSTANCE, true, true);
+      jgen = new FilteringGeneratorDelegate(jgen, NonSerPropertyFilter.INSTANCE, true, true);
       schema.toJson(new AvroNamesRefResolver(client), jgen);
       jgen.flush();
       headers.accept(Headers.CONTENT_SCHEMA, sw.toString());
@@ -102,17 +102,20 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
     return "DefaultSchemaProtocol{" + "client=" + client + '}';
   }
 
-  private static class DocPropertyFilter extends TokenFilter {
+  private static class NonSerPropertyFilter extends TokenFilter {
 
-    private static final DocPropertyFilter INSTANCE = new DocPropertyFilter();
+    private static final NonSerPropertyFilter INSTANCE = new NonSerPropertyFilter();
 
     @Override
     @Nullable
     public TokenFilter includeProperty(final String name) {
-      if ("doc".equals(name)) {
-        return null;
-      } else {
-        return TokenFilter.INCLUDE_ALL;
+      switch (name) {
+        case "doc":
+          return null;
+        case "java-class":
+          return null;
+        default:
+          return TokenFilter.INCLUDE_ALL;
       }
     }
   }
