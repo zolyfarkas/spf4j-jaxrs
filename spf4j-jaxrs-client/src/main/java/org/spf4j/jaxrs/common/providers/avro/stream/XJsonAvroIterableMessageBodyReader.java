@@ -15,13 +15,14 @@
  */
 package org.spf4j.jaxrs.common.providers.avro.stream;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
 import org.apache.avro.io.Decoder;
-import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.io.ExtendedJsonDecoder;
 import org.spf4j.io.MemorizingBufferedInputStream;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 
@@ -29,18 +30,19 @@ import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
  * @author Zoltan Farkas
  */
 @Provider
-@Consumes({"application/octet-stream;fmt=avro", "application/avro"})
-public final class BinaryAvroArrayMessageBodyReader extends AvroArrayMessageBodyReader {
+@Consumes({"application/json;fmt=avro-x", "application/avro-x+json", "text/plain;fmt=avro-x"})
+public final class XJsonAvroIterableMessageBodyReader extends AvroIterableMessageBodyReader {
 
-  public BinaryAvroArrayMessageBodyReader(final SchemaProtocol protocol) {
+  public XJsonAvroIterableMessageBodyReader(final SchemaProtocol protocol) {
     super(protocol);
   }
 
   @Override
-  public Decoder getDecoder(final Schema writerSchema, final InputStream is)  {
-    return DecoderFactory.get().binaryDecoder(is, null);
+  public Decoder getDecoder(final Schema writerSchema, final InputStream is) throws IOException {
+    return new ExtendedJsonDecoder(writerSchema, is);
   }
 
+  @Override
   public  InputStream wrapInputStream(final InputStream pentityStream) {
     return new MemorizingBufferedInputStream(pentityStream, StandardCharsets.UTF_8);
   }

@@ -22,7 +22,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
 import org.apache.avro.io.Decoder;
-import org.apache.avro.io.ExtendedJsonDecoder;
+import org.apache.avro.io.DecoderFactory;
 import org.spf4j.io.MemorizingBufferedInputStream;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 
@@ -30,16 +30,16 @@ import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
  * @author Zoltan Farkas
  */
 @Provider
-@Consumes({"application/json;fmt=avro-x", "application/avro-x+json", "text/plain;fmt=avro-x"})
-public final class XJsonAvroArrayMessageBodyReader extends AvroArrayMessageBodyReader {
+@Consumes({"application/avro+json"})
+public final class JsonAvroIterableMessageBodyReader extends AvroIterableMessageBodyReader {
 
-  public XJsonAvroArrayMessageBodyReader(final SchemaProtocol protocol) {
+  public JsonAvroIterableMessageBodyReader(final SchemaProtocol protocol) {
     super(protocol);
   }
 
   @Override
   public Decoder getDecoder(final Schema writerSchema, final InputStream is) throws IOException {
-    return new ExtendedJsonDecoder(writerSchema, is);
+    return DecoderFactory.get().jsonDecoder(writerSchema, is);
   }
 
   @Override

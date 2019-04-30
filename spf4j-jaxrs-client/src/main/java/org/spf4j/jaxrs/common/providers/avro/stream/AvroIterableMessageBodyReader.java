@@ -18,18 +18,19 @@ import org.apache.avro.reflect.ExtendedReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
 import org.spf4j.avro.ArrayIterator;
 import org.spf4j.avro.DecodedSchema;
+import org.spf4j.avro.MapIterator;
 import org.spf4j.io.MemorizingBufferedInputStream;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 
 /**
  * @author Zoltan Farkas
  */
-public abstract class AvroArrayMessageBodyReader implements MessageBodyReader<Iterable> {
+public abstract class AvroIterableMessageBodyReader implements MessageBodyReader<Iterable> {
 
   private final SchemaProtocol protocol;
 
   @Inject
-  public AvroArrayMessageBodyReader(final SchemaProtocol protocol) {
+  public AvroIterableMessageBodyReader(final SchemaProtocol protocol) {
     this.protocol = protocol;
   }
 
@@ -89,22 +90,29 @@ public abstract class AvroArrayMessageBodyReader implements MessageBodyReader<It
     } else {
       readerSchema = writerSchema;
     }
-    DatumReader reader = new ReflectDatumReader(writerSchema.getElementType(), readerSchema.getElementType());
     if (decoder == null) {
       decoder = getDecoder(writerSchema, entityStream);
     }
-    return new CloseableIterableImpl(pentityStream, decoder, reader);
+    if (readerSchema.getType() == Schema.Type.ARRAY) {
+      DatumReader reader = new ReflectDatumReader(writerSchema.getElementType(), readerSchema.getElementType());
+      return new IterableAdaptor(pentityStream, new ArrayIterator(decoder, reader));
+    } else if (readerSchema.getType() == Schema.Type.MAP) {
+      DatumReader reader = new ReflectDatumReader(writerSchema.getValueType(), readerSchema.getValueType());
+      return new IterableAdaptor(pentityStream, new MapIterator(decoder, reader));
+    } else {
+      throw new IllegalStateException("invalid reader schema " + readerSchema + " for " + genericType);
+    }
   }
 
 
-  private static class CloseableIterableImpl implements CloseableIterable {
+  private static class IterableAdaptor implements CloseableIterable {
 
     private final InputStream pentityStream;
     private final Iterator iterator;
 
-    CloseableIterableImpl(final InputStream pentityStream, final Decoder decoder, final DatumReader reader) {
+    IterableAdaptor(final InputStream pentityStream, final Iterator iterator) {
       this.pentityStream = pentityStream;
-      this.iterator = new ArrayIterator(decoder, reader);
+      this.iterator = iterator;
     }
 
     @Override
