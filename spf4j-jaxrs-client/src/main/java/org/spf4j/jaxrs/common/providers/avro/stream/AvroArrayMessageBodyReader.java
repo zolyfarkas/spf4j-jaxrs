@@ -1,12 +1,11 @@
 package org.spf4j.jaxrs.common.providers.avro.stream;
 
+import org.spf4j.jaxrs.CloseableIterable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
@@ -17,6 +16,7 @@ import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.reflect.ExtendedReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
+import org.spf4j.avro.ArrayIterator;
 import org.spf4j.avro.DecodedSchema;
 import org.spf4j.io.MemorizingBufferedInputStream;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
@@ -96,51 +96,6 @@ public abstract class AvroArrayMessageBodyReader implements MessageBodyReader<It
     return new CloseableIterableImpl(pentityStream, decoder, reader);
   }
 
-
-  private static class ArrayIterator implements Iterator {
-
-    private final Decoder decoder;
-    private final DatumReader reader;
-    private long l;
-
-    ArrayIterator(final Decoder decoder, final DatumReader reader) {
-      this.decoder = decoder;
-      this.reader = reader;
-      try {
-        l = decoder.readArrayStart();
-      } catch (IOException ex) {
-        throw new UncheckedIOException(ex);
-      }
-    }
-
-    @Override
-    public boolean hasNext() {
-      return l > 0;
-    }
-
-    @Override
-    public Object next() {
-      try {
-        if (l <= 0) {
-          throw new NoSuchElementException();
-        }
-        Object read = reader.read(null, decoder);
-        l--;
-        if (l <= 0) {
-          l = decoder.arrayNext();
-        }
-        return read;
-      } catch (IOException ex) {
-        throw new UncheckedIOException(ex);
-      }
-    }
-
-    @Override
-    public String toString() {
-      return "ArrayIterator{" + "decoder=" + decoder + ", reader=" + reader + ", l=" + l + '}';
-    }
-
-  }
 
   private static class CloseableIterableImpl implements CloseableIterable {
 
