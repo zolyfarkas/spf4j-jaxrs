@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -42,6 +43,7 @@ import org.spf4j.log.ExecContextLogger;
 @Produces(value = {"application/avro-x+json", "application/json",
   "application/avro+json", "application/avro", "application/octet-stream"})
 @Immediate
+@RolesAllowed("operator")
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 public class InfoResource {
 

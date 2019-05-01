@@ -18,6 +18,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.DefaultValue;
@@ -54,6 +55,7 @@ import org.spf4j.zel.vm.Program;
  */
 @Path("logs")
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
+@RolesAllowed("operator")
 public class LogsResource {
 
   private static final Comparator<LogRecord> L_COMP = new Comparator<LogRecord>() {
