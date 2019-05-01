@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.jaxrs;
+package org.spf4j.base;
 
-import java.io.IOException;
-import org.spf4j.jaxrs.server.ContentWriter;
+import java.io.Flushable;
+import java.util.function.BiConsumer;
 
 /**
- * Streaming Output, that will stream back an array.
+ * @author Zoltan Farkas
  */
-public interface StreamingOutput<T> {
- void write(ContentWriter<T> output) throws IOException;
+public interface MapWriter<T> extends Flushable, BiConsumer<String, T> {
+
 }

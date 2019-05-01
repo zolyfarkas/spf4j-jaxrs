@@ -31,9 +31,9 @@ public final class ArrayIterator<T> implements Iterator<T> {
   private final DatumReader<T> reader;
   private long l;
 
-  public ArrayIterator(final Decoder decoder, final DatumReader<T> reader) {
+  public ArrayIterator(final Decoder decoder, final DatumReader<T> elementReader) {
     this.decoder = decoder;
-    this.reader = reader;
+    this.reader = elementReader;
     try {
       l = decoder.readArrayStart();
     } catch (IOException ex) {

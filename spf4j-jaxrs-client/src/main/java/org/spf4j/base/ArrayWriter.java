@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.jaxrs.server;
+package org.spf4j.jaxrs;
 
-import java.io.IOException;
+import java.io.Closeable;
+import java.io.Flushable;
+import java.util.function.Consumer;
 
 /**
  * @author Zoltan Farkas
  */
-public interface ContentWriter<T> {
-
-  void write(T obj) throws IOException;
-
-  void flush() throws IOException;
+public interface ArrayWriter<T> extends Flushable, Closeable, Consumer<T> {
 
 }

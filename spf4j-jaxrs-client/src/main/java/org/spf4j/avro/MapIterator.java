@@ -33,9 +33,9 @@ public final class MapIterator<T> implements Iterator<Map.Entry<String, T>> {
   private final DatumReader<T> reader;
   private long l;
 
-  public MapIterator(final Decoder decoder, final DatumReader<T> reader) {
+  public MapIterator(final Decoder decoder, final DatumReader<T> valueReader) {
     this.decoder = decoder;
-    this.reader = reader;
+    this.reader = valueReader;
     try {
       l = decoder.readMapStart();
     } catch (IOException ex) {
