@@ -20,6 +20,7 @@ import org.spf4j.avro.ArrayIterator;
 import org.spf4j.avro.DecodedSchema;
 import org.spf4j.avro.MapIterator;
 import org.spf4j.io.MemorizingBufferedInputStream;
+import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 
 /**
@@ -73,7 +74,8 @@ public abstract class AvroIterableMessageBodyReader implements MessageBodyReader
           final InputStream pentityStream)
           throws IOException {
     Schema writerSchema = protocol.deserialize(httpHeaders::getFirst, (Class) type, genericType);
-    Schema readerSchema = ExtendedReflectData.get().getSchema(genericType != null ? genericType : type);
+    Type effectiveType = MessageBodyRWUtils.effectiveType(type, genericType);
+    Schema readerSchema = ExtendedReflectData.get().getSchema(effectiveType);
     Decoder decoder = null;
     InputStream entityStream = wrapInputStream(pentityStream);
     if (writerSchema == null) {

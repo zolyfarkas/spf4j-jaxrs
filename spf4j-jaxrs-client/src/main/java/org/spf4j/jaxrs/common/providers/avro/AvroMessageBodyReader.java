@@ -74,7 +74,8 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
           final InputStream pentityStream)
           throws IOException {
     Schema writerSchema = protocol.deserialize(httpHeaders::getFirst, type, genericType);
-    Schema readerSchema = ExtendedReflectData.get().getSchema(genericType != null ? genericType : type);
+    Type effectiveType = MessageBodyRWUtils.effectiveType(type, genericType);
+    Schema readerSchema = ExtendedReflectData.get().getSchema(effectiveType);
     InputStream entityStream = wrapInputStream(pentityStream);
     Decoder decoder = null;
     if (writerSchema == null) {

@@ -56,9 +56,10 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
           final OutputStream entityStream)
           throws IOException {
     ExtendedReflectData reflector = ExtendedReflectData.get();
-    Schema schema = reflector.getSchema(genericType != null ? genericType : type);
+    Type effectiveType = MessageBodyRWUtils.effectiveType(type, genericType);
+    Schema schema = reflector.getSchema(effectiveType);
     if (schema == null) {
-      schema = reflector.createSchema(genericType != null ? genericType : type, t, new HashMap<>());
+      schema = reflector.createSchema(effectiveType, t, new HashMap<>());
     }
     protocol.serialize(httpHeaders::add, schema);
     try {
