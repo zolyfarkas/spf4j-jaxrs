@@ -15,6 +15,7 @@
  */
 package org.spf4j.actuator.jmx;
 
+import com.google.common.annotations.Beta;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -22,13 +23,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.annotation.security.RolesAllowed;
+import javax.management.Attribute;
 import javax.management.AttributeNotFoundException;
 import javax.management.Descriptor;
 import javax.management.InstanceNotFoundException;
 import javax.management.IntrospectionException;
+import javax.management.InvalidAttributeValueException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
@@ -39,13 +40,17 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
+import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import org.glassfish.hk2.api.Immediate;
 import org.spf4j.base.avro.jmx.OperationImpact;
+import org.spf4j.base.avro.jmx.OperationInvocation;
 import org.spf4j.jaxrs.ArrayWriter;
 import org.spf4j.jaxrs.StreamingArrayOutput;
 
@@ -57,6 +62,7 @@ import org.spf4j.jaxrs.StreamingArrayOutput;
 @Immediate
 @RolesAllowed("operator")
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
+@Beta
 public class JmxResource {
 
   @GET
@@ -115,7 +121,24 @@ public class JmxResource {
     try {
       return srv.getAttribute(mname, attrName);
     } catch (AttributeNotFoundException | InstanceNotFoundException ex) {
-      throw new NotFoundException("Atttr not found: " + attrName + " for " + mbeanName);
+      throw new NotFoundException("Atttr not found: " + attrName + " for " + mbeanName, ex);
+    }
+  }
+
+  @POST
+  @Path("/{mbeanName}/attributes/{attrName}")
+  @Produces({"application/json", "application/avro"})
+  public void setMBeanAttribute(@PathParam("mbeanName") final String mbeanName,
+          @PathParam("attrName") final String attrName,
+          final Object value) throws MBeanException, ReflectionException, IOException {
+    MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
+    ObjectName mname = getJmxObjName(mbeanName);
+    try {
+      srv.setAttribute(mname, new Attribute(attrName, value));
+    } catch (AttributeNotFoundException | InstanceNotFoundException ex) {
+      throw new NotFoundException("Atttr not found: " + attrName + " for " + mbeanName, ex);
+    } catch (InvalidAttributeValueException ex) {
+      throw new ClientErrorException("Invalid value for " + mbeanName + ':' + attrName + value, 400, ex);
     }
   }
 
@@ -142,6 +165,26 @@ public class JmxResource {
       }
     };
   }
+
+  @POST
+  @Path("/{mbeanName}/operations")
+  @Produces({"application/json", "application/avro"})
+  @Consumes({"application/json", "application/avro"})
+  public Object invoke(
+          @PathParam("mbeanName") final String mbeanName, final OperationInvocation invocation)
+          throws MBeanException, ReflectionException, IOException {
+    MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
+    ObjectName mname = getJmxObjName(mbeanName);
+    List<Object> parameters = invocation.getParameters();
+    List<String> sign = invocation.getSignature();
+    try {
+      return srv.invoke(mname, invocation.getName(),
+              parameters.toArray(new Object[parameters.size()]), sign.toArray(new String[sign.size()]));
+    } catch (InstanceNotFoundException ex) {
+      throw new NotFoundException("bean not found " + mbeanName, ex);
+    }
+  }
+
 
   private static Map<String, Object> toDescriptorMap(final Descriptor descriptor) {
     String[] fields = descriptor.getFields();
