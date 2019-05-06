@@ -42,15 +42,14 @@ public final class AvroArrayWriter<T> implements ArrayWriter<T> {
 
   private boolean isClosed;
 
-  public AvroArrayWriter(final Encoder encoder, final DatumWriter<T> writer, final Class<T> type, final int bufferSize)
-          throws IOException {
+  public AvroArrayWriter(final Encoder encoder, final DatumWriter<T> elementWriter,
+          final Class<T> type, final int bufferSize) {
     if (bufferSize < 1) {
       throw new IllegalArgumentException("Invalid buffer size " + bufferSize);
     }
     this.encoder = encoder;
-    this.writer = writer;
+    this.writer = elementWriter;
     buffer = (T[]) java.lang.reflect.Array.newInstance(type, bufferSize);
-    encoder.writeArrayStart();
     this.at = 0;
     this.start = true;
     this.isClosed = false;
