@@ -23,15 +23,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.ServiceIntegrationBase;
 import static org.spf4j.actuator.ServiceIntegrationBase.getTarget;
+import org.spf4j.base.avro.jmx.MBeanAttributeInfo;
+import org.spf4j.base.avro.jmx.MBeanOperationInfo;
 
 /**
  *
  * @author Zoltan Farkas
  */
-public class ResourceBuilderTest extends ServiceIntegrationBase {
+public class JMXResourceTest extends ServiceIntegrationBase {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ResourceBuilderTest.class);
-
+  private static final Logger LOG = LoggerFactory.getLogger(JMXResourceTest.class);
 
   @Test
   public void testJmxEndpoint() {
@@ -41,6 +42,14 @@ public class ResourceBuilderTest extends ServiceIntegrationBase {
     List<String> memory = getTarget().path("jmx/{mbean}").resolveTemplate("mbean", "java.lang:type=Memory")
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
     LOG.debug("Jmx memory Mbean resource ", memory);
+    List<MBeanAttributeInfo> attrs = getTarget().path("jmx/{mbean}/attributes")
+            .resolveTemplate("mbean", "java.lang:type=Memory")
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<MBeanAttributeInfo>>() { });
+    LOG.debug("Jmx memory Mbean attributes ", attrs);
+    List<MBeanOperationInfo> ops = getTarget().path("jmx/{mbean}/operations")
+            .resolveTemplate("mbean", "java.lang:type=Memory")
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<MBeanOperationInfo>>() { });
+    LOG.debug("Jmx memory Mbean attributes ", ops);
   }
 
 

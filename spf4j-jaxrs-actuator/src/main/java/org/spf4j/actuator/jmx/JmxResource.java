@@ -15,18 +15,22 @@
  */
 package org.spf4j.actuator.jmx;
 
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.annotation.security.RolesAllowed;
+import javax.management.Descriptor;
 import javax.management.InstanceNotFoundException;
 import javax.management.IntrospectionException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
-import javax.management.MBeanServer;
+import javax.management.MBeanParameterInfo;
+import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
@@ -36,9 +40,10 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.PathSegment;
-import javax.ws.rs.core.Response;
 import org.glassfish.hk2.api.Immediate;
+import org.spf4j.base.avro.jmx.OperationImpact;
+import org.spf4j.jaxrs.ArrayWriter;
+import org.spf4j.jaxrs.StreamingArrayOutput;
 
 /**
  *
@@ -53,73 +58,113 @@ public class JmxResource {
   @GET
   @Path("")
   @Produces({"application/json", "application/avro"})
-  public List<String> getMbeans() {
-    MBeanServer srv = ManagementFactory.getPlatformMBeanServer();
+  public StreamingArrayOutput<String> getMBeans() {
+    MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
     Set<ObjectInstance> beans;
     try {
       beans = srv.queryMBeans(new ObjectName("*:*"), null);
-    } catch (MalformedObjectNameException ex) {
+    } catch (MalformedObjectNameException | IOException ex) {
       throw new RuntimeException(ex);
     }
-    List<String> res = new ArrayList<>(beans.size());
-    for (ObjectInstance bean : beans) {
-      res.add(bean.getObjectName().getCanonicalName());
-    }
-    return res;
+    return new StreamingArrayOutput<String>() {
+      @Override
+      public void write(final ArrayWriter<String> output) throws IOException {
+        for (ObjectInstance bean : beans) {
+          output.accept(bean.getObjectName().getCanonicalName());
+        }
+      }
+    };
   }
 
   @GET
-  @Path("/{path:.*}")
+  @Path("/{mbeanName}")
   @Produces({"application/json", "application/avro"})
-  public Response get(@PathParam("path") final List<PathSegment> path) {
-    MBeanServer srv = ManagementFactory.getPlatformMBeanServer();
-    PathSegment mbeanName = path.get(0);
+  public String[] get(@PathParam("mbeanName") final String mbeanName) {
+    return new String[]{"attributes", "operations"};
+  }
+
+  @GET
+  @Path("/{mbeanName}/attributes")
+  @Produces({"application/json", "application/avro"})
+  public StreamingArrayOutput<org.spf4j.base.avro.jmx.MBeanAttributeInfo> getMBeanAttributes(
+          @PathParam("mbeanName") final String mbeanName) {
+    MBeanAttributeInfo[] attrs = getMBeanInfo(mbeanName).getAttributes();
+    return new StreamingArrayOutput<org.spf4j.base.avro.jmx.MBeanAttributeInfo>() {
+      @Override
+      public void write(final ArrayWriter<org.spf4j.base.avro.jmx.MBeanAttributeInfo> output) throws IOException {
+        for (MBeanAttributeInfo attr : attrs) {
+          Map<String, Object> descriptorMap = toDescriptorMap(attr.getDescriptor());
+          output.accept(new org.spf4j.base.avro.jmx.MBeanAttributeInfo(attr.getName(), attr.getType(),
+                  attr.getDescription(), attr.isReadable(), attr.isWritable(), attr.isIs(), descriptorMap));
+        }
+      }
+    };
+  }
+
+  @GET
+  @Path("/{mbeanName}/operations")
+  @Produces({"application/json", "application/avro"})
+  public StreamingArrayOutput<org.spf4j.base.avro.jmx.MBeanOperationInfo> getMBeanOperations(
+          @PathParam("mbeanName") final String mbeanName) {
+    MBeanOperationInfo[] operations = getMBeanInfo(mbeanName).getOperations();
+    return new StreamingArrayOutput<org.spf4j.base.avro.jmx.MBeanOperationInfo>() {
+      @Override
+      public void write(final ArrayWriter<org.spf4j.base.avro.jmx.MBeanOperationInfo> output) throws IOException {
+        for (MBeanOperationInfo op : operations) {
+          Map<String, Object> descriptorMap = toDescriptorMap(op.getDescriptor());
+          MBeanParameterInfo[] signature = op.getSignature();
+          List<org.spf4j.base.avro.jmx.MBeanParameterInfo> params = new ArrayList<>(signature.length);
+          for (MBeanParameterInfo pi : signature) {
+            params.add(new org.spf4j.base.avro.jmx.MBeanParameterInfo(pi.getName(),
+                    pi.getType(), pi.getDescription(), toDescriptorMap(pi.getDescriptor())));
+          }
+          output.accept(new org.spf4j.base.avro.jmx.MBeanOperationInfo(op.getName(), params,
+                  op.getReturnType(), op.getDescription(), toImpact(op.getImpact()), descriptorMap));
+        }
+      }
+    };
+  }
+
+  private static Map<String, Object> toDescriptorMap(final Descriptor descriptor) {
+    String[] fields = descriptor.getFields();
+    Object[] fieldValues = descriptor.getFieldValues(fields);
+    Map<String, Object> descriptorMap = new HashMap<>(fields.length);
+    for (int j = 0; j < fields.length; j++) {
+      descriptorMap.put(fields[j], fieldValues[j]);
+    }
+    return descriptorMap;
+  }
+
+  private static OperationImpact toImpact(final int impactId) {
+    switch (impactId) {
+      case MBeanOperationInfo.ACTION:
+        return OperationImpact.ACTION;
+      case MBeanOperationInfo.ACTION_INFO:
+        return OperationImpact.ACTION_INFO;
+      case MBeanOperationInfo.INFO:
+        return OperationImpact.INFO;
+      default:
+        return OperationImpact.UNKNOWN;
+    }
+  }
+
+  private MBeanInfo getMBeanInfo(final String mbeanName) throws NotFoundException, RuntimeException {
+    MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
     ObjectName mname;
     try {
-      mname = new ObjectName(mbeanName.getPath());
+      mname = new ObjectName(mbeanName);
     } catch (MalformedObjectNameException ex) {
       throw new NotFoundException("Mbean not found " + mbeanName, ex);
     }
     MBeanInfo mBeanInfo;
     try {
       mBeanInfo = srv.getMBeanInfo(mname);
-    } catch (IntrospectionException | ReflectionException ex) {
+    } catch (IntrospectionException | ReflectionException | IOException ex) {
       throw new RuntimeException(ex);
     } catch (InstanceNotFoundException ex) {
       throw new NotFoundException("Mbean not found " + mbeanName, ex);
     }
-    if (path.size() == 1) {
-      return Response.ok(Arrays.asList("attributes", "operations")).build();
-    } else {
-      PathSegment attOrOp = path.get(1);
-      switch (attOrOp.getPath()) {
-        case "attributes":
-          if (path.size() == 2) {
-            MBeanAttributeInfo[] attributes = mBeanInfo.getAttributes();
-            List<String> res = new ArrayList<>(attributes.length);
-            for (MBeanAttributeInfo attr : attributes) {
-              res.add(attr.getName());
-            }
-            return Response.ok(res).build();
-          } else {
-            throw new UnsupportedOperationException();
-          }
-        case "operations":
-          if (path.size() == 2) {
-            MBeanOperationInfo[] operations = mBeanInfo.getOperations();
-            List<String> res = new ArrayList<>(operations.length);
-            for (MBeanOperationInfo op : operations) {
-              res.add(op.getName());
-            }
-            return Response.ok(res).build();
-          } else {
-            throw new UnsupportedOperationException();
-          }
-        default:
-          throw new NotFoundException("Bean subresource not found " + attOrOp.getPath());
-      }
-    }
-
+    return mBeanInfo;
   }
 
 }
