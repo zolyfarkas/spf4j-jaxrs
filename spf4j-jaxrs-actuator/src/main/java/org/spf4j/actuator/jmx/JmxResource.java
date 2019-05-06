@@ -22,11 +22,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.annotation.security.RolesAllowed;
+import javax.management.AttributeNotFoundException;
 import javax.management.Descriptor;
 import javax.management.InstanceNotFoundException;
 import javax.management.IntrospectionException;
 import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
@@ -102,6 +106,20 @@ public class JmxResource {
   }
 
   @GET
+  @Path("/{mbeanName}/attributes/{attrName}")
+  @Produces({"application/json", "application/avro"})
+  public Object getMBeanAttribute(@PathParam("mbeanName") final String mbeanName,
+          @PathParam("attrName") final String attrName) throws MBeanException, ReflectionException, IOException {
+    MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
+    ObjectName mname = getJmxObjName(mbeanName);
+    try {
+      return srv.getAttribute(mname, attrName);
+    } catch (AttributeNotFoundException | InstanceNotFoundException ex) {
+      throw new NotFoundException("Atttr not found: " + attrName + " for " + mbeanName);
+    }
+  }
+
+  @GET
   @Path("/{mbeanName}/operations")
   @Produces({"application/json", "application/avro"})
   public StreamingArrayOutput<org.spf4j.base.avro.jmx.MBeanOperationInfo> getMBeanOperations(
@@ -150,12 +168,7 @@ public class JmxResource {
 
   private MBeanInfo getMBeanInfo(final String mbeanName) throws NotFoundException, RuntimeException {
     MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
-    ObjectName mname;
-    try {
-      mname = new ObjectName(mbeanName);
-    } catch (MalformedObjectNameException ex) {
-      throw new NotFoundException("Mbean not found " + mbeanName, ex);
-    }
+    ObjectName mname = getJmxObjName(mbeanName);
     MBeanInfo mBeanInfo;
     try {
       mBeanInfo = srv.getMBeanInfo(mname);
@@ -165,6 +178,16 @@ public class JmxResource {
       throw new NotFoundException("Mbean not found " + mbeanName, ex);
     }
     return mBeanInfo;
+  }
+
+  private static ObjectName getJmxObjName(final String mbeanName) throws NotFoundException {
+    ObjectName mname;
+    try {
+      mname = new ObjectName(mbeanName);
+    } catch (MalformedObjectNameException ex) {
+      throw new NotFoundException("Mbean not found " + mbeanName, ex);
+    }
+    return mname;
   }
 
 }

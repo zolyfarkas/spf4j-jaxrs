@@ -18,6 +18,7 @@ package org.spf4j.actuator.jmx;
 import java.util.List;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,12 @@ public class JMXResourceTest extends ServiceIntegrationBase {
             .resolveTemplate("mbean", "java.lang:type=Memory")
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<MBeanAttributeInfo>>() { });
     LOG.debug("Jmx memory Mbean attributes ", attrs);
+    MBeanAttributeInfo ai = attrs.get(0);
+    Object resp = getTarget().path("jmx/{mbean}/attributes/{attrName}")
+            .resolveTemplate("mbean", "java.lang:type=Memory")
+            .resolveTemplate("attrName", ai.getName())
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<Object>() { });
+    LOG.debug("Jmx memory Mbean attribute value ", resp);
     List<MBeanOperationInfo> ops = getTarget().path("jmx/{mbean}/operations")
             .resolveTemplate("mbean", "java.lang:type=Memory")
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<MBeanOperationInfo>>() { });
