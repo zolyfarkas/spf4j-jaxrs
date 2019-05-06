@@ -16,6 +16,7 @@
 package org.spf4j.jaxrs.common.providers.avro;
 
 import java.lang.reflect.Type;
+import javax.annotation.Nullable;
 
 /**
  *
@@ -28,7 +29,12 @@ public final class MessageBodyRWUtils {
   /**
    * when using dynamic resources, type can be an ArrayList.class, and genericType is Object.class.
    */
+  @Nullable
   public static Type effectiveType(final Class<?> type, final Type genericType) {
-    return genericType != null && genericType != Object.class ? genericType : type;
+    Type res = genericType != null && genericType != Object.class ? genericType : type;
+    if (res == Object.class) {
+      return null;
+    }
+    return res;
   }
 }
