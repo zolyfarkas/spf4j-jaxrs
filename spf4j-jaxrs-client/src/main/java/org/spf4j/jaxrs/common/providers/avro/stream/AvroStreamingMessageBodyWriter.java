@@ -69,7 +69,7 @@ public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWrite
       DatumWriter writer = new ExtendedReflectDatumWriter(elemSchema);
       Encoder encoder = getEncoder(schema, entityStream);
       AvroArrayWriter arrWriter = new AvroArrayWriter(encoder, writer,
-              TypeToken.of(elType).getRawType(), 128);
+              TypeToken.of(elType).getRawType(), t.getElementBufferSize());
       t.write(arrWriter);
       arrWriter.close();
     } catch (IOException | RuntimeException e) {

@@ -22,4 +22,8 @@ import java.io.IOException;
  */
 public interface StreamingArrayOutput<T> {
  void write(ArrayWriter<T> output) throws IOException;
+
+ default int getElementBufferSize() {
+   return 64;
+ }
 }
