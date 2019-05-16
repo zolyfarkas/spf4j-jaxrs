@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.ServiceIntegrationBase;
 import static org.spf4j.actuator.ServiceIntegrationBase.getTarget;
+import org.spf4j.base.avro.jmx.AttributeValue;
 import org.spf4j.base.avro.jmx.MBeanAttributeInfo;
 import org.spf4j.base.avro.jmx.MBeanOperationInfo;
 
@@ -39,24 +40,44 @@ public class JMXResourceTest extends ServiceIntegrationBase {
     List<String> beans = getTarget().path("jmx").request(
             MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
     LOG.debug("Jmx resource ", beans);
-    List<String> memory = getTarget().path("jmx/{mbean}").resolveTemplate("mbean", "java.lang:type=Memory")
-            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
-    LOG.debug("Jmx memory Mbean resource ", memory);
-    List<MBeanAttributeInfo> attrs = getTarget().path("jmx/{mbean}/attributes")
-            .resolveTemplate("mbean", "java.lang:type=Memory")
+    for (String beanName : beans) {
+      List<String> memory = getTarget().path("jmx/{mbean}").resolveTemplate("mbean", beanName)
+              .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
+      LOG.debug("Jmx {} resource ", beanName, memory);
+      List<MBeanAttributeInfo> attrs = getTarget().path("jmx/{mbean}/attributes")
+            .resolveTemplate("mbean", beanName)
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<MBeanAttributeInfo>>() { });
-    LOG.debug("Jmx memory Mbean attributes ", attrs);
-    MBeanAttributeInfo ai = attrs.get(0);
-    Object resp = getTarget().path("jmx/{mbean}/attributes/{attrName}")
-            .resolveTemplate("mbean", "java.lang:type=Memory")
-            .resolveTemplate("attrName", ai.getName())
-            .request(MediaType.APPLICATION_JSON).get(new GenericType<Object>() { });
-    LOG.debug("Jmx memory Mbean attribute value ", resp);
-    List<MBeanOperationInfo> ops = getTarget().path("jmx/{mbean}/operations")
-            .resolveTemplate("mbean", "java.lang:type=Memory")
+      LOG.debug("Jmx {} attributes ", beanName, attrs);
+
+      List<AttributeValue> values = getTarget().path("jmx/{mbean}/attributes/values")
+              .resolveTemplate("mbean", beanName)
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<AttributeValue>>() { });
+      LOG.debug("Jmx {} attributes values ", beanName, values);
+
+      if (!attrs.isEmpty()) {
+        MBeanAttributeInfo ai = attrs.get(0);
+        Object resp = getTarget().path("jmx/{mbean}/attributes/values/{attrName}")
+              .resolveTemplate("mbean", beanName)
+              .resolveTemplate("attrName", ai.getName())
+              .request(MediaType.APPLICATION_JSON).get(new GenericType<Object>() { });
+        LOG.debug("Jmx {} attribute  {} value ", beanName, ai.getName(), resp);
+      }
+      List<MBeanOperationInfo> ops = getTarget().path("jmx/{mbean}/operations")
+            .resolveTemplate("mbean", beanName)
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<MBeanOperationInfo>>() { });
-    LOG.debug("Jmx memory Mbean attributes ", ops);
+      LOG.debug("Jmx{} attributes ", beanName, ops);
+    }
   }
+
+  @Test
+  public void testGetAttribute() {
+     Object resp = getTarget().path("jmx/{mbean}/attributes/values/{attrName}")
+              .resolveTemplate("mbean", "java.lang:name=Metaspace,type=MemoryPool")
+              .resolveTemplate("attrName", "Name")
+              .request(MediaType.APPLICATION_JSON).get(new GenericType<Object>() { });
+     LOG.debug("Jmx {} attribute  {} value ", "java.lang:name=Metaspace,type=MemoryPool", "Name", resp);
+  }
+
 
 
 }

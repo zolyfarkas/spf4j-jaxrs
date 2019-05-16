@@ -111,7 +111,7 @@ public abstract class ServiceIntegrationBase {
     servletRegistration.setInitParameter("javax.ws.rs.Application", TestApplication.class.getName());
     servletRegistration.setInitParameter(ServerProperties.PROCESSING_RESPONSE_ERRORS_ENABLED, "true");
     servletRegistration.setInitParameter(ServerProperties.PROVIDER_PACKAGES,
-            "org.spf4j.jaxrs.server.providers;org.spf4j.demo;org.spf4j.actuator");
+            "org.spf4j.jaxrs.server.providers");
     servletRegistration.setInitParameter("hostName", hostName);
     servletRegistration.setInitParameter("servlet.bindAddr", bindAddr);
     servletRegistration.setInitParameter("servlet.port", Integer.toString(port));
@@ -250,6 +250,7 @@ public abstract class ServiceIntegrationBase {
       if (instance != null) {
         throw new IllegalStateException("Application already initialized " + instance);
       }
+      packages("org.spf4j.actuator");
       instance = this;
     }
 
