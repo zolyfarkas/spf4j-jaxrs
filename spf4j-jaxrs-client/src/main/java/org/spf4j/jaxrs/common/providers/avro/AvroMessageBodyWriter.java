@@ -12,7 +12,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import org.apache.avro.Schema;
-import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.reflect.ExtendedReflectData;
@@ -36,10 +35,9 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
   @Override
   public boolean isWriteable(final Class<?> type, final Type genericType,
           final Annotation[] annotations, final MediaType mediaType) {
-    return IndexedRecord.class.isAssignableFrom(type)
-            || (type != void.class &&  type != Void.class
+    return type != void.class &&  type != Void.class
             && !OutputStream.class.isAssignableFrom(type)
-            && !Writer.class.isAssignableFrom(type));
+            && !Writer.class.isAssignableFrom(type);
   }
 
   public abstract Encoder getEncoder(Schema writerSchema, OutputStream os)
