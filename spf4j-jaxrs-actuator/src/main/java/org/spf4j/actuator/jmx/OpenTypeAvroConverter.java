@@ -15,11 +15,18 @@
  */
 package org.spf4j.actuator.jmx;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -27,11 +34,17 @@ import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.OpenType;
 import javax.management.openmbean.SimpleType;
+import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
+import javax.management.openmbean.TabularType;
+import org.apache.avro.LogicalType;
+import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.reflect.ExtendedReflectData;
 import org.spf4j.base.Reflections;
+import org.spf4j.base.SuppressForbiden;
 
 /**
  * Convert to-from OpenType.ALLOWED_CLASSNAMES_LIST and Avro Objects.
@@ -52,21 +65,50 @@ public interface OpenTypeAvroConverter<T extends OpenType, A, C> {
   OpenTypeAvroConverter<SimpleType, Object, Object> SIMPLE_TYPE =
           new OpenTypeAvroConverter<SimpleType, Object, Object>() {
     @Override
+    @SuppressForbiden
     public Object fromOpenValue(final SimpleType type, final Object openValue,
             final OpenTypeConverterSupplier convSupp) {
+      String className = type.getClassName();
+      if (className.equals(ObjectName.class.getName())) {
+        return ((ObjectName) openValue).getCanonicalName();
+      } else if (className.equals(Date.class.getName())) {
+        return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(((Date) openValue).getTime()));
+      }
       return openValue;
     }
 
     @Override
+    @SuppressForbiden
     public Object toOpenValue(final SimpleType type, final Object value, final OpenTypeConverterSupplier convSupp) {
+      String className = type.getClassName();
+      if (className.equals(ObjectName.class.getName())) {
+        try {
+          return new ObjectName(value.toString());
+        } catch (MalformedObjectNameException ex) {
+          throw new IllegalArgumentException("Invalid ObjectName " + value, ex);
+        }
+      } else if (className.equals(Date.class.getName())) {
+        return new Date(DateTimeFormatter.ISO_INSTANT.parse((String) value, Instant::from).toEpochMilli());
+      }
       return value;
     }
 
     @Override
+    @SuppressForbiden
     public Schema getSchema(final SimpleType type, final OpenTypeConverterSupplier convSupp) {
+      String className = type.getClassName();
+      if (className.equals(ObjectName.class.getName())) {
+        return Schema.createUnion(Schema.create(Schema.Type.NULL), Schema.create(Schema.Type.STRING));
+      } else if (className.equals(Date.class.getName())) {
+        Schema strType = Schema.create(Schema.Type.STRING);
+        strType.addProp(LogicalType.LOGICAL_TYPE_PROP, "instant");
+        LogicalType lt = LogicalTypes.fromSchema(strType);
+        strType.setLogicalType(lt);
+        return Schema.createUnion(Schema.create(Schema.Type.NULL), strType);
+      }
       try {
         return Schema.createUnion(Schema.create(Schema.Type.NULL),
-                ExtendedReflectData.get().getSchema(Reflections.forName(type.getClassName())));
+                ExtendedReflectData.get().getSchema(Reflections.forName(className)));
       } catch (ClassNotFoundException ex) {
         throw new RuntimeException(ex);
       }
@@ -170,8 +212,57 @@ public interface OpenTypeAvroConverter<T extends OpenType, A, C> {
         Schema schema = convSupp.getConverter(aType).getSchema(aType, convSupp);
         fields.add(new Schema.Field(attribute, schema, "", (Object) null));
       }
-      return Schema.createRecord(type.getTypeName() + 'X', type.getDescription(), "", false, fields);
+      return Schema.createRecord(null, type.getDescription(), "", false, fields);
     }
+  };
+
+  OpenTypeAvroConverter<TabularType, List<GenericRecord>, TabularData> TABULAR_TYPE
+          = new OpenTypeAvroConverter<TabularType, List<GenericRecord>, TabularData>() {
+    @Override
+    public List<GenericRecord> fromOpenValue(final TabularType type, final TabularData openValue,
+            final OpenTypeConverterSupplier convSupp) {
+      if (openValue == null) {
+        return null;
+      }
+      CompositeType rowType = type.getRowType();
+      OpenTypeAvroConverter converter = convSupp.getConverter(rowType);
+      Collection<CompositeData> data = (Collection<CompositeData>) openValue.values();
+      List<GenericRecord> result = new ArrayList<>(data.size());
+      for (CompositeData row : data) {
+        result.add((GenericRecord) converter.fromOpenValue(rowType, row, convSupp));
+      }
+      return result;
+    }
+
+    @Override
+    public TabularData toOpenValue(final TabularType type, final List<GenericRecord> value,
+            final OpenTypeConverterSupplier convSupp) {
+      if (value == null) {
+        return null;
+      }
+      TabularDataSupport result = new TabularDataSupport(type, value.size(), 1.0f);
+      CompositeType rowType = type.getRowType();
+      OpenTypeAvroConverter converter = convSupp.getConverter(rowType);
+      for (GenericRecord rec : value) {
+        result.put((CompositeData) converter.toOpenValue(rowType, rec, convSupp));
+      }
+
+      return result;
+    }
+
+    @Override
+    public Schema getSchema(final TabularType type, final OpenTypeConverterSupplier convSupp) {
+      CompositeType rowType = type.getRowType();
+      Schema rowSchema = convSupp.getConverter(rowType).getSchema(rowType, convSupp);
+      Schema arraySchema = Schema.createArray(rowSchema);
+      ArrayNode arrNode = Schema.MAPPER.createArrayNode();
+      for (String pkc : type.getIndexNames()) {
+        arrNode = arrNode.add(pkc);
+      }
+      arraySchema.addProp("primaryKey", arrNode);
+      return arraySchema;
+    }
+
   };
 
 }

@@ -265,7 +265,7 @@ public class JmxResource {
           List<org.spf4j.base.avro.jmx.MBeanParameterInfo> params = new ArrayList<>(signature.length);
           for (MBeanParameterInfo pi : signature) {
             if (pi instanceof OpenMBeanParameterInfo) {
-              OpenType<?> pOpenType = ((OpenMBeanOperationInfoSupport) op).getReturnOpenType();
+              OpenType<?> pOpenType = ((OpenMBeanParameterInfo) pi).getOpenType();
               OpenTypeAvroConverter converter = OpenTypeConverterSupplier.INSTANCE
                       .getConverter(pOpenType);
               params.add(new org.spf4j.base.avro.jmx.MBeanParameterInfo(pi.getName(),

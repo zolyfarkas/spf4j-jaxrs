@@ -20,6 +20,7 @@ import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenType;
 import javax.management.openmbean.SimpleType;
+import javax.management.openmbean.TabularType;
 import org.spf4j.reflect.CachingTypeMapWrapper;
 import org.spf4j.reflect.GraphTypeMap;
 
@@ -36,7 +37,8 @@ public final class OpenTypeConverterSupplier {
     typeHandler = new CachingTypeMapWrapper<>(new GraphTypeMap());
     typeHandler.safePut(SimpleType.class, OpenTypeAvroConverter.SIMPLE_TYPE)
             .safePut(ArrayType.class, OpenTypeAvroConverter.ARRAY_TYPE)
-            .safePut(CompositeType.class, OpenTypeAvroConverter.COMPOSITE_TYPE);
+            .safePut(CompositeType.class, OpenTypeAvroConverter.COMPOSITE_TYPE)
+            .safePut(TabularType.class, OpenTypeAvroConverter.TABULAR_TYPE);
   }
 
   public OpenTypeAvroConverter getConverter(@Nullable final OpenType<?> openType) {

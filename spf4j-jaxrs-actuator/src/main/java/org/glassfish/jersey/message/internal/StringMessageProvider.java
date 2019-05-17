@@ -37,8 +37,11 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
+//CHECKSTYLE:OFF
+// need to overwrite this to prevent it to interfere.
 package org.glassfish.jersey.message.internal;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -54,13 +57,10 @@ import javax.inject.Singleton;
 import static org.glassfish.jersey.message.internal.AbstractMessageReaderWriterProvider.readFromAsString;
 import static org.glassfish.jersey.message.internal.AbstractMessageReaderWriterProvider.writeToAsString;
 
-/**
- *
- * @author Paul Sandoz
- */
 @Produces({"text/plain"})
 @Consumes({"text/plain"})
 @Singleton
+@SuppressFBWarnings
 final class StringMessageProvider extends AbstractMessageReaderWriterProvider<String> {
 
     @Override
