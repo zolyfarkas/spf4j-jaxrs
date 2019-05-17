@@ -166,21 +166,11 @@ public class JmxResource {
           }
           LOG.debug("writing attribute type {}", attr.getType(), attr);
           String name = attr.getName();
-          if (attr instanceof OpenMBeanAttributeInfoSupport) {
-            OpenType openType = ((OpenMBeanAttributeInfoSupport) attr).getOpenType();
-            OpenTypeAvroConverter converter = OpenTypeConverterSupplier.INSTANCE
-                    .getConverter(openType);
+          OpenType openType = getOpenType(attr);
+          OpenTypeAvroConverter converter = OpenTypeConverterSupplier.INSTANCE.getConverter(openType);
             try {
               output.accept(new AttributeValue(name, converter.fromOpenValue(openType,
                       srv.getAttribute(mname, name), OpenTypeConverterSupplier.INSTANCE)));
-            } catch (MBeanException | ReflectionException ex) {
-              throw new RuntimeException("Unable to convert attribute " + attr, ex);
-            } catch (AttributeNotFoundException | InstanceNotFoundException ex) {
-              throw new NotFoundException(ex);
-            }
-          } else {
-            try {
-              output.accept(new AttributeValue(name, srv.getAttribute(mname, name)));
             } catch (MBeanException | ReflectionException ex) {
               throw new RuntimeException("Unable to convert attribute " + attr, ex);
             } catch (AttributeNotFoundException | InstanceNotFoundException ex) {
@@ -190,10 +180,24 @@ public class JmxResource {
                       "jmx", ex.getMessage()));
               LOG.warn("Unable to read value for {}", attr.getName(), attr, ex);
             }
-          }
         }
       }
+
     };
+  }
+
+  private static OpenType getOpenType(final MBeanAttributeInfo attr) {
+    OpenType openType;
+    if (attr instanceof OpenMBeanAttributeInfoSupport) {
+      openType = ((OpenMBeanAttributeInfoSupport) attr).getOpenType();
+    } else {
+      Object ot = attr.getDescriptor().getFieldValue("openType");
+      if (ot instanceof OpenType) {
+        return (OpenType) ot;
+      }
+      openType = SimpleTypes.getOpenType(attr.getType());
+    }
+    return openType;
   }
 
   @GET
@@ -208,14 +212,9 @@ public class JmxResource {
       throw new NotFoundException("Attribute " + attrName + " not found for " + mbeanName);
     }
     try {
-      if (attr  instanceof OpenMBeanAttributeInfoSupport) {
-        OpenType openType = ((OpenMBeanAttributeInfoSupport) attr).getOpenType();
-        OpenTypeAvroConverter converter = OpenTypeConverterSupplier.INSTANCE
-                    .getConverter(openType);
-        return converter.fromOpenValue(openType, srv.getAttribute(mname, attrName), OpenTypeConverterSupplier.INSTANCE);
-      } else {
-        return srv.getAttribute(mname, attrName);
-      }
+      OpenType openType = getOpenType(attr);
+      OpenTypeAvroConverter converter = OpenTypeConverterSupplier.INSTANCE.getConverter(openType);
+      return converter.fromOpenValue(openType, srv.getAttribute(mname, attrName), OpenTypeConverterSupplier.INSTANCE);
     } catch (AttributeNotFoundException | InstanceNotFoundException ex) {
       throw new NotFoundException("Atttr not found: " + attrName + " for " + mbeanName, ex);
     } catch (UnsupportedOperationException ex) {
@@ -303,8 +302,27 @@ public class JmxResource {
           throws MBeanException, ReflectionException, IOException {
     MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
     ObjectName mname = getJmxObjName(mbeanName);
+    MBeanInfo mBeanInfo = getMBeanInfo(srv, mname);
+    String opName = invocation.getName();
     List<Object> parameters = invocation.getParameters();
     List<String> sign = invocation.getSignature();
+    MBeanOperationInfo[] operations = mBeanInfo.getOperations();
+    MBeanOperationInfo moi = null;
+    for (MBeanOperationInfo oi : operations) {
+      if (oi.getName().equals(opName)) {
+        boolean match = true;
+        for (MBeanParameterInfo param :  oi.getSignature()) {
+          if (!sign.contains(param.getType())) {
+            match = false;
+            break;
+          }
+        }
+        if (match) {
+          moi = oi;
+          break;
+        }
+      }
+    }
     try {
       return srv.invoke(mname, invocation.getName(),
               parameters.toArray(new Object[parameters.size()]), sign.toArray(new String[sign.size()]));
