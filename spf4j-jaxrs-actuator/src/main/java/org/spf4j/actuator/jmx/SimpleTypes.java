@@ -17,6 +17,9 @@ package org.spf4j.actuator.jmx;
 
 import java.util.HashMap;
 import java.util.Map;
+import javax.management.openmbean.ArrayType;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.OpenType;
 import javax.management.openmbean.SimpleType;
 import static javax.management.openmbean.SimpleType.BIGDECIMAL;
 import static javax.management.openmbean.SimpleType.BIGINTEGER;
@@ -47,6 +50,9 @@ public final class SimpleTypes {
 
     private static final Map<String, SimpleType> MAP = new HashMap<>();
 
+    private static final Map<String, SimpleType> PRIMITIVES = new HashMap<>();
+
+
     static {
       for (SimpleType type : TYPE_ARRAY) {
         String className = type.getClassName();
@@ -60,13 +66,29 @@ public final class SimpleTypes {
         Class<?> prim = Reflections.wrapperToPrimitive(clasz);
         if (prim != null && clasz != prim) {
           MAP.put(prim.getName(), type);
+          PRIMITIVES.put(prim.getName(), type);
         }
       }
     }
 
     private SimpleTypes() { }
 
-    public static SimpleType getOpenType(final String typeName) {
+    public static OpenType getOpenType(final String typeName) {
+      if (typeName.startsWith("[")) {
+        try {
+          // arrays
+          Class<?> arrayClass = Class.forName(typeName);
+          OpenType openType = getOpenType(arrayClass.getComponentType().getName());
+          if (openType instanceof ArrayType) {
+            ArrayType arrType = (ArrayType) openType;
+            return new ArrayType(arrType.getDimension() + 1, arrType.getElementOpenType());
+          } else if (openType instanceof SimpleType) {
+            return new ArrayType((SimpleType) openType, PRIMITIVES.containsKey(openType.getClassName()));
+          }
+        } catch (ClassNotFoundException | OpenDataException ex) {
+          throw new IllegalArgumentException("Invalid class " + typeName, ex);
+        }
+      }
       SimpleType st = MAP.get(typeName);
       if (st == null) {
         throw new IllegalArgumentException("Not a simple type: " + typeName);

@@ -1,0 +1,469 @@
+[{
+    "name": "gcClassHistogram",
+    "parameters": [{
+        "name": "arguments",
+        "type": "[Ljava.lang.String;",
+        "avroSchema": "string",
+        "description": "Array of Diagnostic Commands Arguments and Options",
+        "descriptor": {}
+      }],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Provide statistics about the Java heap usage.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.arguments=({-all={dcmd.arg.description=Inspect all objects, including unreachable objects, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=-all, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}})": null,
+      "dcmd.help=GC.class_histogram\nProvide statistics about the Java heap usage.\n\nImpact: High: Depends on Java heap size and content.\n\nPermission: java.lang.management.ManagementPermission(monitor)\n\nSyntax : GC.class_histogram [options]\n\nOptions: (options must be specified using the <key> or <key>=<value> syntax)\n\t-all : [optional] Inspect all objects, including unreachable objects (BOOLEAN, false)\n": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.name=GC.class_histogram": null,
+      "dcmd.description=Provide statistics about the Java heap usage.": null,
+      "dcmd.vmImpact=High: Depends on Java heap size and content.": null,
+      "dcmd.permissionAction=": null
+    }
+  }, {
+    "name": "gcClassStats",
+    "parameters": [{
+        "name": "arguments",
+        "type": "[Ljava.lang.String;",
+        "avroSchema": "string",
+        "description": "Array of Diagnostic Commands Arguments and Options",
+        "descriptor": {}
+      }],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Provide statistics about Java class meta data. Requires -XX:+UnlockDiagnosticVMOptions.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionName=": null,
+      "dcmd.description=Provide statistics about Java class meta data. Requires -XX:+UnlockDiagnosticVMOptions.": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.name=GC.class_stats": null,
+      "dcmd.help=GC.class_stats\nProvide statistics about Java class meta data. Requires -XX:+UnlockDiagnosticVMOptions.\n\nImpact: High: Depends on Java heap size and content.\n\nSyntax : GC.class_stats [options] [<columns>]\n\nArguments:\n\tcolumns : [optional] Comma-separated list of all the columns to show. If not specified, the following columns are shown: InstBytes,KlassBytes,CpAll,annotations,MethodCount,Bytecodes,MethodAll,ROAll,RWAll,Total (STRING, no default value)\n\nOptions: (options must be specified using the <key> or <key>=<value> syntax)\n\t-all : [optional] Show all columns (BOOLEAN, false)\n\t-csv : [optional] Print in CSV (comma-separated values) format for spreadsheets (BOOLEAN, false)\n\t-help : [optional] Show meaning of all the columns (BOOLEAN, false)\n": null,
+      "dcmd.arguments=({-all={dcmd.arg.description=Show all columns, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=-all, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, -csv={dcmd.arg.description=Print in CSV (comma-separated values) format for spreadsheets, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=-csv, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, -help={dcmd.arg.description=Show meaning of all the columns, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=-help, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, columns={dcmd.arg.description=Comma-separated list of all the columns to show. If not specified, the following columns are shown: InstBytes,KlassBytes,CpAll,annotations,MethodCount,Bytecodes,MethodAll,ROAll,RWAll,Total, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=false, dcmd.arg.name=columns, dcmd.arg.position=0, dcmd.arg.type=STRING}})": null,
+      "dcmd.permissionClass=": null,
+      "dcmd.vmImpact=High: Depends on Java heap size and content.": null,
+      "dcmd.permissionAction=": null
+    }
+  }, {
+    "name": "gcFinalizerInfo",
+    "parameters": [],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Provide information about Java finalization queue.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.name=GC.finalizer_info": null,
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.vmImpact=Medium": null,
+      "dcmd.description=Provide information about Java finalization queue.": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.help=GC.finalizer_info\nProvide information about Java finalization queue.\n\nImpact: Medium\n\nPermission: java.lang.management.ManagementPermission(monitor)\n\nSyntax: GC.finalizer_info\n": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.permissionAction=": null
+    }
+  }, {
+    "name": "gcHeapInfo",
+    "parameters": [],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Provide generic Java heap information.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.vmImpact=Medium": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.description=Provide generic Java heap information.": null,
+      "dcmd.help=GC.heap_info\nProvide generic Java heap information.\n\nImpact: Medium\n\nPermission: java.lang.management.ManagementPermission(monitor)\n\nSyntax: GC.heap_info\n": null,
+      "dcmd.name=GC.heap_info": null,
+      "dcmd.permissionAction=": null
+    }
+  }, {
+    "name": "gcRotateLog",
+    "parameters": [],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Force the GC log file to be rotated.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.permissionName=control": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.description=Force the GC log file to be rotated.": null,
+      "dcmd.help=GC.rotate_log\nForce the GC log file to be rotated.\n\nImpact: Low\n\nPermission: java.lang.management.ManagementPermission(control)\n\nSyntax: GC.rotate_log\n": null,
+      "dcmd.name=GC.rotate_log": null,
+      "dcmd.permissionAction=": null,
+      "dcmd.vmImpact=Low": null
+    }
+  }, {
+    "name": "gcRun",
+    "parameters": [],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Call java.lang.System.gc().",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionName=": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.description=Call java.lang.System.gc().": null,
+      "dcmd.help=GC.run\nCall java.lang.System.gc().\n\nImpact: Medium: Depends on Java heap size and content.\n\nSyntax: GC.run\n": null,
+      "dcmd.name=GC.run": null,
+      "dcmd.permissionClass=": null,
+      "dcmd.permissionAction=": null,
+      "dcmd.vmImpact=Medium: Depends on Java heap size and content.": null
+    }
+  }, {
+    "name": "gcRunFinalization",
+    "parameters": [],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Call java.lang.System.runFinalization().",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.name=GC.run_finalization": null,
+      "dcmd.permissionName=": null,
+      "dcmd.vmImpact=Medium: Depends on Java content.": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.help=GC.run_finalization\nCall java.lang.System.runFinalization().\n\nImpact: Medium: Depends on Java content.\n\nSyntax: GC.run_finalization\n": null,
+      "dcmd.description=Call java.lang.System.runFinalization().": null,
+      "dcmd.permissionClass=": null,
+      "dcmd.permissionAction=": null
+    }
+  }, {
+    "name": "help",
+    "parameters": [{
+        "name": "arguments",
+        "type": "[Ljava.lang.String;",
+        "avroSchema": "string",
+        "description": "Array of Diagnostic Commands Arguments and Options",
+        "descriptor": {}
+      }],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "For more information about a specific command use 'help <command>'. With no argument this will show a list of available commands. 'help all' will show help for all commands.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionName=": null,
+      "dcmd.arguments=({-all={dcmd.arg.description=Show help for all commands, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=-all, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, command name={dcmd.arg.description=The name of the command for which we want help, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=false, dcmd.arg.name=command name, dcmd.arg.position=0, dcmd.arg.type=STRING}})": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.help=help\nFor more information about a specific command use 'help <command>'. With no argument this will show a list of available commands. 'help all' will show help for all commands.\n\nImpact: Low\n\nSyntax : help [options] [<command name>]\n\nArguments:\n\tcommand name : [optional] The name of the command for which we want help (STRING, no default value)\n\nOptions: (options must be specified using the <key> or <key>=<value> syntax)\n\t-all : [optional] Show help for all commands (BOOLEAN, false)\n": null,
+      "dcmd.description=For more information about a specific command use 'help <command>'. With no argument this will show a list of available commands. 'help all' will show help for all commands.": null,
+      "dcmd.name=help": null,
+      "dcmd.permissionClass=": null,
+      "dcmd.permissionAction=": null,
+      "dcmd.vmImpact=Low": null
+    }
+  }, {
+    "name": "jfrCheck",
+    "parameters": [{
+        "name": "arguments",
+        "type": "[Ljava.lang.String;",
+        "avroSchema": "string",
+        "description": "Array of Diagnostic Commands Arguments and Options",
+        "descriptor": {}
+      }],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Checks running JFR recording(s)",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.arguments=({name={dcmd.arg.description=Recording name, e.g. \\\"My Recording\\\" or omit to see all recordings, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=name, dcmd.arg.position=-1, dcmd.arg.type=STRING}, recording={dcmd.arg.description=Recording number, or omit to see all recordings, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=recording, dcmd.arg.position=-1, dcmd.arg.type=JLONG}, verbose={dcmd.arg.description=Print event settings for the recording(s), dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=verbose, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}})": null,
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.name=JFR.check": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.description=Checks running JFR recording(s)": null,
+      "dcmd.help=JFR.check\nChecks running JFR recording(s)\n\nImpact: Low\n\nPermission: java.lang.management.ManagementPermission(monitor)\n\nSyntax : JFR.check [options]\n\nOptions: (options must be specified using the <key> or <key>=<value> syntax)\n\tname : [optional] Recording name, e.g. \\\"My Recording\\\" or omit to see all recordings (STRING, no default value)\n\trecording : [optional] Recording number, or omit to see all recordings (JLONG, -1)\n\tverbose : [optional] Print event settings for the recording(s) (BOOLEAN, false)\n": null,
+      "dcmd.permissionAction=": null,
+      "dcmd.vmImpact=Low": null
+    }
+  }, {
+    "name": "jfrDump",
+    "parameters": [{
+        "name": "arguments",
+        "type": "[Ljava.lang.String;",
+        "avroSchema": "string",
+        "description": "Array of Diagnostic Commands Arguments and Options",
+        "descriptor": {}
+      }],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Copies contents of a JFR recording to file. Either the name or the recording id must be specified.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.description=Copies contents of a JFR recording to file. Either the name or the recording id must be specified.": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.help=JFR.dump\nCopies contents of a JFR recording to file. Either the name or the recording id must be specified.\n\nImpact: Low\n\nPermission: java.lang.management.ManagementPermission(monitor)\n\nSyntax : JFR.dump [options]\n\nOptions: (options must be specified using the <key> or <key>=<value> syntax)\n\tname : [optional] Recording name, e.g. \\\"My Recording\\\" (STRING, no default value)\n\trecording : [optional] Recording number, use JFR.check to list available recordings (JLONG, -1)\n\tfilename :  Copy recording data to file, i.e \\\"/Users/user/My Recording.jfr\\\" (STRING, no default value)\n\tcompress : [optional] GZip-compress \"filename\" destination (BOOLEAN, false)\n": null,
+      "dcmd.name=JFR.dump": null,
+      "dcmd.arguments=({compress={dcmd.arg.description=GZip-compress \"filename\" destination, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=compress, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, filename={dcmd.arg.description=Copy recording data to file, i.e \\\"/Users/user/My Recording.jfr\\\", dcmd.arg.isMandatory=true, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=filename, dcmd.arg.position=-1, dcmd.arg.type=STRING}, name={dcmd.arg.description=Recording name, e.g. \\\"My Recording\\\", dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=name, dcmd.arg.position=-1, dcmd.arg.type=STRING}, recording={dcmd.arg.description=Recording number, use JFR.check to list available recordings, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=recording, dcmd.arg.position=-1, dcmd.arg.type=JLONG}})": null,
+      "dcmd.permissionAction=": null,
+      "dcmd.vmImpact=Low": null
+    }
+  }, {
+    "name": "jfrStart",
+    "parameters": [{
+        "name": "arguments",
+        "type": "[Ljava.lang.String;",
+        "avroSchema": "string",
+        "description": "Array of Diagnostic Commands Arguments and Options",
+        "descriptor": {}
+      }],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Starts a new JFR recording",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.arguments=({compress={dcmd.arg.description=GZip-compress the resulting recording file, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=compress, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, defaultrecording={dcmd.arg.description=Starts the default recording, can only be combined with settings., dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=defaultrecording, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, delay={dcmd.arg.description=Delay recording start with (s)econds, (m)inutes), (h)ours), or (d)ays, e.g. 5h., dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=delay, dcmd.arg.position=-1, dcmd.arg.type=NANOTIME}, dumponexit={dcmd.arg.description=Dump running recording when JVM shuts down, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=dumponexit, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, duration={dcmd.arg.description=Duration of recording in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 300s., dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=duration, dcmd.arg.position=-1, dcmd.arg.type=NANOTIME}, filename={dcmd.arg.description=Resulting recording filename, e.g. \\\"/Users/user/My Recording.jfr\\\", dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=filename, dcmd.arg.position=-1, dcmd.arg.type=STRING}, maxage={dcmd.arg.description=Maximum time to keep recorded data (on disk) in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 60m, or 0 for no limit, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=maxage, dcmd.arg.position=-1, dcmd.arg.type=NANOTIME}, maxsize={dcmd.arg.description=Maximum amount of bytes to keep (on disk) in (k)B, (M)B or (G)B, e.g. 500M, or 0 for no limit, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=maxsize, dcmd.arg.position=-1, dcmd.arg.type=MEMORY SIZE}, name={dcmd.arg.description=Name that can be used to identify recording, e.g. \\\"My Recording\\\", dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=name, dcmd.arg.position=-1, dcmd.arg.type=STRING}, settings={dcmd.arg.description=Settings file(s), e.g. profile or default. See JRE_HOME/lib/jfr, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=true, dcmd.arg.isOption=true, dcmd.arg.name=settings, dcmd.arg.position=-1, dcmd.arg.type=STRING SET}})": null,
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.description=Starts a new JFR recording": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.name=JFR.start": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.help=JFR.start\nStarts a new JFR recording\n\nImpact: Medium: Depending on the settings for a recording, the impact can range from low to high.\n\nPermission: java.lang.management.ManagementPermission(monitor)\n\nSyntax : JFR.start [options]\n\nOptions: (options must be specified using the <key> or <key>=<value> syntax)\n\tname : [optional] Name that can be used to identify recording, e.g. \\\"My Recording\\\" (STRING, no default value)\n\tdefaultrecording : [optional] Starts the default recording, can only be combined with settings. (BOOLEAN, false)\n\tdumponexit : [optional] Dump running recording when JVM shuts down (BOOLEAN, no default value)\n\tsettings : [optional] Settings file(s), e.g. profile or default. See JRE_HOME/lib/jfr (STRING SET, no default value)\n\tdelay : [optional] Delay recording start with (s)econds, (m)inutes), (h)ours), or (d)ays, e.g. 5h. (NANOTIME, 0)\n\tduration : [optional] Duration of recording in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 300s. (NANOTIME, 0)\n\tfilename : [optional] Resulting recording filename, e.g. \\\"/Users/user/My Recording.jfr\\\" (STRING, no default value)\n\tcompress : [optional] GZip-compress the resulting recording file (BOOLEAN, false)\n\tmaxage : [optional] Maximum time to keep recorded data (on disk) in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 60m, or 0 for no limit (NANOTIME, 0)\n\tmaxsize : [optional] Maximum amount of bytes to keep (on disk) in (k)B, (M)B or (G)B, e.g. 500M, or 0 for no limit (MEMORY SIZE, 0)\n": null,
+      "dcmd.vmImpact=Medium: Depending on the settings for a recording, the impact can range from low to high.": null,
+      "dcmd.permissionAction=": null
+    }
+  }, {
+    "name": "jfrStop",
+    "parameters": [{
+        "name": "arguments",
+        "type": "[Ljava.lang.String;",
+        "avroSchema": "string",
+        "description": "Array of Diagnostic Commands Arguments and Options",
+        "descriptor": {}
+      }],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Stops a JFR recording",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.help=JFR.stop\nStops a JFR recording\n\nImpact: Low\n\nPermission: java.lang.management.ManagementPermission(monitor)\n\nSyntax : JFR.stop [options]\n\nOptions: (options must be specified using the <key> or <key>=<value> syntax)\n\tname : [optional] Recording name,.e.g \\\"My Recording\\\" (STRING, no default value)\n\trecording : [optional] Recording number, see JFR.check for a list of available recordings (JLONG, -1)\n\tdiscard : [optional] Skip writing data to previously specified file (if any) (BOOLEAN, false)\n\tfilename : [optional] Copy recording data to file, e.g. \\\"/Users/user/My Recording.jfr\\\" (STRING, no default value)\n\tcompress : [optional] GZip-compress \"filename\" destination (BOOLEAN, false)\n": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.name=JFR.stop": null,
+      "dcmd.description=Stops a JFR recording": null,
+      "dcmd.arguments=({compress={dcmd.arg.description=GZip-compress \"filename\" destination, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=compress, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, discard={dcmd.arg.description=Skip writing data to previously specified file (if any), dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=discard, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, filename={dcmd.arg.description=Copy recording data to file, e.g. \\\"/Users/user/My Recording.jfr\\\", dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=filename, dcmd.arg.position=-1, dcmd.arg.type=STRING}, name={dcmd.arg.description=Recording name,.e.g \\\"My Recording\\\", dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=name, dcmd.arg.position=-1, dcmd.arg.type=STRING}, recording={dcmd.arg.description=Recording number, see JFR.check for a list of available recordings, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=recording, dcmd.arg.position=-1, dcmd.arg.type=JLONG}})": null,
+      "dcmd.permissionAction=": null,
+      "dcmd.vmImpact=Low": null
+    }
+  }, {
+    "name": "threadPrint",
+    "parameters": [{
+        "name": "arguments",
+        "type": "[Ljava.lang.String;",
+        "avroSchema": "string",
+        "description": "Array of Diagnostic Commands Arguments and Options",
+        "descriptor": {}
+      }],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Print all threads with stacktraces.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.arguments=({-l={dcmd.arg.description=print java.util.concurrent locks, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=-l, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}})": null,
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.description=Print all threads with stacktraces.": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.help=Thread.print\nPrint all threads with stacktraces.\n\nImpact: Medium: Depends on the number of threads.\n\nPermission: java.lang.management.ManagementPermission(monitor)\n\nSyntax : Thread.print [options]\n\nOptions: (options must be specified using the <key> or <key>=<value> syntax)\n\t-l : [optional] print java.util.concurrent locks (BOOLEAN, false)\n": null,
+      "dcmd.name=Thread.print": null,
+      "dcmd.vmImpact=Medium: Depends on the number of threads.": null,
+      "dcmd.permissionAction=": null
+    }
+  }, {
+    "name": "vmCheckCommercialFeatures",
+    "parameters": [],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Display status of commercial features",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionName=": null,
+      "dcmd.name=VM.check_commercial_features": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.description=Display status of commercial features": null,
+      "dcmd.vmImpact=Low: No impact": null,
+      "dcmd.permissionClass=": null,
+      "dcmd.help=VM.check_commercial_features\nDisplay status of commercial features\n\nImpact: Low: No impact\n\nSyntax: VM.check_commercial_features\n": null,
+      "dcmd.permissionAction=": null
+    }
+  }, {
+    "name": "vmClassloaderStats",
+    "parameters": [],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Print statistics about all ClassLoaders.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.description=Print statistics about all ClassLoaders.": null,
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.name=VM.classloader_stats": null,
+      "dcmd.help=VM.classloader_stats\nPrint statistics about all ClassLoaders.\n\nImpact: Low\n\nPermission: java.lang.management.ManagementPermission(monitor)\n\nSyntax: VM.classloader_stats\n": null,
+      "dcmd.permissionAction=": null,
+      "dcmd.vmImpact=Low": null
+    }
+  }, {
+    "name": "vmCommandLine",
+    "parameters": [],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Print the command line used to start this VM instance.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.help=VM.command_line\nPrint the command line used to start this VM instance.\n\nImpact: Low\n\nPermission: java.lang.management.ManagementPermission(monitor)\n\nSyntax: VM.command_line\n": null,
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.description=Print the command line used to start this VM instance.": null,
+      "dcmd.name=VM.command_line": null,
+      "dcmd.permissionAction=": null,
+      "dcmd.vmImpact=Low": null
+    }
+  }, {
+    "name": "vmDynlibs",
+    "parameters": [],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Print loaded dynamic libraries.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.name=VM.dynlibs": null,
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.help=VM.dynlibs\nPrint loaded dynamic libraries.\n\nImpact: Low\n\nPermission: java.lang.management.ManagementPermission(monitor)\n\nSyntax: VM.dynlibs\n": null,
+      "dcmd.description=Print loaded dynamic libraries.": null,
+      "dcmd.permissionAction=": null,
+      "dcmd.vmImpact=Low": null
+    }
+  }, {
+    "name": "vmFlags",
+    "parameters": [{
+        "name": "arguments",
+        "type": "[Ljava.lang.String;",
+        "avroSchema": "string",
+        "description": "Array of Diagnostic Commands Arguments and Options",
+        "descriptor": {}
+      }],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Print VM flag options and their current values.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.arguments=({-all={dcmd.arg.description=Print all flags supported by the VM, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=-all, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}})": null,
+      "dcmd.description=Print VM flag options and their current values.": null,
+      "dcmd.name=VM.flags": null,
+      "dcmd.help=VM.flags\nPrint VM flag options and their current values.\n\nImpact: Low\n\nPermission: java.lang.management.ManagementPermission(monitor)\n\nSyntax : VM.flags [options]\n\nOptions: (options must be specified using the <key> or <key>=<value> syntax)\n\t-all : [optional] Print all flags supported by the VM (BOOLEAN, false)\n": null,
+      "dcmd.permissionAction=": null,
+      "dcmd.vmImpact=Low": null
+    }
+  }, {
+    "name": "vmNativeMemory",
+    "parameters": [{
+        "name": "arguments",
+        "type": "[Ljava.lang.String;",
+        "avroSchema": "string",
+        "description": "Array of Diagnostic Commands Arguments and Options",
+        "descriptor": {}
+      }],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Print native memory usage",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.vmImpact=Medium": null,
+      "dcmd.name=VM.native_memory": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.help=VM.native_memory\nPrint native memory usage\n\nImpact: Medium\n\nPermission: java.lang.management.ManagementPermission(monitor)\n\nSyntax : VM.native_memory [options]\n\nOptions: (options must be specified using the <key> or <key>=<value> syntax)\n\tsummary : [optional] request runtime to report current memory summary, which includes total reserved and committed memory, along with memory usage summary by each subsytem. (BOOLEAN, false)\n\tdetail : [optional] request runtime to report memory allocation >= 1K by each callsite. (BOOLEAN, false)\n\tbaseline : [optional] request runtime to baseline current memory usage, so it can be compared against in later time. (BOOLEAN, false)\n\tsummary.diff : [optional] request runtime to report memory summary comparison against previous baseline. (BOOLEAN, false)\n\tdetail.diff : [optional] request runtime to report memory detail comparison against previous baseline, which shows the memory allocation activities at different callsites. (BOOLEAN, false)\n\tshutdown : [optional] request runtime to shutdown itself and free the memory used by runtime. (BOOLEAN, false)\n\tstatistics : [optional] print tracker statistics for tuning purpose. (BOOLEAN, false)\n\tscale : [optional] Memory usage in which scale, KB, MB or GB (STRING, KB)\n": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.description=Print native memory usage": null,
+      "dcmd.arguments=({baseline={dcmd.arg.description=request runtime to baseline current memory usage, so it can be compared against in later time., dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=baseline, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, detail={dcmd.arg.description=request runtime to report memory allocation >= 1K by each callsite., dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=detail, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, detail.diff={dcmd.arg.description=request runtime to report memory detail comparison against previous baseline, which shows the memory allocation activities at different callsites., dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=detail.diff, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, scale={dcmd.arg.description=Memory usage in which scale, KB, MB or GB, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=scale, dcmd.arg.position=-1, dcmd.arg.type=STRING}, shutdown={dcmd.arg.description=request runtime to shutdown itself and free the memory used by runtime., dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=shutdown, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, statistics={dcmd.arg.description=print tracker statistics for tuning purpose., dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=statistics, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, summary={dcmd.arg.description=request runtime to report current memory summary, which includes total reserved and committed memory, along with memory usage summary by each subsytem., dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=summary, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}, summary.diff={dcmd.arg.description=request runtime to report memory summary comparison against previous baseline., dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=summary.diff, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}})": null,
+      "dcmd.permissionAction=": null
+    }
+  }, {
+    "name": "vmSystemProperties",
+    "parameters": [],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Print system properties.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionClass=java.util.PropertyPermission": null,
+      "dcmd.permissionName=*": null,
+      "dcmd.permissionAction=read": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.help=VM.system_properties\nPrint system properties.\n\nImpact: Low\n\nPermission: java.util.PropertyPermission(*, read)\n\nSyntax: VM.system_properties\n": null,
+      "dcmd.name=VM.system_properties": null,
+      "dcmd.description=Print system properties.": null,
+      "dcmd.vmImpact=Low": null
+    }
+  }, {
+    "name": "vmUnlockCommercialFeatures",
+    "parameters": [],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Unlock commercial features",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.help=VM.unlock_commercial_features\nUnlock commercial features\n\nImpact: Low: No impact\n\nPermission: java.lang.management.ManagementPermission(control)\n\nSyntax: VM.unlock_commercial_features\n": null,
+      "dcmd.permissionName=control": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.name=VM.unlock_commercial_features": null,
+      "dcmd.vmImpact=Low: No impact": null,
+      "dcmd.description=Unlock commercial features": null,
+      "dcmd.permissionAction=": null
+    }
+  }, {
+    "name": "vmUptime",
+    "parameters": [{
+        "name": "arguments",
+        "type": "[Ljava.lang.String;",
+        "avroSchema": "string",
+        "description": "Array of Diagnostic Commands Arguments and Options",
+        "descriptor": {}
+      }],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Print VM uptime.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionName=": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.name=VM.uptime": null,
+      "dcmd.help=VM.uptime\nPrint VM uptime.\n\nImpact: Low\n\nSyntax : VM.uptime [options]\n\nOptions: (options must be specified using the <key> or <key>=<value> syntax)\n\t-date : [optional] Add a prefix with current date (BOOLEAN, false)\n": null,
+      "dcmd.permissionClass=": null,
+      "dcmd.arguments=({-date={dcmd.arg.description=Add a prefix with current date, dcmd.arg.isMandatory=false, dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=-date, dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}})": null,
+      "dcmd.description=Print VM uptime.": null,
+      "dcmd.permissionAction=": null,
+      "dcmd.vmImpact=Low": null
+    }
+  }, {
+    "name": "vmVersion",
+    "parameters": [],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Print JVM version information.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionClass=java.util.PropertyPermission": null,
+      "dcmd.description=Print JVM version information.": null,
+      "dcmd.permissionAction=read": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.help=VM.version\nPrint JVM version information.\n\nImpact: Low\n\nPermission: java.util.PropertyPermission(java.vm.version, read)\n\nSyntax: VM.version\n": null,
+      "dcmd.permissionName=java.vm.version": null,
+      "dcmd.name=VM.version": null,
+      "dcmd.vmImpact=Low": null
+    }
+  }]

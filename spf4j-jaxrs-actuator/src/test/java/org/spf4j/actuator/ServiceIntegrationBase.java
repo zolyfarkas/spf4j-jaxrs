@@ -84,6 +84,7 @@ import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
 import org.spf4j.jaxrs.common.providers.CsvParameterConverterProvider;
+import org.spf4j.jaxrs.common.providers.GZipEncoderDecoder;
 import org.spf4j.jaxrs.common.providers.avro.AvroFeature;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
 import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyWriter;
@@ -242,6 +243,7 @@ public abstract class ServiceIntegrationBase {
       register(new Spf4jBinder(schemaClient, restClient, (x) -> true));
       register(avroFeature);
       register(CsvParameterConverterProvider.class);
+      register(GZipEncoderDecoder.class);
       javax.servlet.ServletRegistration servletRegistration = srvContext.getServletRegistration("jersey");
       String initParameter = servletRegistration.getInitParameter("servlet.port");
       String bindAddr = servletRegistration.getInitParameter("servlet.bindAddr");

@@ -44,7 +44,7 @@ import javax.management.ReflectionException;
 import javax.management.RuntimeMBeanException;
 import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
 import javax.management.openmbean.OpenMBeanOperationInfoSupport;
-import javax.management.openmbean.OpenMBeanParameterInfo;
+import javax.management.openmbean.OpenMBeanParameterInfoSupport;
 import javax.management.openmbean.OpenType;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Consumes;
@@ -116,11 +116,11 @@ public class JmxResource {
   }
 
   private static Schema getSimpleTypeSchema(final String typeName) {
-      try {
-        return ExtendedReflectData.get().getSchema(Reflections.forName(typeName));
-      } catch (ClassNotFoundException ex) {
-        throw new RuntimeException(ex);
-      }
+    try {
+      return ExtendedReflectData.get().getSchema(Reflections.forName(typeName));
+    } catch (ClassNotFoundException ex) {
+      throw new RuntimeException(ex);
+    }
   }
 
   @GET
@@ -134,16 +134,16 @@ public class JmxResource {
         for (MBeanAttributeInfo attr : attrs) {
           Map<String, Object> descriptorMap = toDescriptorMap(attr.getDescriptor());
           if (attr instanceof OpenMBeanAttributeInfoSupport) {
-             OpenType openType = ((OpenMBeanAttributeInfoSupport) attr).getOpenType();
-                         OpenTypeAvroConverter converter = OpenTypeConverterSupplier.INSTANCE
+            OpenType openType = ((OpenMBeanAttributeInfoSupport) attr).getOpenType();
+            OpenTypeAvroConverter converter = OpenTypeConverterSupplier.INSTANCE
                     .getConverter(openType);
             output.accept(new org.spf4j.base.avro.jmx.MBeanAttributeInfo(attr.getName(), attr.getType(),
-                  converter.getSchema(openType, OpenTypeConverterSupplier.INSTANCE),
-                  attr.getDescription(), attr.isReadable(), attr.isWritable(), attr.isIs(), descriptorMap));
+                    converter.getSchema(openType, OpenTypeConverterSupplier.INSTANCE),
+                    attr.getDescription(), attr.isReadable(), attr.isWritable(), attr.isIs(), descriptorMap));
           } else {
             output.accept(new org.spf4j.base.avro.jmx.MBeanAttributeInfo(attr.getName(), attr.getType(),
-                  getSimpleTypeSchema(attr.getType()),
-                  attr.getDescription(), attr.isReadable(), attr.isWritable(), attr.isIs(), descriptorMap));
+                    getSimpleTypeSchema(attr.getType()),
+                    attr.getDescription(), attr.isReadable(), attr.isWritable(), attr.isIs(), descriptorMap));
           }
         }
       }
@@ -168,18 +168,18 @@ public class JmxResource {
           String name = attr.getName();
           OpenType openType = getOpenType(attr);
           OpenTypeAvroConverter converter = OpenTypeConverterSupplier.INSTANCE.getConverter(openType);
-            try {
-              output.accept(new AttributeValue(name, converter.fromOpenValue(openType,
-                      srv.getAttribute(mname, name), OpenTypeConverterSupplier.INSTANCE)));
-            } catch (MBeanException | ReflectionException ex) {
-              throw new RuntimeException("Unable to convert attribute " + attr, ex);
-            } catch (AttributeNotFoundException | InstanceNotFoundException ex) {
-              throw new NotFoundException(ex);
-            } catch (RuntimeMBeanException ex) {
-              ExecutionContexts.current().add(ContextTags.HTTP_WARNINGS, new HttpWarning(HttpWarning.MISCELLANEOUS,
-                      "jmx", ex.getMessage()));
-              LOG.warn("Unable to read value for {}", attr.getName(), attr, ex);
-            }
+          try {
+            output.accept(new AttributeValue(name, converter.fromOpenValue(openType,
+                    srv.getAttribute(mname, name), OpenTypeConverterSupplier.INSTANCE)));
+          } catch (MBeanException | ReflectionException ex) {
+            throw new RuntimeException("Unable to convert attribute " + attr, ex);
+          } catch (AttributeNotFoundException | InstanceNotFoundException ex) {
+            throw new NotFoundException(ex);
+          } catch (RuntimeMBeanException ex) {
+            ExecutionContexts.current().add(ContextTags.HTTP_WARNINGS, new HttpWarning(HttpWarning.MISCELLANEOUS,
+                    "jmx", ex.getMessage()));
+            LOG.warn("Unable to read value for {}", attr.getName(), attr, ex);
+          }
         }
       }
 
@@ -196,6 +196,34 @@ public class JmxResource {
         return (OpenType) ot;
       }
       openType = SimpleTypes.getOpenType(attr.getType());
+    }
+    return openType;
+  }
+
+  private static OpenType getOpenType(final MBeanParameterInfo pi) {
+    OpenType openType;
+    if (pi instanceof OpenMBeanParameterInfoSupport) {
+      openType = ((OpenMBeanParameterInfoSupport) pi).getOpenType();
+    } else {
+      Object ot = pi.getDescriptor().getFieldValue("openType");
+      if (ot instanceof OpenType) {
+        return (OpenType) ot;
+      }
+      openType = SimpleTypes.getOpenType(pi.getType());
+    }
+    return openType;
+  }
+
+  private static OpenType getOpenType(final MBeanOperationInfo op) {
+    OpenType openType;
+    if (op instanceof OpenMBeanOperationInfoSupport) {
+      openType = ((OpenMBeanOperationInfoSupport) op).getReturnOpenType();
+    } else {
+      Object ot = op.getDescriptor().getFieldValue("returnOpenType");
+      if (ot instanceof OpenType) {
+        return (OpenType) ot;
+      }
+      openType = SimpleTypes.getOpenType(op.getReturnType());
     }
     return openType;
   }
@@ -235,7 +263,7 @@ public class JmxResource {
   @POST
   @Path("{mbeanName}/attributes/values/{attrName}")
   @Consumes(value = {"application/avro-x+json", "application/json",
-  "application/avro+json", "application/avro", "application/octet-stream"})
+    "application/avro+json", "application/avro", "application/octet-stream"})
   public void setMBeanAttribute(@PathParam("mbeanName") final String mbeanName,
           @PathParam("attrName") final String attrName,
           final Object value) throws MBeanException, ReflectionException, IOException {
@@ -263,31 +291,19 @@ public class JmxResource {
           MBeanParameterInfo[] signature = op.getSignature();
           List<org.spf4j.base.avro.jmx.MBeanParameterInfo> params = new ArrayList<>(signature.length);
           for (MBeanParameterInfo pi : signature) {
-            if (pi instanceof OpenMBeanParameterInfo) {
-              OpenType<?> pOpenType = ((OpenMBeanParameterInfo) pi).getOpenType();
-              OpenTypeAvroConverter converter = OpenTypeConverterSupplier.INSTANCE
-                      .getConverter(pOpenType);
-              params.add(new org.spf4j.base.avro.jmx.MBeanParameterInfo(pi.getName(),
-                    pi.getType(), converter.getSchema(pOpenType, OpenTypeConverterSupplier.INSTANCE),
-                      pi.getDescription(), toDescriptorMap(pi.getDescriptor())));
-            } else {
-              params.add(new org.spf4j.base.avro.jmx.MBeanParameterInfo(pi.getName(),
-                    pi.getType(), getSimpleTypeSchema(op.getReturnType()),
-                      pi.getDescription(), toDescriptorMap(pi.getDescriptor())));
-            }
-          }
-          if (op instanceof OpenMBeanOperationInfoSupport) {
-            OpenType<?> returnOpenType = ((OpenMBeanOperationInfoSupport) op).getReturnOpenType();
+            OpenType<?> pOpenType = getOpenType(pi);
             OpenTypeAvroConverter converter = OpenTypeConverterSupplier.INSTANCE
-                    .getConverter(returnOpenType);
-            output.accept(new org.spf4j.base.avro.jmx.MBeanOperationInfo(op.getName(), params,
+                    .getConverter(pOpenType);
+            params.add(new org.spf4j.base.avro.jmx.MBeanParameterInfo(pi.getName(),
+                    pi.getType(), converter.getSchema(pOpenType, OpenTypeConverterSupplier.INSTANCE),
+                    pi.getDescription(), toDescriptorMap(pi.getDescriptor())));
+          }
+          OpenType<?> returnOpenType = getOpenType(op);
+          OpenTypeAvroConverter converter = OpenTypeConverterSupplier.INSTANCE
+                  .getConverter(returnOpenType);
+          output.accept(new org.spf4j.base.avro.jmx.MBeanOperationInfo(op.getName(), params,
                   op.getReturnType(), converter.getSchema(returnOpenType, OpenTypeConverterSupplier.INSTANCE),
                   op.getDescription(), toImpact(op.getImpact()), descriptorMap));
-          } else {
-            output.accept(new org.spf4j.base.avro.jmx.MBeanOperationInfo(op.getName(), params,
-                  op.getReturnType(), getSimpleTypeSchema(op.getReturnType()),
-                  op.getDescription(), toImpact(op.getImpact()), descriptorMap));
-          }
         }
       }
     };
@@ -295,8 +311,8 @@ public class JmxResource {
 
   @POST
   @Path("/{mbeanName}/operations")
-  @Consumes(value = {"application/avro-x+json", "application/json",
-  "application/avro+json", "application/avro", "application/octet-stream"})
+  @Consumes({"application/avro-x+json", "application/json",
+    "application/avro+json", "application/avro", "application/octet-stream"})
   public Object invoke(
           @PathParam("mbeanName") final String mbeanName, final OperationInvocation invocation)
           throws MBeanException, ReflectionException, IOException {
@@ -311,7 +327,7 @@ public class JmxResource {
     for (MBeanOperationInfo oi : operations) {
       if (oi.getName().equals(opName)) {
         boolean match = true;
-        for (MBeanParameterInfo param :  oi.getSignature()) {
+        for (MBeanParameterInfo param : oi.getSignature()) {
           if (!sign.contains(param.getType())) {
             match = false;
             break;
@@ -323,9 +339,25 @@ public class JmxResource {
         }
       }
     }
+
+    Object[] cParams = new Object[parameters.size()];
+    MBeanParameterInfo[] signature = moi.getSignature();
+    for (int i = 0; i < cParams.length; i++) {
+      MBeanParameterInfo pinfo = signature[i];
+      OpenType openType = getOpenType(pinfo);
+      OpenTypeAvroConverter pconv = OpenTypeConverterSupplier.INSTANCE.getConverter(openType);
+      cParams[i] = pconv.toOpenValue(openType, parameters.get(i),
+              org.spf4j.actuator.jmx.OpenTypeConverterSupplier.INSTANCE);
+    }
+
+
+    OpenType retOpenType = getOpenType(moi);
+    OpenTypeAvroConverter converter = OpenTypeConverterSupplier.INSTANCE
+                    .getConverter(retOpenType);
     try {
-      return srv.invoke(mname, invocation.getName(),
-              parameters.toArray(new Object[parameters.size()]), sign.toArray(new String[sign.size()]));
+      return converter.fromOpenValue(retOpenType,
+              srv.invoke(mname, invocation.getName(), cParams, sign.toArray(new String[sign.size()])),
+              OpenTypeConverterSupplier.INSTANCE);
     } catch (InstanceNotFoundException ex) {
       throw new NotFoundException("bean not found " + mbeanName, ex);
     }

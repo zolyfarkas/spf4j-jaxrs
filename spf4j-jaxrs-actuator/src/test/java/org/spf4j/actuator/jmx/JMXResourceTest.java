@@ -15,7 +15,10 @@
  */
 package org.spf4j.actuator.jmx;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import org.junit.Test;
@@ -26,12 +29,17 @@ import static org.spf4j.actuator.ServiceIntegrationBase.getTarget;
 import org.spf4j.base.avro.jmx.AttributeValue;
 import org.spf4j.base.avro.jmx.MBeanAttributeInfo;
 import org.spf4j.base.avro.jmx.MBeanOperationInfo;
+import org.spf4j.base.avro.jmx.OperationInvocation;
 
 /**
  *
  * @author Zoltan Farkas
  */
 public class JMXResourceTest extends ServiceIntegrationBase {
+
+  static {
+    System.setProperty("avro.generic.default.stringClass", String.class.getName());
+  }
 
   private static final Logger LOG = LoggerFactory.getLogger(JMXResourceTest.class);
 
@@ -65,7 +73,7 @@ public class JMXResourceTest extends ServiceIntegrationBase {
       List<MBeanOperationInfo> ops = getTarget().path("jmx/{mbean}/operations")
             .resolveTemplate("mbean", beanName)
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<MBeanOperationInfo>>() { });
-      LOG.debug("Jmx{} attributes ", beanName, ops);
+      LOG.debug("Jmx {} operations ", beanName, ops);
     }
   }
 
@@ -76,6 +84,51 @@ public class JMXResourceTest extends ServiceIntegrationBase {
               .resolveTemplate("attrName", "Name")
               .request(MediaType.APPLICATION_JSON).get(new GenericType<Object>() { });
      LOG.debug("Jmx {} attribute  {} value ", "java.lang:name=Metaspace,type=MemoryPool", "Name", resp);
+  }
+
+  @Test
+  public void testInvokeOperation() {
+    /* calling: com.sun.management:type=DiagnosticCommand operation: gcClassHistogram.
+     {
+    "name": "gcClassHistogram",
+    "parameters": [{
+        "name": "arguments",
+        "type": "[Ljava.lang.String;",
+        "avroSchema": "string",
+        "description": "Array of Diagnostic Commands Arguments and Options",
+        "descriptor": {}
+      }],
+    "returnType": "java.lang.String",
+    "returnAvroSchema": "string",
+    "description": "Provide statistics about the Java heap usage.",
+    "impact": "ACTION_INFO",
+    "descriptor": {
+      "dcmd.permissionClass=java.lang.management.ManagementPermission": null,
+      "dcmd.enabled=(true)": null,
+      "dcmd.arguments=({-all={dcmd.arg.description=Inspect all objects,
+    including unreachable objects, dcmd.arg.isMandatory=false,
+    dcmd.arg.isMultiple=false, dcmd.arg.isOption=true, dcmd.arg.name=-all,
+    dcmd.arg.position=-1, dcmd.arg.type=BOOLEAN}})": null,
+      "dcmd.help=GC.class_histogram\nProvide statistics about the Java heap usage.
+    \n\nImpact: High: Depends on Java heap size and content.\n\nPermission:
+    java.lang.management.ManagementPermission(monitor)\n\nSyntax : GC.class_histogram
+    [options]\n\nOptions: (options must be specified using the <key> or <key>=<value> syntax)\n
+    \t-all : [optional] Inspect all objects, including unreachable objects (BOOLEAN, false)\n": null,
+      "dcmd.permissionName=monitor": null,
+      "dcmd.name=GC.class_histogram": null,
+      "dcmd.description=Provide statistics about the Java heap usage.": null,
+      "dcmd.vmImpact=High: Depends on Java heap size and content.": null,
+      "dcmd.permissionAction=": null
+    }
+  }
+    */
+    OperationInvocation invocation = new OperationInvocation("gcClassHistogram",
+            Arrays.asList("[Ljava.lang.String;"), Collections.singletonList(Collections.singletonList("-all")));
+     Object resp = getTarget().path("jmx/{mbean}/operations")
+              .resolveTemplate("mbean", "com.sun.management:type=DiagnosticCommand")
+              .request(MediaType.APPLICATION_JSON).
+             post(Entity.entity(invocation, MediaType.APPLICATION_JSON), new GenericType<Object>() { });
+     LOG.debug("Jmx {} operation  {} returned", "com.sun.management:type=DiagnosticCommand", "gcClassHistogram", resp);
   }
 
 

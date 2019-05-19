@@ -68,11 +68,16 @@ public interface OpenTypeAvroConverter<T extends OpenType, A, C> {
     @SuppressForbiden
     public Object fromOpenValue(final SimpleType type, final Object openValue,
             final OpenTypeConverterSupplier convSupp) {
+      if (openValue == null) {
+        return openValue;
+      }
       String className = type.getClassName();
       if (className.equals(ObjectName.class.getName())) {
         return ((ObjectName) openValue).getCanonicalName();
       } else if (className.equals(Date.class.getName())) {
         return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(((Date) openValue).getTime()));
+      } else if (className.equals(String.class.getName())) {
+        return openValue.toString();
       }
       return openValue;
     }
@@ -80,6 +85,9 @@ public interface OpenTypeAvroConverter<T extends OpenType, A, C> {
     @Override
     @SuppressForbiden
     public Object toOpenValue(final SimpleType type, final Object value, final OpenTypeConverterSupplier convSupp) {
+      if (value == null) {
+        return value;
+      }
       String className = type.getClassName();
       if (className.equals(ObjectName.class.getName())) {
         try {
@@ -89,6 +97,8 @@ public interface OpenTypeAvroConverter<T extends OpenType, A, C> {
         }
       } else if (className.equals(Date.class.getName())) {
         return new Date(DateTimeFormatter.ISO_INSTANT.parse((String) value, Instant::from).toEpochMilli());
+      } else if (className.equals(String.class.getName())) {
+        return value.toString();
       }
       return value;
     }
