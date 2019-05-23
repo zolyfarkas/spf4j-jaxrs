@@ -117,8 +117,14 @@ public interface OpenTypeAvroConverter<T extends OpenType, A, C> {
         return Schema.createUnion(Schema.create(Schema.Type.NULL), strType);
       }
       try {
-        return Schema.createUnion(Schema.create(Schema.Type.NULL),
-                ExtendedReflectData.get().getSchema(Reflections.forName(className)));
+        Schema schema = ExtendedReflectData.get().getSchema(Reflections.forName(className));
+        if (schema == null) {
+          throw new UnsupportedOperationException("Unable to figure out schema for " + className);
+        }
+        if (schema.getType() == Schema.Type.NULL) {
+          return schema;
+        }
+        return Schema.createUnion(Schema.create(Schema.Type.NULL), schema);
       } catch (ClassNotFoundException ex) {
         throw new RuntimeException(ex);
       }
