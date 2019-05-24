@@ -15,9 +15,6 @@
  */
 package org.spf4j.actuator.logs;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -34,15 +31,14 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import org.spf4j.base.avro.FileEntry;
 import org.spf4j.base.avro.FileType;
 import org.spf4j.base.avro.NetworkService;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
-import org.spf4j.io.Streams;
 import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.jaxrs.client.Spf4JClient;
+import org.spf4j.jaxrs.server.StreamedResponseContent;
 import org.spf4j.jaxrs.server.resources.FilesResource;
 
 /**
@@ -101,14 +97,7 @@ public class LogFilesResource {
     }
     URI uri = new URI(service.getName(), null,  path.get(0).getPath(), service.getPort(), tPath, null, null);
     Response resp = httpClient.target(uri).request(MediaType.WILDCARD).get(Response.class);
-    return Response.ok(new StreamingOutput() {
-      @Override
-      public void write(final OutputStream output) throws IOException {
-        try (InputStream is = resp.readEntity(InputStream.class)) {
-          Streams.copy(is, output);
-        }
-      }
-    }, resp.getHeaderString("Content-Type")).build();
+    return Response.ok(new StreamedResponseContent(resp), resp.getHeaderString("Content-Type")).build();
 
   }
 

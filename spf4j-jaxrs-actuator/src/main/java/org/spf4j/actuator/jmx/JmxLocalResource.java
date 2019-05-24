@@ -74,16 +74,16 @@ import org.spf4j.log.ExecContextLogger;
  *
  * @author Zoltan Farkas
  */
-@Path("jmx")
+@Path("jmx/local")
 @Immediate
 @RolesAllowed("operator")
 @Produces(value = {"application/avro-x+json", "application/json",
   "application/avro+json", "application/avro", "application/octet-stream"})
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 @Beta
-public class JmxResource {
+public class JmxLocalResource {
 
-  private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(JmxResource.class));
+  private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(JmxLocalResource.class));
 
   private static final String[] MBEAN_RESOURCES = {
     "attributes",
@@ -219,7 +219,7 @@ public class JmxResource {
     if (op instanceof OpenMBeanOperationInfoSupport) {
       openType = ((OpenMBeanOperationInfoSupport) op).getReturnOpenType();
     } else {
-      Object ot = op.getDescriptor().getFieldValue("returnOpenType");
+      Object ot = op.getDescriptor().getFieldValue("openType");
       if (ot instanceof OpenType) {
         return (OpenType) ot;
       }

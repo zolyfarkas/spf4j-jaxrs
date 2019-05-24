@@ -45,32 +45,32 @@ public class JMXResourceTest extends ServiceIntegrationBase {
 
   @Test
   public void testJmxEndpoint() {
-    List<String> beans = getTarget().path("jmx").request(
+    List<String> beans = getTarget().path("jmx/local").request(
             MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
     LOG.debug("Jmx resource ", beans);
     for (String beanName : beans) {
-      List<String> memory = getTarget().path("jmx/{mbean}").resolveTemplate("mbean", beanName)
+      List<String> memory = getTarget().path("jmx/local/{mbean}").resolveTemplate("mbean", beanName)
               .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
       LOG.debug("Jmx {} resource ", beanName, memory);
-      List<MBeanAttributeInfo> attrs = getTarget().path("jmx/{mbean}/attributes")
+      List<MBeanAttributeInfo> attrs = getTarget().path("jmx/local/{mbean}/attributes")
             .resolveTemplate("mbean", beanName)
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<MBeanAttributeInfo>>() { });
       LOG.debug("Jmx {} attributes ", beanName, attrs);
 
-      List<AttributeValue> values = getTarget().path("jmx/{mbean}/attributes/values")
+      List<AttributeValue> values = getTarget().path("jmx/local/{mbean}/attributes/values")
               .resolveTemplate("mbean", beanName)
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<AttributeValue>>() { });
       LOG.debug("Jmx {} attributes values ", beanName, values);
 
       if (!attrs.isEmpty()) {
         MBeanAttributeInfo ai = attrs.get(0);
-        Object resp = getTarget().path("jmx/{mbean}/attributes/values/{attrName}")
+        Object resp = getTarget().path("jmx/local/{mbean}/attributes/values/{attrName}")
               .resolveTemplate("mbean", beanName)
               .resolveTemplate("attrName", ai.getName())
               .request(MediaType.APPLICATION_JSON).get(new GenericType<Object>() { });
         LOG.debug("Jmx {} attribute  {} value ", beanName, ai.getName(), resp);
       }
-      List<MBeanOperationInfo> ops = getTarget().path("jmx/{mbean}/operations")
+      List<MBeanOperationInfo> ops = getTarget().path("jmx/local/{mbean}/operations")
             .resolveTemplate("mbean", beanName)
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<MBeanOperationInfo>>() { });
       LOG.debug("Jmx {} operations ", beanName, ops);
@@ -79,12 +79,22 @@ public class JMXResourceTest extends ServiceIntegrationBase {
 
   @Test
   public void testGetAttribute() {
-     Object resp = getTarget().path("jmx/{mbean}/attributes/values/{attrName}")
+     Object resp = getTarget().path("jmx/local/{mbean}/attributes/values/{attrName}")
               .resolveTemplate("mbean", "java.lang:name=Metaspace,type=MemoryPool")
               .resolveTemplate("attrName", "Name")
               .request(MediaType.APPLICATION_JSON).get(new GenericType<Object>() { });
      LOG.debug("Jmx {} attribute  {} value ", "java.lang:name=Metaspace,type=MemoryPool", "Name", resp);
   }
+
+  @Test
+  public void testGetAttributeCluster() {
+     Object resp = getTarget().path("jmx/cluster/127.0.0.1/{mbean}/attributes/values/{attrName}")
+              .resolveTemplate("mbean", "java.lang:name=Metaspace,type=MemoryPool")
+              .resolveTemplate("attrName", "Name")
+              .request(MediaType.APPLICATION_JSON).get(new GenericType<Object>() { });
+     LOG.debug("Jmx {} attribute  {} value ", "java.lang:name=Metaspace,type=MemoryPool", "Name", resp);
+  }
+
 
   @Test
   public void testInvokeOperation() {
@@ -124,7 +134,18 @@ public class JMXResourceTest extends ServiceIntegrationBase {
     */
     OperationInvocation invocation = new OperationInvocation("gcClassHistogram",
             Arrays.asList("[Ljava.lang.String;"), Collections.singletonList(Collections.singletonList("-all")));
-     Object resp = getTarget().path("jmx/{mbean}/operations")
+     Object resp = getTarget().path("jmx/local/{mbean}/operations")
+              .resolveTemplate("mbean", "com.sun.management:type=DiagnosticCommand")
+              .request(MediaType.APPLICATION_JSON).
+             post(Entity.entity(invocation, MediaType.APPLICATION_JSON), new GenericType<Object>() { });
+     LOG.debug("Jmx {} operation  {} returned", "com.sun.management:type=DiagnosticCommand", "gcClassHistogram", resp);
+  }
+
+ @Test
+  public void testInvokeOperationCluster() {
+    OperationInvocation invocation = new OperationInvocation("gcClassHistogram",
+            Arrays.asList("[Ljava.lang.String;"), Collections.singletonList(Collections.singletonList("-all")));
+     Object resp = getTarget().path("jmx/cluster/127.0.0.1/{mbean}/operations")
               .resolveTemplate("mbean", "com.sun.management:type=DiagnosticCommand")
               .request(MediaType.APPLICATION_JSON).
              post(Entity.entity(invocation, MediaType.APPLICATION_JSON), new GenericType<Object>() { });
