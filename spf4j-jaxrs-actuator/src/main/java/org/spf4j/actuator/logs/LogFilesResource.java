@@ -15,6 +15,7 @@
  */
 package org.spf4j.actuator.logs;
 
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -97,7 +98,8 @@ public class LogFilesResource {
     }
     URI uri = new URI(service.getName(), null,  path.get(0).getPath(), service.getPort(), tPath, null, null);
     Response resp = httpClient.target(uri).request(MediaType.WILDCARD).get(Response.class);
-    return Response.ok(new StreamedResponseContent(resp), resp.getHeaderString("Content-Type")).build();
+    return Response.ok(new StreamedResponseContent(() -> resp.readEntity(InputStream.class)),
+            resp.getHeaderString("Content-Type")).build();
 
   }
 

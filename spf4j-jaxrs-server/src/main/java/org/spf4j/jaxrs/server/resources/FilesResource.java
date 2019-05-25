@@ -58,12 +58,13 @@ public class FilesResource {
   @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // try-resources gen code
   public Response get(@PathParam("path") final List<PathSegment> path,
           @HeaderParam("Range") final HttpRange range) throws IOException {
-    Path target = base;
+    Path ltarget = base;
     for (PathSegment part : path) {
       String p = part.getPath();
       CharSequences.validatedFileName(p);
-      target = target.resolve(p);
+      ltarget = ltarget.resolve(p);
     }
+    final Path target = ltarget;
     if (Files.isDirectory(target)) {
       List<FileEntry> result = new ArrayList<>();
       try (DirectoryStream<Path> stream = Files.newDirectoryStream(target)) {
@@ -82,9 +83,9 @@ public class FilesResource {
       if (range != null && range.isByteRange()) {
         List<Range<Long>> ranges = range.getRanges();
         if (ranges.size() == 1) {
-          Range<Long> r = ranges.get(0);
+          final Range<Long> r = ranges.get(0);
           return Response.status(206).entity(new StreamedResponseContent(
-                  new BufferedInputStream(Files.newInputStream(target)), r.lowerEndpoint(), r.upperEndpoint()))
+                  () -> new BufferedInputStream(Files.newInputStream(target)), r.lowerEndpoint(), r.upperEndpoint()))
                   .encoding(MediaType.APPLICATION_OCTET_STREAM)
                   .header("Accept-Ranges", "bytes")
                   .header("Content-Range", "bytes " + r.lowerEndpoint() + '-' + r.upperEndpoint() + "/*")
@@ -92,7 +93,7 @@ public class FilesResource {
                   .build();
         }
       }
-      return Response.ok(new StreamedResponseContent(new BufferedInputStream(Files.newInputStream(target))),
+      return Response.ok(new StreamedResponseContent(() -> new BufferedInputStream(Files.newInputStream(target))),
               MediaType.APPLICATION_OCTET_STREAM)
               .header("Accept-Ranges", "bytes")
               .header("Content-Disposition", "attachment; filename=\"" + target.getFileName() + "\"")

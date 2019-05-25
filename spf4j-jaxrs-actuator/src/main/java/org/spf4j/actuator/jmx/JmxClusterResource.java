@@ -97,7 +97,8 @@ public class JmxClusterResource {
           @HeaderParam("Accept") @DefaultValue(MediaType.WILDCARD) final String accept) throws URISyntaxException {
     URI uri = buildURI(path);
     Response resp = httpClient.target(uri).request(accept).get(Response.class);
-    return Response.ok(new StreamedResponseContent(resp), resp.getHeaderString("Content-Type"))
+    return Response.ok(new StreamedResponseContent(() -> resp.readEntity(InputStream.class)),
+            resp.getHeaderString("Content-Type"))
             .header(Headers.CONTENT_SCHEMA, resp.getHeaderString(Headers.CONTENT_SCHEMA))
             .build();
   }
@@ -110,10 +111,11 @@ public class JmxClusterResource {
           @HeaderParam(Headers.CONTENT_SCHEMA) final String schema,
           final InputStream is) throws URISyntaxException {
     URI uri = buildURI(path);
-    Response resp = httpClient.target(uri)
+    final Response resp = httpClient.target(uri)
             .request(accept).header(Headers.CONTENT_SCHEMA, schema)
             .post(Entity.entity(is, contentType));
-    return Response.ok(new StreamedResponseContent(resp), resp.getHeaderString("Content-Type"))
+    return Response.ok(new StreamedResponseContent(() -> resp.readEntity(InputStream.class)),
+            resp.getHeaderString("Content-Type"))
             .header(Headers.CONTENT_SCHEMA, resp.getHeaderString(Headers.CONTENT_SCHEMA))
             .build();
   }

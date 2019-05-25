@@ -15,10 +15,12 @@
  */
 package org.spf4j.jaxrs.server;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import javax.ws.rs.core.StreamingOutput;
+import org.spf4j.base.ESupplier;
 import org.spf4j.io.Streams;
 
 /**
@@ -27,23 +29,24 @@ import org.spf4j.io.Streams;
  */
 public final class StreamedResponseContent implements StreamingOutput {
 
-  private final InputStream is;
+  private final ESupplier<InputStream, IOException> is;
   private final long from;
   private final long to;
 
-  public StreamedResponseContent(final InputStream is) {
+  public StreamedResponseContent(final ESupplier<InputStream, IOException> is) {
     this(is, 0, -1);
   }
 
-  public StreamedResponseContent(final InputStream is, final long from, final long to) {
+  public StreamedResponseContent(final ESupplier<InputStream, IOException> is, final long from, final long to) {
     this.is = is;
     this.from = from;
     this.to = to;
   }
 
   @Override
+  @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
   public void write(final OutputStream output) throws IOException {
-    try (InputStream bis = is) {
+    try (InputStream bis = is.get()) {
        long skip = bis.skip(from);
         if (skip != from) {
           throw new UnsupportedOperationException("Unable to skip " + from + " bytes, managed only " + skip);
