@@ -19,7 +19,6 @@ import com.google.common.collect.Range;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,12 +31,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import org.spf4j.base.CharSequences;
 import org.spf4j.base.avro.FileEntry;
 import org.spf4j.base.avro.FileType;
 import org.spf4j.http.HttpRange;
-import org.spf4j.io.Streams;
+import org.spf4j.jaxrs.server.StreamedResponseContent;
 
 /**
  * A naive implementation of a file tree REST "browser"
@@ -85,7 +83,8 @@ public class FilesResource {
         List<Range<Long>> ranges = range.getRanges();
         if (ranges.size() == 1) {
           Range<Long> r = ranges.get(0);
-          return Response.status(206).entity(new StreamedFile(target, r.lowerEndpoint(), r.upperEndpoint()))
+          return Response.status(206).entity(new StreamedResponseContent(
+                  new BufferedInputStream(Files.newInputStream(target)), r.lowerEndpoint(), r.upperEndpoint()))
                   .encoding(MediaType.APPLICATION_OCTET_STREAM)
                   .header("Accept-Ranges", "bytes")
                   .header("Content-Range", "bytes " + r.lowerEndpoint() + '-' + r.upperEndpoint() + "/*")
@@ -93,7 +92,8 @@ public class FilesResource {
                   .build();
         }
       }
-      return Response.ok(new StreamedFile(target), MediaType.APPLICATION_OCTET_STREAM)
+      return Response.ok(new StreamedResponseContent(new BufferedInputStream(Files.newInputStream(target))),
+              MediaType.APPLICATION_OCTET_STREAM)
               .header("Accept-Ranges", "bytes")
               .header("Content-Disposition", "attachment; filename=\"" + target.getFileName() + "\"")
               .build();
@@ -103,40 +103,6 @@ public class FilesResource {
   @Override
   public String toString() {
     return "FilesResource{" + "base=" + base + '}';
-  }
-
-  private static class StreamedFile implements StreamingOutput {
-
-    private final Path ft;
-
-    private final long from;
-
-    private final long to;
-
-    StreamedFile(final Path ft) {
-      this(ft, 0, -1L);
-    }
-
-    StreamedFile(final Path ft, final long from, final long to) {
-      this.ft = ft;
-      this.from = from;
-      this.to = to;
-    }
-
-    @Override
-    public void write(final OutputStream output) throws IOException {
-      try (BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(ft))) {
-        long skip = bis.skip(from);
-        if (skip != from) {
-          throw new UnsupportedOperationException("Unable to skip " + from + " bytes, managed only " + skip);
-        }
-        if (to < 0) {
-          Streams.copy(bis, output);
-        } else {
-          Streams.copy(bis, output, 8192, to);
-        }
-      }
-    }
   }
 
 }

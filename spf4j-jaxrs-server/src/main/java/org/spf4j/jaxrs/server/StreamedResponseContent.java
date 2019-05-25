@@ -18,7 +18,6 @@ package org.spf4j.jaxrs.server;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import org.spf4j.io.Streams;
 
@@ -28,21 +27,37 @@ import org.spf4j.io.Streams;
  */
 public final class StreamedResponseContent implements StreamingOutput {
 
-  private final Response resp;
+  private final InputStream is;
+  private final long from;
+  private final long to;
 
-  public StreamedResponseContent(final Response resp) {
-    this.resp = resp;
+  public StreamedResponseContent(final InputStream is) {
+    this(is, 0, -1);
+  }
+
+  public StreamedResponseContent(final InputStream is, final long from, final long to) {
+    this.is = is;
+    this.from = from;
+    this.to = to;
   }
 
   @Override
   public void write(final OutputStream output) throws IOException {
-    try (InputStream is = resp.readEntity(InputStream.class)) {
-      Streams.copy(is, output);
+    try (InputStream bis = is) {
+       long skip = bis.skip(from);
+        if (skip != from) {
+          throw new UnsupportedOperationException("Unable to skip " + from + " bytes, managed only " + skip);
+        }
+        if (to < 0) {
+          Streams.copy(bis, output);
+        } else {
+          Streams.copy(bis, output, 8192, to);
+        }
     }
   }
 
   @Override
   public String toString() {
-    return "StreamedResponseContent{" + "resp=" + resp + '}';
+    return "StreamedResponseContent{" + "is=" + is + '}';
   }
 }
