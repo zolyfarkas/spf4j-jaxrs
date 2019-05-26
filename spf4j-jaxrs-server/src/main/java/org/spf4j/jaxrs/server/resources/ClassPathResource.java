@@ -46,7 +46,7 @@ public class ClassPathResource {
   @Path("{path:.*}")
   public Response staticResources(@PathParam("path") final String path) {
     final InputStream resource = Thread.currentThread().getContextClassLoader()
-            .getResourceAsStream(cpBase + CharSequences.validatedFileName(path));
+            .getResourceAsStream(cpBase + '/' + CharSequences.validatedFileName(path));
     return null == resource
         ? Response.status(404).build()
         : Response.ok().entity(resource).build();
