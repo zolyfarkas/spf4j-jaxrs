@@ -32,6 +32,7 @@ import javax.ws.rs.core.UriInfo;
 import org.spf4j.jaxrs.RawSerialization;
 
 @Path("/")
+@SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 public class OpenApiResource extends BaseOpenApiResource {
 
   private final ServletConfig config;
@@ -49,8 +50,8 @@ public class OpenApiResource extends BaseOpenApiResource {
   @Operation(hidden = true)
   @RawSerialization
   @Path("openapi.json")
-  public Response getOpenApi(@Context HttpHeaders headers,
-          @Context UriInfo uriInfo) throws Exception {
+  public Response getOpenApi(@Context final HttpHeaders headers,
+          @Context final UriInfo uriInfo) throws Exception {
     return super.getOpenApi(headers, config, app, uriInfo, "json");
   }
 
@@ -59,8 +60,8 @@ public class OpenApiResource extends BaseOpenApiResource {
   @Operation(hidden = true)
   @RawSerialization
   @Path("openapi.yaml")
-  public Response getOpenApiYaml(@Context HttpHeaders headers,
-          @Context UriInfo uriInfo) throws Exception {
+  public Response getOpenApiYaml(@Context final HttpHeaders headers,
+          @Context final UriInfo uriInfo) throws Exception {
     return super.getOpenApi(headers, config, app, uriInfo, "yamls");
   }
 

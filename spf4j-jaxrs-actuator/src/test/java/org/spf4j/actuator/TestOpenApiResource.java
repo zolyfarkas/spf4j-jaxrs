@@ -15,7 +15,6 @@
  */
 package org.spf4j.actuator;
 
-import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import org.junit.Ignore;
 import org.junit.Test;
