@@ -17,6 +17,7 @@ package org.spf4j.actuator;
 
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,7 @@ public class TestOpenApiResource extends ServiceIntegrationBase {
   }
 
   @Test
+  @Ignore
   public void testOpenApiUI() throws InterruptedException {
     CharSequence json = getTarget().path("openapi.json")
             .request(MediaType.APPLICATION_JSON)
