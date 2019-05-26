@@ -51,6 +51,12 @@
     </dependency>
 
     <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-jaxrs2</artifactId>
+      <version>2.0.8</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.spf4j</groupId>
       <artifactId>spf4j-zel</artifactId>
       <version>${spf4j.version}</version>
@@ -65,8 +71,10 @@
     <dependency>
       <groupId>org.spf4j</groupId>
       <artifactId>spf4j-logback</artifactId>
-      <version>1.2.2</version>
+      <version>1.2.3-SNAPSHOT</version>
     </dependency>
+
+
 
     <dependency>
       <groupId>org.glassfish.jersey.containers</groupId>
@@ -90,6 +98,50 @@
         <artifactId>spotbugs-maven-plugin</artifactId>
       </plugin>
 -->
+
+      <plugin>
+        <groupId>com.googlecode.maven-download-plugin</groupId>
+        <artifactId>download-maven-plugin</artifactId>
+        <version>1.4.1</version>
+        <executions>
+          <execution>
+            <id>swagger-ui</id>
+            <goals>
+              <goal>wget</goal>
+            </goals>
+            <configuration>
+              <url>https://github.com/swagger-api/swagger-ui/archive/master.tar.gz</url>
+              <unpack>true</unpack>
+              <outputDirectory>${project.build.directory}</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>target/classes/org/spf4j/actuator/apiBrowser</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/swagger-ui-master/dist</directory>
+                  <filtering>true</filtering>
+                  <excludes>
+                    <exclude>index.html</exclude>
+                  </excludes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>

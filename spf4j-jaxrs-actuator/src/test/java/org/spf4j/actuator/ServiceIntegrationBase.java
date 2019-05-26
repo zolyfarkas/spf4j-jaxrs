@@ -33,6 +33,7 @@ import javax.inject.Singleton;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import javax.servlet.ServletContext;
+import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -61,6 +62,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spf4j.actuator.apiBrowser.OpenApiResource;
 import org.spf4j.actuator.health.ClusterAllNodesCheck;
 import org.spf4j.actuator.health.ClusterAllNodesRegistration;
 import org.spf4j.actuator.health.HealthCheck;
@@ -83,7 +85,9 @@ import org.spf4j.jaxrs.client.Spf4jWebTarget;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
+import org.spf4j.jaxrs.common.providers.CharSequenceMessageProvider;
 import org.spf4j.jaxrs.common.providers.CsvParameterConverterProvider;
+import org.spf4j.jaxrs.common.providers.DirectStringMessageProvider;
 import org.spf4j.jaxrs.common.providers.GZipEncoderDecoder;
 import org.spf4j.jaxrs.common.providers.avro.AvroFeature;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
@@ -205,6 +209,7 @@ public abstract class ServiceIntegrationBase {
   }
 
   @Singleton
+  @ApplicationPath("/")
   private static class TestApplication extends ResourceConfig {
 
     private static volatile TestApplication instance;
@@ -234,6 +239,7 @@ public abstract class ServiceIntegrationBase {
               .register(ClientCustomExecutorServiceProvider.class)
               .register(ClientCustomScheduledExecutionServiceProvider.class)
               .register(new CsvParameterConverterProvider(Collections.EMPTY_LIST))
+              .register(new CharSequenceMessageProvider())
               .register(GZipEncoder.class)
               .register(DeflateEncoder.class)
               .register(EncodingFilter.class)
@@ -244,6 +250,8 @@ public abstract class ServiceIntegrationBase {
       register(avroFeature);
       register(CsvParameterConverterProvider.class);
       register(GZipEncoderDecoder.class);
+      register(new DirectStringMessageProvider());
+      register(new CharSequenceMessageProvider());
       javax.servlet.ServletRegistration servletRegistration = srvContext.getServletRegistration("jersey");
       String initParameter = servletRegistration.getInitParameter("servlet.port");
       String bindAddr = servletRegistration.getInitParameter("servlet.bindAddr");
@@ -253,6 +261,7 @@ public abstract class ServiceIntegrationBase {
         throw new IllegalStateException("Application already initialized " + instance);
       }
       packages("org.spf4j.actuator");
+      registerClasses(OpenApiResource.class);
       instance = this;
     }
 
