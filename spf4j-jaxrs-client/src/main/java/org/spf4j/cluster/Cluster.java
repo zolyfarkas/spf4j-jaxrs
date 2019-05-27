@@ -1,21 +1,25 @@
 
 package org.spf4j.cluster;
 
-import com.google.common.collect.Sets;
-import com.google.common.collect.UnmodifiableIterator;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
+import org.spf4j.os.OperatingSystem;
 
 /**
  * @author Zoltan Farkas
  */
-public interface Cluster {
+public interface Cluster  extends Service {
 
   ClusterInfo getClusterInfo();
+
+  @Override
+  default ServiceInfo getServiceInfo() {
+    return getClusterInfo();
+  }
 
   static Set<InetAddress> getLocalAddresses() {
     Set<InetAddress> result = new HashSet<>(4);
@@ -39,23 +43,7 @@ public interface Cluster {
   }
 
   default String getLocalHostName() {
-    ClusterInfo clusterInfo = getClusterInfo();
-    Set<InetAddress> localAddresses = clusterInfo.getLocalAddresses();
-    Set<InetAddress> clusterAddresses = clusterInfo.getAddresses();
-    UnmodifiableIterator<InetAddress> iterator
-            = Sets.intersection(localAddresses, clusterAddresses)
-                    .iterator();
-    if (iterator.hasNext()) {
-      InetAddress next = iterator.next();
-      if (iterator.hasNext()) {
-        throw new IllegalStateException("Multiple local adresses " + localAddresses
-              + "within cluster addresses " + clusterAddresses);
-      }
-      return next.getHostName();
-    } else {
-      throw new IllegalStateException("local adresses " + localAddresses
-              + "not within cluster addresses " + clusterAddresses);
-    }
+    return OperatingSystem.getHostName();
   }
 
 }

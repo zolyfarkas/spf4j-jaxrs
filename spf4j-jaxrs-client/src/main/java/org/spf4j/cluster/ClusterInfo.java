@@ -27,8 +27,6 @@ public interface ClusterInfo extends ServiceInfo {
 
   Set<InetAddress> getAddresses();
 
-  Set<InetAddress> getLocalAddresses();
-
   default Set<InetAddress> getPeerAddresses() {
     return Sets.difference(getAddresses(), getLocalAddresses());
   }

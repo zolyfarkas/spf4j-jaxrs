@@ -15,38 +15,12 @@
  */
 package org.spf4j.cluster;
 
-import java.net.InetAddress;
-import java.util.Set;
-import javax.annotation.Nullable;
-import org.spf4j.base.avro.NetworkService;
-
 /**
  *
  * @author Zoltan Farkas
  */
-public interface ServiceInfo {
+public interface Service {
 
-  Set<InetAddress> getLocalAddresses();
-  
-  Set<NetworkService> getServices();
-
-  @Nullable
-  default NetworkService getService(final String name) {
-    for (NetworkService svc : getServices()) {
-      if (name.equals(svc.getName())) {
-        return svc;
-      }
-    }
-    return null;
-  }
-
-  @Nullable
-  default NetworkService getHttpService() {
-    NetworkService service = getService("http");
-    if (service == null) {
-      service = getService("https");
-    }
-    return service;
-  }
+    ServiceInfo getServiceInfo();
 
 }
