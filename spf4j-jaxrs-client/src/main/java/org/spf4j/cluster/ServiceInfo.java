@@ -15,22 +15,35 @@
  */
 package org.spf4j.cluster;
 
-import com.google.common.collect.Sets;
-import java.net.InetAddress;
 import java.util.Set;
+import javax.annotation.Nullable;
+import org.spf4j.base.avro.NetworkService;
 
 /**
  *
  * @author Zoltan Farkas
  */
-public interface ClusterInfo extends ServiceInfo {
+public interface ServiceInfo {
 
-  Set<InetAddress> getAddresses();
+  Set<NetworkService> getServices();
 
-  Set<InetAddress> getLocalAddresses();
+  @Nullable
+  default NetworkService getService(final String name) {
+    for (NetworkService svc : getServices()) {
+      if (name.equals(svc.getName())) {
+        return svc;
+      }
+    }
+    return null;
+  }
 
-  default Set<InetAddress> getPeerAddresses() {
-    return Sets.difference(getAddresses(), getLocalAddresses());
+  @Nullable
+  default NetworkService getHttpService() {
+    NetworkService service = getService("http");
+    if (service == null) {
+      service = getService("https");
+    }
+    return service;
   }
 
 }
