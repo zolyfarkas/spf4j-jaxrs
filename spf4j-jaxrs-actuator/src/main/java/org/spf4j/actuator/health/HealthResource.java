@@ -2,6 +2,7 @@ package org.spf4j.actuator.health;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -35,7 +36,7 @@ public class HealthResource {
 
   private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(HealthResource.class));
 
-  private final HealthOrgNode checks;
+  private final Supplier<HealthOrgNode> checkSupplier;
 
   private final String host;
 
@@ -47,30 +48,33 @@ public class HealthResource {
           @ConfigProperty("hostName") @DefaultValue("hostName") final String host) {
     this.ddEnt = ddEnt;
     this.host = host;
-    checks =  HealthOrgNode.newHealthChecks();
-    for (HealthCheck.Registration registration : healthChecks) {
-      String[] path = registration.getPath();
-      HealthCheck check = registration.getCheck();
-      switch (check.getType()) {
-        case local:
-          path = org.spf4j.base.Arrays.preppend(path, Type.local.toString());
-          break;
-        case cluster:
-          path = org.spf4j.base.Arrays.preppend(path, Type.cluster.toString());
-          break;
-        case custom:
-          break;
-        default:
-          throw new UnsupportedOperationException("Unsupported health check type " + check.getType());
+    checkSupplier = () -> {
+      HealthOrgNode checks = HealthOrgNode.newHealthChecks();
+      for (HealthCheck.Registration registration : healthChecks) {
+        String[] path = registration.getPath();
+        HealthCheck check = registration.getCheck();
+        switch (check.getType()) {
+          case local:
+            path = org.spf4j.base.Arrays.preppend(path, Type.local.toString());
+            break;
+          case cluster:
+            path = org.spf4j.base.Arrays.preppend(path, Type.cluster.toString());
+            break;
+          case custom:
+            break;
+          default:
+            throw new UnsupportedOperationException("Unsupported health check type " + check.getType());
+        }
+        checks.addHealthCheck(check, path);
       }
-      checks.addHealthCheck(check, path);
-    }
+      return checks;
+    };
   }
 
   @GET
   @Path("ping")
-  public void ping() {
-    // DO nothing, this is a ping endpoint.
+  public String ping() {
+    return "pong";
   }
 
   @GET
@@ -79,15 +83,14 @@ public class HealthResource {
     return list(Collections.EMPTY_LIST, maxDepth);
   }
 
-
   @GET
   @Path("info/{path:.*}")
   public HealthCheckInfo list(@PathParam("path") final List<PathSegment> path,
           @QueryParam("maxDepth") @DefaultValue("10") final int maxDepth) {
     String[] pathArr = toStrArray(path);
-    HealthOrgNode hNode = checks.getHealthNode(pathArr);
+    HealthOrgNode hNode = checkSupplier.get().getHealthNode(pathArr);
     if (hNode == null) {
-        throw new NotFoundException("No health checks at " + path);
+      throw new NotFoundException("No health checks at " + path);
     }
     return hNode.getHealthCheckInfo("", maxDepth);
   }
@@ -117,13 +120,13 @@ public class HealthResource {
           @QueryParam("debugOnError") @DefaultValue("true") final boolean pisDebugOnError,
           @Context final SecurityContext secCtx) {
     boolean isDebug = pisDebug;
-    boolean isDebugOnError =  pisDebugOnError;
+    boolean isDebugOnError = pisDebugOnError;
     if (!ddEnt.test(secCtx)) {
       isDebug = false;
       isDebugOnError = false;
     }
     String[] pathArr = toStrArray(path);
-    HealthOrgNode hNode = checks.getHealthNode(pathArr);
+    HealthOrgNode hNode = checkSupplier.get().getHealthNode(pathArr);
     HealthRecord healthRecord = hNode.getHealthRecord("", host, LOG, isDebug, isDebugOnError);
     if (healthRecord.getStatus() == HealthStatus.HEALTHY) {
       return Response.ok(healthRecord).build();
@@ -134,7 +137,7 @@ public class HealthResource {
 
   @Override
   public String toString() {
-    return "HealthResource{" + "checks=" + checks + ", host=" + host + ", ddEnt=" + ddEnt + '}';
+    return "HealthResource{" + "checks=" + checkSupplier + ", host=" + host + ", ddEnt=" + ddEnt + '}';
   }
 
 }
