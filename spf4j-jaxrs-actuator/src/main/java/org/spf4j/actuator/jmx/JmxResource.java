@@ -81,9 +81,9 @@ import org.spf4j.log.ExecContextLogger;
   "application/avro+json", "application/avro", "application/octet-stream"})
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 @Beta
-public class JmxLocalResource {
+public class JmxResource {
 
-  private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(JmxLocalResource.class));
+  private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(JmxResource.class));
 
   private static final String[] MBEAN_RESOURCES = {
     "attributes",

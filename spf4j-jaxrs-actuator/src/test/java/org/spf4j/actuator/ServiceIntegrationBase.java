@@ -76,6 +76,7 @@ import org.spf4j.base.avro.NetworkProtocol;
 import org.spf4j.base.avro.NetworkService;
 import org.spf4j.base.avro.ServiceError;
 import org.spf4j.cluster.Cluster;
+import org.spf4j.cluster.Service;
 import org.spf4j.cluster.SingleNodeCluster;
 import org.spf4j.concurrent.LifoThreadPoolBuilder;
 import org.spf4j.hk2.Spf4jBinder;
@@ -324,10 +325,12 @@ public abstract class ServiceIntegrationBase {
     @Override
     protected void configure() {
       try {
-        bind(new SingleNodeCluster(ImmutableSet.copyOf(InetAddress.getAllByName(bindAddr)),
+        SingleNodeCluster singleNodeCluster = new SingleNodeCluster(
+                ImmutableSet.copyOf(InetAddress.getAllByName(bindAddr)),
                 Collections.singleton(new NetworkService("http",
-                        port, NetworkProtocol.TCP))))
-                .to(Cluster.class);
+                        port, NetworkProtocol.TCP)));
+        bind(singleNodeCluster).to(Cluster.class);
+        bind(singleNodeCluster).to(Service.class);
       } catch (UnknownHostException ex) {
         throw new RuntimeException(ex);
       }
