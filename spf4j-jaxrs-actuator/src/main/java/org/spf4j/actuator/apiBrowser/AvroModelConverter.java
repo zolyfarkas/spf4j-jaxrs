@@ -104,7 +104,7 @@ public final class AvroModelConverter implements ModelConverter {
           final Map<org.apache.avro.Schema, Schema> resolved, final ModelConverterContext context) {
     Schema get = resolved.get(aSchema);
     if (get != null) {
-      return new Schema().$ref(aSchema.getFullName());
+      return new Schema().$ref("#/components/schemas/" + aSchema.getFullName());
     }
     LogicalType logicalType = aSchema.getLogicalType();
     Schema result;

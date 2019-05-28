@@ -15,8 +15,19 @@
  */
 package org.spf4j.actuator.apiBrowser;
 
+import io.swagger.v3.core.filter.OpenAPISpecFilter;
+import io.swagger.v3.core.filter.SpecFilter;
+import io.swagger.v3.core.util.Json;
+import io.swagger.v3.core.util.Yaml;
+import io.swagger.v3.jaxrs2.integration.JaxrsOpenApiContextBuilder;
+import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.getContextIdFromServletConfig;
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.integration.api.OpenApiContext;
+import io.swagger.v3.oas.models.OpenAPI;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
 
 import javax.servlet.ServletConfig;
@@ -25,15 +36,22 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spf4j.jaxrs.RawSerialization;
 
 @Path("/")
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 public class OpenApiResource extends BaseOpenApiResource {
+
+  private static final Logger LOG = LoggerFactory.getLogger(OpenApiResource.class);
 
   private final ServletConfig config;
 
@@ -52,7 +70,7 @@ public class OpenApiResource extends BaseOpenApiResource {
   @Path("openapi.json")
   public Response getOpenApi(@Context final HttpHeaders headers,
           @Context final UriInfo uriInfo) throws Exception {
-    return super.getOpenApi(headers, config, app, uriInfo, "json");
+    return getOpenApi(headers, config, app, uriInfo, "json");
   }
 
   @GET
@@ -62,7 +80,96 @@ public class OpenApiResource extends BaseOpenApiResource {
   @Path("openapi.yaml")
   public Response getOpenApiYaml(@Context final HttpHeaders headers,
           @Context final UriInfo uriInfo) throws Exception {
-    return super.getOpenApi(headers, config, app, uriInfo, "yamls");
+    return getOpenApi(headers, config, app, uriInfo, "yamls");
+  }
+
+  @Override
+  protected Response getOpenApi(final HttpHeaders headers,
+          final ServletConfig servletConfig,
+          final Application application,
+          final UriInfo uriInfo,
+          final String type) throws Exception {
+
+    String ctxId = getContextIdFromServletConfig(servletConfig);
+    OpenApiContext ctx = new JaxrsOpenApiContextBuilder()
+            .servletConfig(servletConfig)
+            .application(application)
+            .resourcePackages(resourcePackages)
+            .configLocation(configLocation)
+            .openApiConfiguration(openApiConfiguration)
+            .ctxId(ctxId)
+            .buildContext(true);
+    OpenAPI oas = ctx.read();
+    boolean pretty = false;
+    if (ctx.getOpenApiConfiguration() != null && Boolean.TRUE.equals(ctx.getOpenApiConfiguration().isPrettyPrint())) {
+      pretty = true;
+    }
+
+    if (oas != null) {
+      if (ctx.getOpenApiConfiguration() != null && ctx.getOpenApiConfiguration().getFilterClass() != null) {
+        try {
+          OpenAPISpecFilter filterImpl = (OpenAPISpecFilter) Class.forName(
+                  ctx.getOpenApiConfiguration().getFilterClass()).newInstance();
+          SpecFilter f = new SpecFilter();
+          oas = f.filter(oas, filterImpl, getQueryParams(uriInfo.getQueryParameters()), getCookies(headers),
+                  getHeaders(headers));
+        } catch (Exception e) {
+          LOG.error("failed to load filter", e);
+        }
+      }
+    }
+    SpecFilter f = new SpecFilter();
+    oas = f.filter(oas, new DefaultAspectsApiFilter(),
+            getQueryParams(uriInfo.getQueryParameters()), getCookies(headers),
+                  getHeaders(headers));
+    if (oas == null) {
+      return Response.status(404).build();
+    }
+
+    if (StringUtils.isNotBlank(type) && type.trim().equalsIgnoreCase("yaml")) {
+      return Response.status(Response.Status.OK)
+              .entity(pretty ? Yaml.pretty(oas) : Yaml.mapper().writeValueAsString(oas))
+              .type("application/yaml")
+              .build();
+    } else {
+      return Response.status(Response.Status.OK)
+              .entity(pretty ? Json.pretty(oas) : Json.mapper().writeValueAsString(oas))
+              .type(MediaType.APPLICATION_JSON_TYPE)
+              .build();
+    }
+  }
+
+  private static Map<String, List<String>> getQueryParams(final MultivaluedMap<String, String> params) {
+    Map<String, List<String>> output = new HashMap<String, List<String>>();
+    if (params != null) {
+      for (String key : params.keySet()) {
+        List<String> values = params.get(key);
+        output.put(key, values);
+      }
+    }
+    return output;
+  }
+
+  private static Map<String, String> getCookies(final HttpHeaders headers) {
+    Map<String, String> output = new HashMap<String, String>();
+    if (headers != null) {
+      for (String key : headers.getCookies().keySet()) {
+        Cookie cookie = headers.getCookies().get(key);
+        output.put(key, cookie.getValue());
+      }
+    }
+    return output;
+  }
+
+  private static Map<String, List<String>> getHeaders(final HttpHeaders headers) {
+    Map<String, List<String>> output = new HashMap<String, List<String>>();
+    if (headers != null) {
+      for (String key : headers.getRequestHeaders().keySet()) {
+        List<String> values = headers.getRequestHeaders().get(key);
+        output.put(key, values);
+      }
+    }
+    return output;
   }
 
 }
