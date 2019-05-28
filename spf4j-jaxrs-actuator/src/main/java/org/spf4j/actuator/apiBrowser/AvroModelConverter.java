@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
+import org.apache.avro.LogicalType;
 import org.apache.avro.reflect.ExtendedReflectData;
 
 /**
@@ -105,6 +106,7 @@ public final class AvroModelConverter implements ModelConverter {
     if (get != null) {
       return new Schema().$ref(aSchema.getFullName());
     }
+    LogicalType logicalType = aSchema.getLogicalType();
     Schema result;
     switch (aSchema.getType()) {
          case ARRAY:
@@ -136,7 +138,29 @@ public final class AvroModelConverter implements ModelConverter {
            result = PrimitiveType.LONG.createProperty();
            break;
          case STRING:
-           result = PrimitiveType.STRING.createProperty();
+            if (logicalType != null) {
+              switch (logicalType.getName()) {
+                case "date":
+                  result = PrimitiveType.DATE.createProperty();
+                  break;
+                case "instant":
+                  result = PrimitiveType.DATE_TIME.createProperty();
+                  break;
+                case "url":
+                  result = PrimitiveType.URL.createProperty();
+                  break;
+                case "uri":
+                  result = PrimitiveType.URI.createProperty();
+                  break;
+                case "uuid":
+                  result = PrimitiveType.UUID.createProperty();
+                  break;
+                default:
+                  result = PrimitiveType.STRING.createProperty();
+              }
+            } else {
+              result = PrimitiveType.STRING.createProperty();
+            }
            break;
          case NULL:
            result = PrimitiveType.STRING.createProperty().format("").nullable(Boolean.TRUE);
@@ -176,7 +200,10 @@ public final class AvroModelConverter implements ModelConverter {
          default:
            throw new UnsupportedOperationException("Unsupported schema type " + aSchema);
        }
-    return result.description(aSchema.getDoc());
+    if (aSchema.getProp("deprecated") != null) {
+      result.deprecated(Boolean.TRUE);
+    }
+    return result.description((aSchema.getProp("beta") != null ? "Beta model; " : "") + aSchema.getDoc());
   }
 
 }
