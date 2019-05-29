@@ -201,7 +201,7 @@ public abstract class ServiceIntegrationBase {
   public static void setUp() throws IOException, URISyntaxException {
     // start the server
     ModelConverters.getInstance().addConverter(AvroModelConverter.INSTANCE);
-    server = startHttpServer("127.0.0.1", "127.0.0.1", 8080);
+    server = startHttpServer("127.0.0.1", "127.0.0.1", 9090);
     client = TestApplication.getInstance().getRestClient();
     localService = "http://127.0.0.1:" + server.getListener("http").getPort();
     target = client.target(localService);
