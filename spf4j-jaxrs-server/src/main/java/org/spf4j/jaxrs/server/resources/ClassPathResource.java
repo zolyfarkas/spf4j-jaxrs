@@ -17,7 +17,6 @@ package org.spf4j.jaxrs.server.resources;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.InputStream;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -38,6 +37,10 @@ public class ClassPathResource {
     this.cpBase = cpBase;
   }
 
+  public String getCpBase() {
+    return cpBase;
+  }
+
   @Override
   public String toString() {
     return "ClassPathResource{" + "cpBase=" + cpBase + '}';
@@ -45,7 +48,7 @@ public class ClassPathResource {
 
   @GET
   @Path("{path:.*}")
-  public Response staticResources(@PathParam("path")  @DefaultValue("index.html") final String path) {
+  public Response staticResources(@PathParam("path")  final String path) {
     final InputStream resource = Thread.currentThread().getContextClassLoader()
             .getResourceAsStream(cpBase + '/' + CharSequences.validatedFileName(path));
     return null == resource

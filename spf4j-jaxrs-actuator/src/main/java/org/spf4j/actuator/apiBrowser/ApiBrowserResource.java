@@ -15,7 +15,13 @@
  */
 package org.spf4j.actuator.apiBrowser;
 
+import java.net.URI;
+
+import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import org.spf4j.jaxrs.server.resources.ClassPathResource;
 
 /**
@@ -35,6 +41,14 @@ public class ApiBrowserResource {
   @Path("apiBrowser")
   public ClassPathResource getUI() {
     return res;
+  }
+
+  @Path("apiBrowser")
+  @GET
+  public Response getUIIndex(@Context final UriInfo request) {
+    URI uri = request.getRequestUri();
+    URI redirect = uri.resolve(uri.getPath() + '/' + "index.html");
+    return Response.temporaryRedirect(redirect).build();
   }
 
 }
