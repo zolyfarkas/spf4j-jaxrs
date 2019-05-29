@@ -21,6 +21,7 @@ import io.swagger.v3.core.model.ApiDescription;
 import io.swagger.v3.core.util.PrimitiveType;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
@@ -45,6 +46,11 @@ public final class DefaultAspectsApiFilter extends AbstractSpecFilter {
   public Optional<OpenAPI> filterOpenAPI(final OpenAPI openAPI, final Map<String, List<String>> params,
           final Map<String, String> cookies, final Map<String, List<String>> headers) {
     openAPI.getComponents().getSchemas().putAll(ModelConverters.getInstance().readAll(ServiceError.class));
+    Paths np = new Paths();
+    openAPI.getPaths().entrySet().stream()
+      .sorted(Map.Entry.comparingByKey())
+      .forEach(entry -> np.put(entry.getKey(), entry.getValue()));
+    openAPI.setPaths(np);
     return Optional.of(openAPI);
   }
 
