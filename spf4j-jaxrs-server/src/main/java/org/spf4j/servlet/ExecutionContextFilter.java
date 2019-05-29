@@ -3,11 +3,14 @@ package org.spf4j.servlet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.spf4j.http.ContextTags;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import javax.servlet.AsyncContext;
 import javax.servlet.AsyncEvent;
@@ -21,9 +24,12 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+import org.apache.avro.SchemaResolver;
 import org.glassfish.jersey.uri.UriComponent;
+import org.spf4j.base.Arrays;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.Methods;
@@ -32,11 +38,16 @@ import org.spf4j.base.SysExits;
 import org.spf4j.base.Throwables;
 import org.spf4j.base.TimeSource;
 import org.spf4j.base.avro.Converters;
+import org.spf4j.base.avro.DebugDetail;
+import org.spf4j.base.avro.ServiceError;
 import org.spf4j.base.avro.StackSampleElement;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.http.DefaultDeadlineProtocol;
 import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
+import org.spf4j.io.LazyOutputStreamWrapper;
+import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
+import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyWriter;
 import org.spf4j.log.Level;
 import org.spf4j.log.LogAttribute;
 import org.spf4j.log.LogUtils;
@@ -146,16 +157,29 @@ public final class ExecutionContextFilter implements Filter {
     CountingHttpServletRequest httpReq = new CountingHttpServletRequest(
             overwriteHeadersIfNeeded((HttpServletRequest) request));
     CountingHttpServletResponse httpResp = new CountingHttpServletResponse((HttpServletResponse) response);
-    long startTimeNanos = TimeSource.nanoTime();
-    long deadlineNanos = deadlineProtocol.deserialize(httpReq::getHeader, startTimeNanos);
     String name = httpReq.getMethod() + '/' + httpReq.getRequestURL();
-    ExecutionContext ctx = ExecutionContexts.start(name,
-            httpReq.getHeader(idHeaderName), null, startTimeNanos, deadlineNanos);
+    String reqId = httpReq.getHeader(idHeaderName);
+    long startTimeNanos = TimeSource.nanoTime();
+    long deadlineNanos;
+    try {
+      deadlineNanos = deadlineProtocol.deserialize(httpReq::getHeader, startTimeNanos);
+    } catch (IllegalArgumentException ex) {
+      errorResponse(httpResp, 400, "Invalid deadline/timeout", "", ex);
+      logRequestEnd(org.spf4j.log.Level.WARN, name, reqId, httpReq, httpResp);
+      return;
+    }
+    ExecutionContext ctx = ExecutionContexts.start(name, reqId, null, startTimeNanos, deadlineNanos);
     ctx.put(ContextTags.HTTP_REQ, httpReq);
     ctx.put(ContextTags.HTTP_RESP, httpResp);
     String ctxLoglevel = httpReq.getHeader(ctxLogLevelHeaderName);
     if (ctxLoglevel != null) {
-      ctx.setBackendMinLogLevel(Level.valueOf(ctxLoglevel));
+      try {
+        ctx.setBackendMinLogLevel(Level.valueOf(ctxLoglevel));
+      } catch (IllegalArgumentException ex) {
+        errorResponse(httpResp, 400, "Invalid log level", ctxLoglevel, ex);
+        logRequestEnd(org.spf4j.log.Level.WARN, name, reqId, httpReq, httpResp);
+        return;
+      }
     }
     try {
       chain.doFilter(httpReq, httpResp);
@@ -203,7 +227,7 @@ public final class ExecutionContextFilter implements Filter {
   }
 
   @SuppressFBWarnings("UCC_UNRELATED_COLLECTION_CONTENTS")
-  public void logRequestEnd(final Level plevel,
+  private void logRequestEnd(final Level plevel,
           final ExecutionContext ctx, final CountingHttpServletRequest req, final CountingHttpServletResponse resp) {
     org.spf4j.log.Level level;
     org.spf4j.log.Level ctxOverride = ctx.get(ContextTags.LOG_LEVEL);
@@ -284,6 +308,54 @@ public final class ExecutionContextFilter implements Filter {
     }
   }
 
+  private void logRequestEnd(final Level level, final String reqStr,
+          final String reqId, final CountingHttpServletRequest req,
+          final CountingHttpServletResponse resp) {
+    Object[] args;
+    args = new Object[]{reqStr,
+      LogAttribute.traceId(reqId),
+      LogAttribute.of("clientHost", getRemoteHost(req)),
+      LogAttribute.value("httpStatus", resp.getStatus()),
+      LogAttribute.execTimeMicros(0, TimeUnit.NANOSECONDS),
+      LogAttribute.value("inBytes", req.getBytesRead()), LogAttribute.value("outBytes", resp.getBytesWritten())
+    };
+    log.log(level.getJulLevel(), "Done {0}", args);
+  }
+
+
+  private void errorResponse(final HttpServletResponse resp,
+          final int status, final String reasonPhrase, final String description, final Throwable exception) {
+    resp.setStatus(status);
+    ServiceError err = ServiceError.newBuilder()
+            .setCode(status)
+            .setMessage(reasonPhrase + "; " + description)
+            .setDetail(new DebugDetail("origin", Collections.EMPTY_LIST,
+                    exception != null ? Converters.convert(exception) : null, Collections.EMPTY_LIST))
+            .build();
+    XJsonAvroMessageBodyWriter writer = new XJsonAvroMessageBodyWriter(new DefaultSchemaProtocol(
+            SchemaResolver.NONE));
+    try {
+      MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<String, Object>(2);
+      writer.writeTo(err, err.getClass(), err.getClass(),
+              Arrays.EMPTY_ANNOT_ARRAY,
+              MediaType.APPLICATION_JSON_TYPE, headers,
+              new LazyOutputStreamWrapper(new HeaderWriteBeforeOutput(headers, resp)));
+    } catch (RuntimeException ex) {
+      if (exception != null) {
+        ex.addSuppressed(exception);
+      }
+      log.log(java.util.logging.Level.SEVERE, "Exception while writing detail", ex);
+      throw ex;
+    } catch (IOException ex) {
+      if (exception != null) {
+        ex.addSuppressed(exception);
+      }
+      log.log(java.util.logging.Level.SEVERE, "Exception while writing detail", ex);
+      throw new UncheckedIOException(ex);
+    }
+  }
+
+
   private String getRemoteHost(final HttpServletRequest req) {
     try { // see https://github.com/eclipse-ee4j/grizzly/issues/2042
       return req.getRemoteHost();
@@ -334,6 +406,38 @@ public final class ExecutionContextFilter implements Filter {
     return "ExecutionContextFilter{" + "deadlineProtocol=" + deadlineProtocol + ", idHeaderName="
             + idHeaderName + ", warnThreshold=" + warnThreshold + ", errorThreshold="
             + errorThreshold + '}';
+  }
+
+  @SuppressFBWarnings("DMC_DUBIOUS_MAP_COLLECTION")
+  private static class HeaderWriteBeforeOutput implements Supplier<OutputStream> {
+
+    private final MultivaluedHashMap<String, Object> headers;
+    private final HttpServletResponse resp;
+
+    HeaderWriteBeforeOutput(final MultivaluedHashMap<String, Object> headers, final HttpServletResponse resp) {
+      this.headers = headers;
+      this.resp = resp;
+    }
+
+    @Override
+    @SuppressFBWarnings("HTTP_RESPONSE_SPLITTING")
+    public OutputStream get() {
+      for (Map.Entry<String, List<Object>> entry : headers.entrySet()) {
+        String key = entry.getKey();
+        for (Object val : entry.getValue()) {
+          String strVal = val.toString();
+          if (strVal.indexOf('\n') >= 0 || strVal.indexOf('\r') >= 0) {
+            throw new IllegalArgumentException("No multiline warning messages supported: " + strVal);
+          }
+          resp.addHeader(key, strVal);
+        }
+      }
+      try {
+        return resp.getOutputStream();
+      } catch (IOException ex) {
+        throw new UncheckedIOException(ex);
+      }
+    }
   }
 
 }
