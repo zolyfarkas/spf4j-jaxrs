@@ -131,7 +131,7 @@ public final class Spf4JClient implements Client {
 
 
   @Nullable
-  public static ParamConverter getConverter(final Class type, final List<ParamConverterProvider> paramConverters) {
+  public static ParamConverter getConverter(final Class type, final Iterable<ParamConverterProvider> paramConverters) {
     for (ParamConverterProvider pcp : paramConverters) {
       ParamConverter converter = pcp.getConverter(type, type, Arrays.EMPTY_ANNOT_ARRAY);
       if (converter != null) {

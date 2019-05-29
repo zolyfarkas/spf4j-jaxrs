@@ -268,10 +268,10 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
     Throwable rootCause = null;
     if (detail != null) {
       org.spf4j.base.avro.Throwable throwable = detail.getThrowable();
-      if (throwable != null) {
-        rootCause = Converters.convert(detail.getOrigin(), throwable);
-      }
       String origin = detail.getOrigin();
+      if (throwable != null) {
+        rootCause = Converters.convert(origin, throwable);
+      }
       if (current != null) {
         for (LogRecord log : detail.getLogs()) {
           if (log.getOrigin().isEmpty()) {
