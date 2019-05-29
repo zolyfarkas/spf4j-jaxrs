@@ -98,7 +98,9 @@ public final class DefaultDeadlineProtocol implements DeadlineProtocol {
       case 'n':
         return TimeUnit.NANOSECONDS;
       default:
-        throw new IllegalArgumentException("Unsupported time unit " + cs + " at " + idx);
+        throw new IllegalArgumentException("Unsupported time unit " + cs + " at " + idx
+        + "; Supported units: Hour - \"H\" Minute - \"M\""
+                + " Second - \"S\" Millisecond - \"m\" Microsecond - \"u\" Nanosecond → \"n\"");
     }
   }
 
