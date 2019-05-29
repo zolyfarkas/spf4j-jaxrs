@@ -61,7 +61,7 @@ public class InfoResource {
     return getProcessInfo(service.getServiceInfo());
   }
 
-  ProcessInfo getProcessInfo(final ServiceInfo serviceInfo) {
+  public ProcessInfo getProcessInfo(final ServiceInfo serviceInfo) {
     ProcessInfo.Builder builder = ProcessInfo.newBuilder()
             .setAppVersion(org.spf4j.base.Runtime.getAppVersionString())
             .setHostName(hostName)

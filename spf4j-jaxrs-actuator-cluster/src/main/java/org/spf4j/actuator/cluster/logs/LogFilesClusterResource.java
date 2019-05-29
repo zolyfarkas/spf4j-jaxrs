@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.actuator.logs;
+package org.spf4j.actuator.cluster.logs;
 
 import java.io.InputStream;
 import java.net.InetAddress;

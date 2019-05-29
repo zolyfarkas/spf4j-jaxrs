@@ -1,5 +1,5 @@
 
-package org.spf4j.actuator.info;
+package org.spf4j.actuator.cluster.info;
 
 import java.net.MalformedURLException;
 import javax.ws.rs.core.MediaType;

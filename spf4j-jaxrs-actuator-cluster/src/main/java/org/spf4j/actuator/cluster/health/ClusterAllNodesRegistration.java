@@ -1,7 +1,8 @@
-package org.spf4j.actuator.health;
+package org.spf4j.actuator.cluster.health;
 
 import javax.inject.Inject;
 import org.jvnet.hk2.annotations.Service;
+import org.spf4j.actuator.health.HealthCheck;
 
 /**
  *

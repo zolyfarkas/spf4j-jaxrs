@@ -1,4 +1,4 @@
-package org.spf4j.actuator.health;
+package org.spf4j.actuator.cluster.health;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.InetAddress;
@@ -15,6 +15,7 @@ import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
+import org.spf4j.actuator.health.HealthCheck;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.avro.HealthRecord;

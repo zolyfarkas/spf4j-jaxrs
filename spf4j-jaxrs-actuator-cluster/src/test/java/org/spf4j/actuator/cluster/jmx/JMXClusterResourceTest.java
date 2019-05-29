@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.actuator.jmx;
+package org.spf4j.actuator.cluster.jmx;
 
 import java.util.Arrays;
 import java.util.Collections;

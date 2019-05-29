@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.actuator.info;
+package org.spf4j.actuator.cluster.info;
 
 import java.net.InetAddress;
 import java.net.URI;
@@ -31,6 +31,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import org.glassfish.hk2.api.Immediate;
+import org.spf4j.actuator.info.InfoResource;
 import org.spf4j.base.avro.NetworkService;
 import org.spf4j.base.avro.ProcessInfo;
 import org.spf4j.cluster.Cluster;

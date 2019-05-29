@@ -1,4 +1,4 @@
-package org.spf4j.actuator.logs;
+package org.spf4j.actuator.cluster.logs;
 
 import org.spf4j.jaxrs.server.AsyncResponseWrapper;
 import java.io.IOException;
@@ -30,6 +30,7 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.StreamingOutput;
+import org.spf4j.actuator.logs.LogsResource;
 import org.spf4j.base.avro.LogRecord;
 import org.spf4j.base.avro.NetworkService;
 import org.spf4j.base.avro.Order;

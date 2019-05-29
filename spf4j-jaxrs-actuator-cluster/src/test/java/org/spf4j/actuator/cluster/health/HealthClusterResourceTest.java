@@ -1,5 +1,5 @@
 
-package org.spf4j.actuator.health;
+package org.spf4j.actuator.cluster.health;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
