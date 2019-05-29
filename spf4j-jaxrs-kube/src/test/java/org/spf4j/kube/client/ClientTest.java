@@ -39,7 +39,7 @@ public class ClientTest {
 
   @Test
   public void testKubeClient() {
-    Client kubeCl = new Client("127.0.0.1:32770", null, null);
+    Client kubeCl = new Client("127.0.0.1:32768", null, null);
     Endpoints endpoints = kubeCl.getEndpoints("default", "jaxrs-spf4j-demo");
     LOG.debug("Endpoints: {} ", endpoints);
     Assert.assertNotNull(endpoints);

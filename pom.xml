@@ -50,6 +50,7 @@
     <module>spf4j-jaxrs-client</module>
     <module>spf4j-jaxrs-server</module>
     <module>spf4j-jaxrs-actuator</module>
+    <module>spf4j-jaxrs-actuator-cluster</module>
   </modules>
 
   <dependencyManagement>

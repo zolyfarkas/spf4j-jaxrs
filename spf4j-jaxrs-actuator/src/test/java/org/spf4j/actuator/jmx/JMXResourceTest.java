@@ -86,15 +86,6 @@ public class JMXResourceTest extends ServiceIntegrationBase {
      LOG.debug("Jmx {} attribute  {} value ", "java.lang:name=Metaspace,type=MemoryPool", "Name", resp);
   }
 
-  @Test
-  public void testGetAttributeCluster() {
-     Object resp = getTarget().path("jmx/cluster/127.0.0.1/{mbean}/attributes/values/{attrName}")
-              .resolveTemplate("mbean", "java.lang:name=Metaspace,type=MemoryPool")
-              .resolveTemplate("attrName", "Name")
-              .request(MediaType.APPLICATION_JSON).get(new GenericType<Object>() { });
-     LOG.debug("Jmx {} attribute  {} value ", "java.lang:name=Metaspace,type=MemoryPool", "Name", resp);
-  }
-
 
   @Test
   public void testInvokeOperation() {
@@ -140,18 +131,5 @@ public class JMXResourceTest extends ServiceIntegrationBase {
              post(Entity.entity(invocation, MediaType.APPLICATION_JSON), new GenericType<Object>() { });
      LOG.debug("Jmx {} operation  {} returned", "com.sun.management:type=DiagnosticCommand", "gcClassHistogram", resp);
   }
-
- @Test
-  public void testInvokeOperationCluster() {
-    OperationInvocation invocation = new OperationInvocation("gcClassHistogram",
-            Arrays.asList("[Ljava.lang.String;"), Collections.singletonList(Collections.singletonList("-all")));
-     Object resp = getTarget().path("jmx/cluster/127.0.0.1/{mbean}/operations")
-              .resolveTemplate("mbean", "com.sun.management:type=DiagnosticCommand")
-              .request(MediaType.APPLICATION_JSON).
-             post(Entity.entity(invocation, MediaType.APPLICATION_JSON), new GenericType<Object>() { });
-     LOG.debug("Jmx {} operation  {} returned", "com.sun.management:type=DiagnosticCommand", "gcClassHistogram", resp);
-  }
-
-
 
 }

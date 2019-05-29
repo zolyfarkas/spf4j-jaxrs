@@ -23,7 +23,8 @@
   <artifactId>spf4j-jaxrs-actuator</artifactId>
   <packaging>jar</packaging>
   <name>${project.artifactId}-${project.version}</name>
-  <description>jax-rs server siode components</description>
+  <description>jax-rs actuator implementation that provides REST api access to info,
+    logs, health, jmx, openapi descriptor and ui</description>
   <parent>
     <groupId>org.spf4j</groupId>
     <artifactId>spf4j-jaxrs</artifactId>

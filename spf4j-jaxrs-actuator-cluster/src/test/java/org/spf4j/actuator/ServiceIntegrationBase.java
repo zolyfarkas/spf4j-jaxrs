@@ -65,6 +65,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.apiBrowser.AvroModelConverter;
 import org.spf4j.actuator.apiBrowser.OpenApiResource;
+import org.spf4j.actuator.health.ClusterAllNodesCheck;
+import org.spf4j.actuator.health.ClusterAllNodesRegistration;
 import org.spf4j.actuator.health.HealthCheck;
 import org.spf4j.avro.SchemaClient;
 import org.spf4j.base.Arrays;
@@ -300,6 +302,8 @@ public abstract class ServiceIntegrationBase {
             return HealthCheck.NOP;
           }
         }).to(HealthCheck.Registration.class);
+        bindAsContract(ClusterAllNodesCheck.class);
+        bind(ClusterAllNodesRegistration.class).to(HealthCheck.Registration.class);
       }
     }
   }
