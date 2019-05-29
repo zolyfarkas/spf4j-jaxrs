@@ -18,23 +18,28 @@ package org.spf4j.actuator.apiBrowser;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.filter.AbstractSpecFilter;
 import io.swagger.v3.core.model.ApiDescription;
+import io.swagger.v3.core.util.PrimitiveType;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.spf4j.base.avro.ServiceError;
+import org.spf4j.http.Headers;
+import org.spf4j.log.Level;
 
 /**
  * @author Zoltan Farkas
  */
 public final class DefaultAspectsApiFilter extends AbstractSpecFilter {
-
 
   @Override
   public Optional<OpenAPI> filterOpenAPI(final OpenAPI openAPI, final Map<String, List<String>> params,
@@ -48,9 +53,35 @@ public final class DefaultAspectsApiFilter extends AbstractSpecFilter {
           final Map<String, List<String>> params, final Map<String, String> cookies,
           final Map<String, List<String>> headers) {
     ApiResponses responses = operation.getResponses();
-    responses.addApiResponse("error", new ApiResponse().content(new Content().addMediaType("application/json",
-            new MediaType().schema(new Schema().$ref("#/components/schemas/"
-                    + ServiceError.getClassSchema().getFullName())))));
+    List<Parameter> parameters = operation.getParameters();
+    if (parameters == null) {
+      parameters = new ArrayList<>(4);
+      operation.setParameters(parameters);
+    }
+    parameters.add(new Parameter().required(Boolean.FALSE).name(Headers.REQ_TIMEOUT).in("header")
+            .description("request-timeout → TimeoutValue TimeoutUnit?\n"
+                    + " TimeoutValue → {positive integer as ASCII string of at most 8 digits}\n"
+                    + " TimeoutUnit → Hour / Minute / Second / Millisecond / Microsecond / Nanosecond\n"
+                    + " Hour → \"H\"\n"
+                    + " Minute → \"M\"\n"
+                    + " Second → \"S\"\n"
+                    + " Millisecond → \"m\"\n"
+                    + " Microsecond → \"u\"\n"
+                    + " Nanosecond → \"n\"")
+            .schema(PrimitiveType.STRING.createProperty()));
+    parameters.add(new Parameter().description("Request context log level")
+            .required(Boolean.FALSE).name(Headers.CTX_LOG_LEVEL).in("header")
+            .schema(ModelConverters.getInstance().readAllAsResolvedSchema(Level.class).schema));
+    parameters.add(new Parameter().description("Request id, if not provided server will generate one")
+            .required(Boolean.FALSE).name(Headers.REQ_ID).in("header")
+            .schema(PrimitiveType.STRING.createProperty().description("Request ID")));
+    responses.addApiResponse("error", new ApiResponse().description("standard error response")
+            .content(new Content().addMediaType("application/json",
+            new MediaType().
+                    schema(new Schema().$ref("#/components/schemas/"
+                            + ServiceError.getClassSchema().getFullName()))))
+            .addHeaderObject(Headers.CONTENT_SCHEMA, new Header().schema(PrimitiveType.STRING.createProperty()
+                    .description("Avro schema of the content"))));
     return Optional.of(operation);
   }
 
