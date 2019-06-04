@@ -125,4 +125,19 @@ public class ClientTest {
   }
 
 
+  @Test
+  public void testTokenReview() {
+    Client kubeCl = new Client("127.0.0.1:32768", null, null);
+    TokenReview.Status tokenReview = kubeCl.tokenReview(System.getProperty("kube.token"));
+    Assert.assertTrue(tokenReview.isAuthenticated());
+  }
+
+  @Test
+  public void testTokenReviewFail() {
+    Client kubeCl = new Client("127.0.0.1:32768", null, null);
+    TokenReview.Status tokenReview = kubeCl.tokenReview("abc");
+    Assert.assertFalse(tokenReview.isAuthenticated());
+  }
+
+
 }

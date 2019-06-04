@@ -63,6 +63,34 @@
           <debug>true</debug>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.22.1</version>
+        <configuration>
+          <trimStackTrace>false</trimStackTrace>
+          <forkCount>1</forkCount>
+          <reuseForks>false</reuseForks>
+          <systemProperties>
+            <spf4j.execContentFactoryWrapperClass>org.spf4j.stackmonitor.ProfiledExecutionContextFactory</spf4j.execContentFactoryWrapperClass>
+            <kube.token>${kube.token}</kube.token>
+          </systemProperties>
+          <properties>
+            <property>
+              <name>listener</name>
+              <value>org.spf4j.test.log.junit4.Spf4jTestLogRunListener</value>
+            </property>
+          </properties>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.spf4j</groupId>
+            <artifactId>spf4j-slf4j-test</artifactId>
+            <version>${spf4j.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
     </plugins>
   </build>
 

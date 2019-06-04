@@ -30,17 +30,20 @@ import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.client.ClientProperties;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.jaxrs.client.Spf4JClient;
+import org.spf4j.jaxrs.client.Spf4jWebTarget;
 import org.spf4j.jaxrs.client.providers.BearerAuthClientFilter;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyReader;
+import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyWriter;
 
 /**
  * A mini kubernetes client that implements "discovery" and is meant to be used within a
@@ -58,6 +61,8 @@ import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyReader;
 public final class Client {
 
   private final WebTarget apiTarget;
+
+  private final WebTarget tokenReviewTarget;
 
   public Client(@Nullable final String apiToken,
           @Nullable final byte[] caCertificate) {
@@ -77,15 +82,23 @@ public final class Client {
     if (apiToken != null) {
       clBuilder = clBuilder.register(new BearerAuthClientFilter((hv) -> hv.append(apiToken)));
     }
-    apiTarget = new Spf4JClient(clBuilder
+    Spf4jWebTarget rootTarget = new Spf4JClient(clBuilder
             .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE, true))
             .register(ClientCustomExecutorServiceProvider.class)
             .register(ClientCustomScheduledExecutionServiceProvider.class)
-//            .register(new JsonAvroMessageBodyReader2(SchemaProtocol.NONE))
             .register(new XJsonAvroMessageBodyReader(SchemaProtocol.NONE))
+            .register(new XJsonAvroMessageBodyWriter(SchemaProtocol.NONE))
             .property(ClientProperties.USE_ENCODING, "gzip")
             .build()).target((caCertificate == null ? "http://" : "https://")
-                    + kubernetesMaster).path("api/v1");
+                    + kubernetesMaster);
+    apiTarget = rootTarget.path("api/v1");
+    tokenReviewTarget = rootTarget.path("apis/authentication.k8s.io/v1/tokenreviews");
+  }
+
+
+  public TokenReview.Status tokenReview(final String token) {
+    return tokenReviewTarget.request(MediaType.APPLICATION_JSON_TYPE).post(
+            Entity.entity(new TokenReview(token), MediaType.APPLICATION_JSON), TokenReview.class).getStatus();
   }
 
 
