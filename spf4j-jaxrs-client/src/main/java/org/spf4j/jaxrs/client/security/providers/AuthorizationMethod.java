@@ -15,22 +15,10 @@
  */
 package org.spf4j.jaxrs.client.security.providers;
 
-import java.util.function.Consumer;
-import javax.annotation.Priority;
-import javax.ws.rs.Priorities;
-import javax.ws.rs.ext.Provider;
-
 /**
- * A client filter that will set the authorization header with a Bearer token.
+ *
  * @author Zoltan Farkas
  */
-@Priority(Priorities.HEADER_DECORATOR)
-@Provider
-public final class BearerAuthClientFilter extends  AuthorizationClientFilter {
-
-
-  public BearerAuthClientFilter(final Consumer<StringBuilder> tokenWriter) {
-    super(AuthorizationMethod.Bearer, tokenWriter);
-  }
-
+public enum AuthorizationMethod {
+  Bearer, Basic
 }

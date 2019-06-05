@@ -15,22 +15,21 @@
  */
 package org.spf4j.jaxrs.client.security.providers;
 
-import java.util.function.Consumer;
-import javax.annotation.Priority;
-import javax.ws.rs.Priorities;
-import javax.ws.rs.ext.Provider;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * A client filter that will set the authorization header with a Bearer token.
+ *
  * @author Zoltan Farkas
  */
-@Priority(Priorities.HEADER_DECORATOR)
-@Provider
-public final class BearerAuthClientFilter extends  AuthorizationClientFilter {
+public class BasicAuthorizationUserPasswordTest {
 
-
-  public BearerAuthClientFilter(final Consumer<StringBuilder> tokenWriter) {
-    super(AuthorizationMethod.Bearer, tokenWriter);
+  @Test
+  public void testUserPassword() {
+    BasicAuthorizationUserPassword up = new BasicAuthorizationUserPassword("myUser", "sdfsdjfh:asr");
+    String headerValue = up.toString();
+    BasicAuthorizationUserPassword up2 = new BasicAuthorizationUserPassword(headerValue);
+    Assert.assertEquals(up, up2);
   }
 
 }

@@ -15,7 +15,8 @@
  */
 package org.spf4j.jaxrs.client.security.providers;
 
-import java.util.function.Consumer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.ext.Provider;
@@ -26,11 +27,15 @@ import javax.ws.rs.ext.Provider;
  */
 @Priority(Priorities.HEADER_DECORATOR)
 @Provider
-public final class BearerAuthClientFilter extends  AuthorizationClientFilter {
+public final class BasicAuthClientFilter extends  AuthorizationClientFilter {
+
+  public BasicAuthClientFilter(final BasicAuthorizationUserPassword tokenWriter) {
+    super(AuthorizationMethod.Basic, (header) -> tokenWriter.writeTo(header, StandardCharsets.US_ASCII));
+  }
 
 
-  public BearerAuthClientFilter(final Consumer<StringBuilder> tokenWriter) {
-    super(AuthorizationMethod.Bearer, tokenWriter);
+  public BasicAuthClientFilter(final BasicAuthorizationUserPassword tokenWriter, final Charset charset) {
+    super(AuthorizationMethod.Basic, (header) -> tokenWriter.writeTo(header, charset));
   }
 
 }
