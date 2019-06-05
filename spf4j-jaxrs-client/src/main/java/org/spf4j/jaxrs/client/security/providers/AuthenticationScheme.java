@@ -19,6 +19,6 @@ package org.spf4j.jaxrs.client.security.providers;
  *
  * @author Zoltan Farkas
  */
-public enum AuthorizationMethod {
-  Bearer, Basic
+public enum AuthenticationScheme {
+  Bearer, Basic, Digest, Negotiate, OAuth, Mutual
 }

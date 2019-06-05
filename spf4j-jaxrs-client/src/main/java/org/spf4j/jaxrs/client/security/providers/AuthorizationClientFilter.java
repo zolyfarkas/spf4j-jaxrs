@@ -35,7 +35,7 @@ public class AuthorizationClientFilter implements ClientRequestFilter {
 
   private final String method;
 
-  public AuthorizationClientFilter(final AuthorizationMethod method, final Consumer<StringBuilder> tokenWriter) {
+  public AuthorizationClientFilter(final AuthenticationScheme method, final Consumer<StringBuilder> tokenWriter) {
    this(method.toString(), tokenWriter);
   }
 

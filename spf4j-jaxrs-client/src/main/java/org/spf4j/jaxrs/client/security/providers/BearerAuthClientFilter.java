@@ -30,7 +30,7 @@ public final class BearerAuthClientFilter extends  AuthorizationClientFilter {
 
 
   public BearerAuthClientFilter(final Consumer<StringBuilder> tokenWriter) {
-    super(AuthorizationMethod.Bearer, tokenWriter);
+    super(AuthenticationScheme.Bearer, tokenWriter);
   }
 
 }

@@ -30,12 +30,12 @@ import javax.ws.rs.ext.Provider;
 public final class BasicAuthClientFilter extends  AuthorizationClientFilter {
 
   public BasicAuthClientFilter(final BasicAuthorizationUserPassword tokenWriter) {
-    super(AuthorizationMethod.Basic, (header) -> tokenWriter.writeTo(header, StandardCharsets.US_ASCII));
+    super(AuthenticationScheme.Basic, (header) -> tokenWriter.writeTo(header, StandardCharsets.US_ASCII));
   }
 
 
   public BasicAuthClientFilter(final BasicAuthorizationUserPassword tokenWriter, final Charset charset) {
-    super(AuthorizationMethod.Basic, (header) -> tokenWriter.writeTo(header, charset));
+    super(AuthenticationScheme.Basic, (header) -> tokenWriter.writeTo(header, charset));
   }
 
 }
