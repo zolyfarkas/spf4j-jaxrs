@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.jaxrs.client.providers;
+package org.spf4j.jaxrs.client.security.providers;
 
 import java.util.function.Consumer;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.ext.Provider;
 
 /**
@@ -41,7 +42,7 @@ public final class BearerAuthClientFilter implements ClientRequestFilter {
     StringBuilder auth = new StringBuilder(128);
     auth.append("Bearer ");
     tokenWriter.accept(auth);
-    requestContext.getHeaders().addFirst("Authorization", auth);
+    requestContext.getHeaders().addFirst(HttpHeaders.AUTHORIZATION, auth);
   }
 
   @Override

@@ -37,7 +37,7 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
-import org.spf4j.jaxrs.client.providers.BearerAuthClientFilter;
+import org.spf4j.jaxrs.client.security.providers.BearerAuthClientFilter;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
