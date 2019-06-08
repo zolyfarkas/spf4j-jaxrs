@@ -26,6 +26,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -64,13 +65,13 @@ public final class Client {
 
   private final WebTarget tokenReviewTarget;
 
-  public Client(@Nullable final String apiToken,
+  public Client(@Nullable final Supplier<String> apiToken,
           @Nullable final byte[] caCertificate) {
     this("kubernetes.default.svc", apiToken, caCertificate);
   }
 
   public Client(final String kubernetesMaster,
-          @Nullable final String apiToken,
+          @Nullable final Supplier<String> apiToken,
           @Nullable final byte[] caCertificate) {
     ClientBuilder clBuilder = ClientBuilder
             .newBuilder()
@@ -80,7 +81,7 @@ public final class Client {
       clBuilder = clBuilder.sslContext(buildSslContext(caCertificate));
     }
     if (apiToken != null) {
-      clBuilder = clBuilder.register(new BearerAuthClientFilter((hv) -> hv.append(apiToken)));
+      clBuilder = clBuilder.register(new BearerAuthClientFilter((hv) -> hv.append(apiToken.get())));
     }
     Spf4jWebTarget rootTarget = new Spf4JClient(clBuilder
             .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE, true))
