@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -49,6 +50,7 @@ public class LogFilesClusterResource {
 
   private final Spf4JClient httpClient;
 
+  @Inject
   public LogFilesClusterResource(
           final Cluster cluster, final Spf4JClient httpClient) {
     this.cluster = cluster;
