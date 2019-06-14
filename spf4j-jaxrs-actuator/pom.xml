@@ -78,10 +78,8 @@
     <dependency>
       <groupId>org.spf4j</groupId>
       <artifactId>spf4j-logback</artifactId>
-      <version>1.2.3</version>
+      <version>1.2.4</version>
     </dependency>
-
-
 
     <dependency>
       <groupId>org.glassfish.jersey.containers</groupId>
