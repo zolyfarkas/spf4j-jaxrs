@@ -37,7 +37,7 @@ public final class CsvAvroMessageBodyReader extends AvroMessageBodyReader {
 
   @Override
   public Decoder getDecoder(final Schema writerSchema, final InputStream is) throws IOException {
-    CsvReader reader = Csv.CSV.readerILEL(new InputStreamReader(is, StandardCharsets.UTF_8));
+    CsvReader reader = Csv.CSV.reader(new InputStreamReader(is, StandardCharsets.UTF_8));
     try {
       reader.skipRow(); // skip headers
     } catch (CsvParseException ex) {
