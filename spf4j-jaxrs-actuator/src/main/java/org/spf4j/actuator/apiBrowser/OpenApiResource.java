@@ -64,7 +64,7 @@ public class OpenApiResource extends BaseOpenApiResource {
   }
 
   @GET
-  @Produces({MediaType.APPLICATION_JSON, "application/yaml"})
+  @Produces({MediaType.APPLICATION_JSON})
   @Operation(hidden = true)
   @RawSerialization
   @Path("openapi.json")
@@ -80,7 +80,7 @@ public class OpenApiResource extends BaseOpenApiResource {
   @Path("openapi.yaml")
   public Response getOpenApiYaml(@Context final HttpHeaders headers,
           @Context final UriInfo uriInfo) throws Exception {
-    return getOpenApi(headers, config, app, uriInfo, "yamls");
+    return getOpenApi(headers, config, app, uriInfo, "yaml");
   }
 
   @Override
