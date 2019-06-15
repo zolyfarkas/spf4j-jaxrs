@@ -81,7 +81,7 @@ public final class DefaultAspectsApiFilter extends AbstractSpecFilter {
     parameters.add(new Parameter().description("Request id, if not provided server will generate one")
             .required(Boolean.FALSE).name(Headers.REQ_ID).in("header")
             .schema(PrimitiveType.STRING.createProperty().description("Request ID")));
-    responses.addApiResponse("error", new ApiResponse().description("standard error response")
+    responses.addApiResponse("500", new ApiResponse().description("standard error response")
             .content(new Content().addMediaType("application/json",
             new MediaType().
                     schema(new Schema().$ref("#/components/schemas/"

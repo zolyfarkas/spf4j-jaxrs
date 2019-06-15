@@ -114,6 +114,12 @@ public class HealthResource {
          description = "Run all health checks",
          responses = {
            @ApiResponse(
+                 description = "All health checks are successful",
+                 responseCode = "200",
+                 content = @Content(schema = @Schema(implementation = HealthRecord.class))),
+            @ApiResponse(
+                 description = "In  case a health check fails",
+                 responseCode = "503",
                  content = @Content(schema = @Schema(implementation = HealthRecord.class)))
          }
   )
@@ -135,7 +141,7 @@ public class HealthResource {
                  content = @Content(schema = @Schema(implementation = HealthRecord.class))),
             @ApiResponse(
                  description = "In  case a health check fails",
-                 responseCode = "500",
+                 responseCode = "503",
                  content = @Content(schema = @Schema(implementation = HealthRecord.class)))
          }
   )
@@ -155,7 +161,7 @@ public class HealthResource {
     if (healthRecord.getStatus() == HealthStatus.HEALTHY) {
       return Response.ok(healthRecord).build();
     } else {
-      return Response.status(500).entity(healthRecord).build();
+      return Response.status(503).entity(healthRecord).build();
     }
   }
 
