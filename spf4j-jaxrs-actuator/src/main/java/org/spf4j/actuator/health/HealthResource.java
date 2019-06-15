@@ -1,5 +1,9 @@
 package org.spf4j.actuator.health;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
@@ -106,6 +110,13 @@ public class HealthResource {
 
   @GET
   @Path("check")
+  @Operation(
+         description = "Run all health checks",
+         responses = {
+           @ApiResponse(
+                 content = @Content(schema = @Schema(implementation = HealthRecord.class)))
+         }
+  )
   public Response run(
           @QueryParam("debug") @DefaultValue("false") final boolean pisDebug,
           @QueryParam("debugOnError") @DefaultValue("true") final boolean pisDebugOnError,
@@ -115,6 +126,19 @@ public class HealthResource {
 
   @GET
   @Path("check/{path:.*}")
+  @Operation(
+         description = "Run a health check",
+         responses = {
+           @ApiResponse(
+                 description = "All health checks are successful",
+                 responseCode = "200",
+                 content = @Content(schema = @Schema(implementation = HealthRecord.class))),
+            @ApiResponse(
+                 description = "In  case a health check fails",
+                 responseCode = "500",
+                 content = @Content(schema = @Schema(implementation = HealthRecord.class)))
+         }
+  )
   public Response run(@PathParam("path") final List<PathSegment> path,
           @QueryParam("debug") @DefaultValue("false") final boolean pisDebug,
           @QueryParam("debugOnError") @DefaultValue("true") final boolean pisDebugOnError,
