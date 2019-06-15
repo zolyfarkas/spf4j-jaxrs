@@ -15,6 +15,11 @@
  */
 package org.spf4j.actuator.cluster.logs;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URI;
@@ -69,6 +74,26 @@ public class LogFilesClusterResource {
     return result;
   }
 
+  @Operation(
+          description = "Get cluster information.",
+          responses = {
+            @ApiResponse(
+                    responseCode = "200",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(
+                                    schema = @Schema(implementation = FileEntry.class)
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "200",
+                    content = @Content(
+                            mediaType = "application/octet-stream"
+                    )
+            )
+         }
+  )
   @Produces({ "application/json", "application/octet-stream" })
   @Path("{nodePath:.*}")
   @GET

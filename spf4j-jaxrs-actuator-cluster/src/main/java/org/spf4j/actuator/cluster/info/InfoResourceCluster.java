@@ -15,6 +15,10 @@
  */
 package org.spf4j.actuator.cluster.info;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -65,6 +69,14 @@ public class InfoResourceCluster {
     this.cluster = cluster;
   }
 
+  @Operation(
+         description = "Get cluster information.",
+         responses = {
+           @ApiResponse(
+                 responseCode = "200",
+                 content = @Content(schema = @Schema(implementation = ClusterInfo.class)))
+         }
+  )
   @Path("cluster")
   @GET
   public void getClusterInfo(@Suspended final AsyncResponse ar) throws URISyntaxException {
