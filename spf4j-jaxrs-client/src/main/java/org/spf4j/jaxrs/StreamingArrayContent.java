@@ -20,7 +20,7 @@ import java.io.IOException;
 /**
  * Streaming Output, that will stream back an array.
  */
-public interface StreamingArrayOutput<T> {
+public interface StreamingArrayContent<T> {
  void write(ArrayWriter<T> output) throws IOException;
 
  default int getElementBufferSize() {

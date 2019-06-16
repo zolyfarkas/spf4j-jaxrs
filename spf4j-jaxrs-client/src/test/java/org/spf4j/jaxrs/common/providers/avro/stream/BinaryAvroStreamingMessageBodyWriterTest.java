@@ -32,7 +32,7 @@ import org.spf4j.base.avro.MediaType;
 import org.spf4j.jaxrs.ArrayWriter;
 import org.spf4j.jaxrs.CloseableIterable;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
-import org.spf4j.jaxrs.StreamingArrayOutput;
+import org.spf4j.jaxrs.StreamingArrayContent;
 
 /**
  *
@@ -51,7 +51,7 @@ public class BinaryAvroStreamingMessageBodyWriterTest {
 
     MultivaluedMap headers = new MultivaluedHashMap();
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    writer.writeTo(new StreamingArrayOutput<MediaType>() {
+    writer.writeTo(new StreamingArrayContent<MediaType>() {
       @Override
       public void write(final ArrayWriter<MediaType> w) throws IOException {
         w.accept(m1);
@@ -60,8 +60,8 @@ public class BinaryAvroStreamingMessageBodyWriterTest {
         w.accept(m3);
         w.close();
       }
-    }, StreamingArrayOutput.class,
-            new TypeToken<StreamingArrayOutput<MediaType>>() { }.getType(),
+    }, StreamingArrayContent.class,
+            new TypeToken<StreamingArrayContent<MediaType>>() { }.getType(),
             Arrays.EMPTY_ANNOT_ARRAY, new javax.ws.rs.core.MediaType("application", "avro"), headers, bos);
     ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
     BinaryAvroIterableMessageBodyReader reader = new BinaryAvroIterableMessageBodyReader(

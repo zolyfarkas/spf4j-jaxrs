@@ -31,7 +31,7 @@ import org.apache.avro.io.Encoder;
 import org.spf4j.avro.csv.CsvEncoder;
 import org.spf4j.io.Csv;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
-import org.spf4j.jaxrs.StreamingArrayOutput;
+import org.spf4j.jaxrs.StreamingArrayContent;
 
 /**
  *
@@ -54,7 +54,7 @@ public final class CsvAvroStreamingMessageBodyWriter  extends AvroStreamingMessa
   }
 
   @Override
-  public void writeTo(final StreamingArrayOutput t, final Class<?> type, final Type genericType,
+  public void writeTo(final StreamingArrayContent t, final Class<?> type, final Type genericType,
           final Annotation[] annotations, final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream) throws IOException {
     httpHeaders.putSingle(HttpHeaders.CONTENT_TYPE, "text/csv;fmt=avro;charset=UTF-8");

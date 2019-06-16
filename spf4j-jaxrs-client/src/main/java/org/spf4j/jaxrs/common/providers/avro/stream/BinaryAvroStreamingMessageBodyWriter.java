@@ -28,7 +28,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
-import org.spf4j.jaxrs.StreamingArrayOutput;
+import org.spf4j.jaxrs.StreamingArrayContent;
 
 /**
  *
@@ -48,7 +48,7 @@ public final class BinaryAvroStreamingMessageBodyWriter  extends AvroStreamingMe
   }
 
   @Override
-  public void writeTo(final StreamingArrayOutput t, final Class<?> type, final Type genericType,
+  public void writeTo(final StreamingArrayContent t, final Class<?> type, final Type genericType,
           final Annotation[] annotations, final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream) throws IOException {
     httpHeaders.putSingle(HttpHeaders.CONTENT_TYPE, "application/avro");

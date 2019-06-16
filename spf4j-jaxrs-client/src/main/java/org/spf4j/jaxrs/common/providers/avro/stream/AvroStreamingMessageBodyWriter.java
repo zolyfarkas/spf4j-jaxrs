@@ -19,12 +19,12 @@ import org.apache.avro.reflect.ExtendedReflectData;
 import org.apache.avro.reflect.ExtendedReflectDatumWriter;
 import org.spf4j.avro.AvroArrayWriter;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
-import org.spf4j.jaxrs.StreamingArrayOutput;
+import org.spf4j.jaxrs.StreamingArrayContent;
 
 /**
  * @author Zoltan Farkas
  */
-public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWriter<StreamingArrayOutput> {
+public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWriter<StreamingArrayContent> {
 
   private final SchemaProtocol protocol;
 
@@ -39,7 +39,7 @@ public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWrite
   @Override
   public boolean isWriteable(final Class<?> type, final Type genericType,
           final Annotation[] annotations, final MediaType mediaType) {
-    return StreamingArrayOutput.class.isAssignableFrom(type);
+    return StreamingArrayContent.class.isAssignableFrom(type);
   }
 
   public abstract Encoder getEncoder(Schema writerSchema, OutputStream os)
@@ -49,7 +49,7 @@ public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWrite
    * @inheritdoc
    */
   @Override
-  public void writeTo(final StreamingArrayOutput t, final Class<?> type,
+  public void writeTo(final StreamingArrayContent t, final Class<?> type,
           final Type genericType, final Annotation[] annotations,
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream)

@@ -6,12 +6,16 @@ import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
 import org.apache.avro.SchemaResolver;
 import org.spf4j.jaxrs.common.providers.avro.stream.BinaryAvroIterableMessageBodyReader;
+import org.spf4j.jaxrs.common.providers.avro.stream.BinaryAvroStreamingMessageBodyReader;
 import org.spf4j.jaxrs.common.providers.avro.stream.BinaryAvroStreamingMessageBodyWriter;
 import org.spf4j.jaxrs.common.providers.avro.stream.CsvAvroIterableMessageBodyReader;
+import org.spf4j.jaxrs.common.providers.avro.stream.CsvAvroStreamingMessageBodyReader;
 import org.spf4j.jaxrs.common.providers.avro.stream.CsvAvroStreamingMessageBodyWriter;
 import org.spf4j.jaxrs.common.providers.avro.stream.JsonAvroIterableMessageBodyReader;
+import org.spf4j.jaxrs.common.providers.avro.stream.JsonAvroStreamingMessageBodyReader;
 import org.spf4j.jaxrs.common.providers.avro.stream.JsonAvroStreamingMessageBodyWriter;
 import org.spf4j.jaxrs.common.providers.avro.stream.XJsonAvroIterableMessageBodyReader;
+import org.spf4j.jaxrs.common.providers.avro.stream.XJsonAvroStreamingMessageBodyReader;
 import org.spf4j.jaxrs.common.providers.avro.stream.XJsonAvroStreamingMessageBodyWriter;
 
 /**
@@ -44,6 +48,10 @@ public final class AvroFeature implements Feature {
     context.register(new JsonAvroIterableMessageBodyReader(protocol));
     context.register(new XJsonAvroIterableMessageBodyReader(protocol));
     context.register(new BinaryAvroIterableMessageBodyReader(protocol));
+    context.register(new CsvAvroStreamingMessageBodyReader(protocol));
+    context.register(new JsonAvroStreamingMessageBodyReader(protocol));
+    context.register(new XJsonAvroStreamingMessageBodyReader(protocol));
+    context.register(new BinaryAvroStreamingMessageBodyReader(protocol));
     context.register(new XJsonAvroStreamingMessageBodyWriter(protocol));
     context.register(new JsonAvroStreamingMessageBodyWriter(protocol));
     context.register(new BinaryAvroStreamingMessageBodyWriter(protocol));

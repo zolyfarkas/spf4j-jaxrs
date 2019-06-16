@@ -17,11 +17,26 @@ package org.spf4j.jaxrs;
 
 import edu.umd.cs.findbugs.annotations.CleanupObligation;
 import java.io.Closeable;
+import java.util.Iterator;
 
 /**
  * @author Zoltan Farkas
  */
 @CleanupObligation
 public interface CloseableIterable<T> extends Closeable, Iterable<T> {
+
+  static <T> CloseableIterable<T> fromIterable(final Iterable<T> it) {
+    return new CloseableIterable<T>() {
+      @Override
+      public void close() {
+        // nothing to close;
+      }
+
+      @Override
+      public Iterator<T> iterator() {
+        return it.iterator();
+      }
+    };
+  }
 
 }
