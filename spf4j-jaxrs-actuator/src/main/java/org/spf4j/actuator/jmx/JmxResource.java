@@ -67,8 +67,8 @@ import org.spf4j.base.avro.jmx.OperationInvocation;
 import org.spf4j.http.ContextTags;
 import org.spf4j.http.HttpWarning;
 import org.spf4j.jaxrs.ArrayWriter;
-import org.spf4j.jaxrs.StreamingArrayOutput;
 import org.spf4j.log.ExecContextLogger;
+import org.spf4j.jaxrs.StreamingArrayContent;
 
 /**
  *
@@ -91,7 +91,7 @@ public class JmxResource {
   };
 
   @GET
-  public StreamingArrayOutput<String> getMBeans() {
+  public StreamingArrayContent<String> getMBeans() {
     MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
     Set<ObjectInstance> beans;
     try {
@@ -99,7 +99,7 @@ public class JmxResource {
     } catch (MalformedObjectNameException | IOException ex) {
       throw new RuntimeException(ex);
     }
-    return new StreamingArrayOutput<String>() {
+    return new StreamingArrayContent<String>() {
       @Override
       public void write(final ArrayWriter<String> output) throws IOException {
         for (ObjectInstance bean : beans) {
@@ -125,10 +125,10 @@ public class JmxResource {
 
   @GET
   @Path("{mbeanName}/attributes")
-  public StreamingArrayOutput<org.spf4j.base.avro.jmx.MBeanAttributeInfo> getMBeanAttributes(
+  public StreamingArrayContent<org.spf4j.base.avro.jmx.MBeanAttributeInfo> getMBeanAttributes(
           @PathParam("mbeanName") final String mbeanName) {
     MBeanAttributeInfo[] attrs = getMBeanInfo(mbeanName).getAttributes();
-    return new StreamingArrayOutput<org.spf4j.base.avro.jmx.MBeanAttributeInfo>() {
+    return new StreamingArrayContent<org.spf4j.base.avro.jmx.MBeanAttributeInfo>() {
       @Override
       public void write(final ArrayWriter<org.spf4j.base.avro.jmx.MBeanAttributeInfo> output) throws IOException {
         for (MBeanAttributeInfo attr : attrs) {
@@ -152,12 +152,12 @@ public class JmxResource {
 
   @GET
   @Path("{mbeanName}/attributes/values")
-  public StreamingArrayOutput<AttributeValue> getMBeanAttributeValues(
+  public StreamingArrayContent<AttributeValue> getMBeanAttributeValues(
           @PathParam("mbeanName") final String mbeanName) {
     MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
     ObjectName mname = getJmxObjName(mbeanName);
     MBeanInfo mBeanInfo = getMBeanInfo(srv, mname);
-    return new StreamingArrayOutput<AttributeValue>() {
+    return new StreamingArrayContent<AttributeValue>() {
       @Override
       public void write(final ArrayWriter<AttributeValue> output) throws IOException {
         for (MBeanAttributeInfo attr : mBeanInfo.getAttributes()) {
@@ -280,10 +280,10 @@ public class JmxResource {
 
   @GET
   @Path("{mbeanName}/operations")
-  public StreamingArrayOutput<org.spf4j.base.avro.jmx.MBeanOperationInfo> getMBeanOperations(
+  public StreamingArrayContent<org.spf4j.base.avro.jmx.MBeanOperationInfo> getMBeanOperations(
           @PathParam("mbeanName") final String mbeanName) {
     MBeanOperationInfo[] operations = getMBeanInfo(mbeanName).getOperations();
-    return new StreamingArrayOutput<org.spf4j.base.avro.jmx.MBeanOperationInfo>() {
+    return new StreamingArrayContent<org.spf4j.base.avro.jmx.MBeanOperationInfo>() {
       @Override
       public void write(final ArrayWriter<org.spf4j.base.avro.jmx.MBeanOperationInfo> output) throws IOException {
         for (MBeanOperationInfo op : operations) {
