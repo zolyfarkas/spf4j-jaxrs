@@ -22,28 +22,10 @@ import javax.annotation.Nullable;
 import org.apache.avro.Schema;
 
 /**
+ * Abstraction of Request Content Schema transmission over HTTP(or other protocol) Headers.
  * @author Zoltan Farkas
  */
 public interface SchemaProtocol {
-
-  /**
-   * De-serialize the schema transmitted via HTTP headers.
-   * @param headers the headers.
-   * @param type - the type the schema will be converted to.
-   * @param genericType - the generic type the schema will be converted to.
-   * @return the schema.
-   */
-  @Nullable
-  Schema deserialize(Function<String, String> headers, Class<?> type, Type genericType);
-
-
-  /**
-   * Serialize a deadline to HTTP headers.
-   * @param headers
-   * @param schema the schema to encode.
-   */
-  void serialize(BiConsumer<String, String> headers, Schema schema);
-
 
   SchemaProtocol NONE = new SchemaProtocol() {
     @Override
@@ -57,5 +39,30 @@ public interface SchemaProtocol {
       //NOTHING
     }
   };
+
+
+  /**
+   * De-serialize the schema transmitted via HTTP headers.
+   * @param headers the headers.
+   * @param type - the type the schema will be converted to.
+   * @param genericType - the generic type the schema will be converted to.
+   * @return the schema or null if schema not transmitted with this protocol.
+   */
+  @Nullable
+  Schema deserialize(Function<String, String> headers, Class<?> type, Type genericType);
+
+
+  /**
+   * Serialize a deadline to HTTP headers.
+   * @param headers
+   * @param schema the schema to encode.
+   */
+  void serialize(BiConsumer<String, String> headers, Schema schema);
+
+
+  default SchemaProtocol combine(final SchemaProtocol secondary) {
+    return new CombinedSchemaProtocol(this, secondary);
+  }
+
 
 }
