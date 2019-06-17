@@ -16,34 +16,31 @@
 package org.spf4j.actuator.cluster.jmx;
 
 import com.google.common.annotations.Beta;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.client.Entity;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
 import org.glassfish.hk2.api.Immediate;
+import org.glassfish.jersey.client.proxy.WebResourceFactory;
+import org.spf4j.actuator.jmx.JmxRestApi;
 import org.spf4j.base.avro.NetworkService;
+import org.spf4j.base.avro.ServiceError;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
-import org.spf4j.http.Headers;
 import org.spf4j.jaxrs.client.Spf4JClient;
-import org.spf4j.jaxrs.server.StreamedResponseContent;
 
 /**
  * @author Zoltan Farkas
@@ -78,48 +75,28 @@ public class JmxClusterResource {
     return result;
   }
 
-  private URI buildURI(final List<PathSegment> path) throws URISyntaxException {
-    ClusterInfo clusterInfo = cluster.getClusterInfo();
-    NetworkService service = clusterInfo.getHttpService();
-    String tPath = "/jmx/local";
-    if (path.size() > 1) {
-      String restpath = path.subList(1, path.size()).stream().map(x -> x.getPath())
-              .collect(Collectors.joining("/"));
-      tPath  = tPath + '/' + restpath;
-    }
-    URI uri = new URI(service.getName(), null,  path.get(0).getPath(), service.getPort(), tPath, null, null);
-    return uri;
-  }
 
-  @Path("{nodePath:.*}")
-  @GET
-  public Response handleGet(@PathParam("nodePath") final List<PathSegment> path,
+  @Path("{node}")
+  public JmxRestApi handleGet(@PathParam("node") final String node,
           @HeaderParam("Accept") @DefaultValue(MediaType.WILDCARD) final String accept) throws URISyntaxException {
-    URI uri = buildURI(path);
-    Response resp = httpClient.target(uri).request(accept).get(Response.class);
-    return Response.ok(new StreamedResponseContent(() -> resp.readEntity(InputStream.class)),
-            resp.getHeaderString("Content-Type"))
-            .header(Headers.CONTENT_SCHEMA, resp.getHeaderString(Headers.CONTENT_SCHEMA))
-            .build();
+    NetworkService httpService = cluster.getClusterInfo().getHttpService();
+    try {
+      return WebResourceFactory.newResource(JmxRestApi.class, httpClient.target(
+            new URI(httpService.getName(), null, node, httpService.getPort(), "/jmx/local", null, null)));
+    } catch (WebApplicationException ex) {
+      Response response = ex.getResponse();
+      ServiceError re;
+      try {
+        re = response.readEntity(ServiceError.class);
+      } catch (RuntimeException ex2) {
+        // not a standard Error.
+        throw new WebApplicationException("Error while accessing node " + node,
+              response.getStatus());
+      }
+      throw new WebApplicationException("Error while accessing node " + node,
+              Response.status(response.getStatus()).entity(re).build());
+    }
   }
-
-  @Path("{nodePath:.*}")
-  @POST
-  public Response handlePostPut(@PathParam("nodePath") final List<PathSegment> path,
-          @HeaderParam("Accept") @DefaultValue(MediaType.WILDCARD) final String accept,
-          @HeaderParam("Content-Type") final String contentType,
-          @HeaderParam(Headers.CONTENT_SCHEMA) final String schema,
-          final InputStream is) throws URISyntaxException {
-    URI uri = buildURI(path);
-    final Response resp = httpClient.target(uri)
-            .request(accept).header(Headers.CONTENT_SCHEMA, schema)
-            .post(Entity.entity(is, contentType));
-    return Response.ok(new StreamedResponseContent(() -> resp.readEntity(InputStream.class)),
-            resp.getHeaderString("Content-Type"))
-            .header(Headers.CONTENT_SCHEMA, resp.getHeaderString(Headers.CONTENT_SCHEMA))
-            .build();
-  }
-
 
 
 }

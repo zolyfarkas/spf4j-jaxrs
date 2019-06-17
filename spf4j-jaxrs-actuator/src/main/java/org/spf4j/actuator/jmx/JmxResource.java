@@ -81,7 +81,7 @@ import org.spf4j.jaxrs.StreamingArrayContent;
   "application/avro+json", "application/avro", "application/octet-stream"})
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 @Beta
-public class JmxResource {
+public class JmxResource implements JmxRestApi {
 
   private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(JmxResource.class));
 
@@ -91,6 +91,7 @@ public class JmxResource {
   };
 
   @GET
+  @Override
   public StreamingArrayContent<String> getMBeans() {
     MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
     Set<ObjectInstance> beans;
@@ -111,6 +112,7 @@ public class JmxResource {
 
   @GET
   @Path("{mbeanName}")
+  @Override
   public String[] get(@PathParam("mbeanName") final String mbeanName) {
     return MBEAN_RESOURCES;
   }
@@ -125,6 +127,7 @@ public class JmxResource {
 
   @GET
   @Path("{mbeanName}/attributes")
+  @Override
   public StreamingArrayContent<org.spf4j.base.avro.jmx.MBeanAttributeInfo> getMBeanAttributes(
           @PathParam("mbeanName") final String mbeanName) {
     MBeanAttributeInfo[] attrs = getMBeanInfo(mbeanName).getAttributes();
@@ -152,6 +155,7 @@ public class JmxResource {
 
   @GET
   @Path("{mbeanName}/attributes/values")
+  @Override
   public StreamingArrayContent<AttributeValue> getMBeanAttributeValues(
           @PathParam("mbeanName") final String mbeanName) {
     MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
@@ -230,6 +234,7 @@ public class JmxResource {
 
   @GET
   @Path("{mbeanName}/attributes/values/{attrName}")
+  @Override
   public Object getMBeanAttribute(@PathParam("mbeanName") final String mbeanName,
           @PathParam("attrName") final String attrName) throws MBeanException, ReflectionException, IOException {
     MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
@@ -264,6 +269,7 @@ public class JmxResource {
   @Path("{mbeanName}/attributes/values/{attrName}")
   @Consumes(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream"})
+  @Override
   public void setMBeanAttribute(@PathParam("mbeanName") final String mbeanName,
           @PathParam("attrName") final String attrName,
           final Object value) throws MBeanException, ReflectionException, IOException {
@@ -280,6 +286,7 @@ public class JmxResource {
 
   @GET
   @Path("{mbeanName}/operations")
+  @Override
   public StreamingArrayContent<org.spf4j.base.avro.jmx.MBeanOperationInfo> getMBeanOperations(
           @PathParam("mbeanName") final String mbeanName) {
     MBeanOperationInfo[] operations = getMBeanInfo(mbeanName).getOperations();
@@ -313,6 +320,7 @@ public class JmxResource {
   @Path("/{mbeanName}/operations")
   @Consumes({"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream"})
+  @Override
   public Object invoke(
           @PathParam("mbeanName") final String mbeanName, final OperationInvocation invocation)
           throws MBeanException, ReflectionException, IOException {
@@ -339,16 +347,11 @@ public class JmxResource {
         }
       }
     }
-
-    Object[] cParams = new Object[parameters.size()];
-    MBeanParameterInfo[] signature = moi.getSignature();
-    for (int i = 0; i < cParams.length; i++) {
-      MBeanParameterInfo pinfo = signature[i];
-      OpenType openType = getOpenType(pinfo);
-      OpenTypeAvroConverter pconv = OpenTypeConverterSupplier.INSTANCE.getConverter(openType);
-      cParams[i] = pconv.toOpenValue(openType, parameters.get(i),
-              org.spf4j.actuator.jmx.OpenTypeConverterSupplier.INSTANCE);
+    if (moi == null) {
+      throw new NotFoundException("Mbean " + mbeanName  + "  operation not found: " + opName);
     }
+
+    Object[] cParams = convertInputParams(parameters, moi);
 
 
     OpenType retOpenType = getOpenType(moi);
@@ -360,6 +363,23 @@ public class JmxResource {
               OpenTypeConverterSupplier.INSTANCE);
     } catch (InstanceNotFoundException ex) {
       throw new NotFoundException("bean not found " + mbeanName, ex);
+    }
+  }
+
+  private static Object[] convertInputParams(final List<Object> parameters, final MBeanOperationInfo moi) {
+    try {
+      Object[] cParams = new Object[parameters.size()];
+      MBeanParameterInfo[] signature = moi.getSignature();
+      for (int i = 0; i < cParams.length; i++) {
+        MBeanParameterInfo pinfo = signature[i];
+        OpenType openType = getOpenType(pinfo);
+        OpenTypeAvroConverter pconv = OpenTypeConverterSupplier.INSTANCE.getConverter(openType);
+        cParams[i] = pconv.toOpenValue(openType, parameters.get(i),
+                org.spf4j.actuator.jmx.OpenTypeConverterSupplier.INSTANCE);
+      }
+      return cParams;
+    } catch (RuntimeException ex) {
+      throw new ClientErrorException("Invalid parameters " + parameters + " for " + moi, 400, ex);
     }
   }
 

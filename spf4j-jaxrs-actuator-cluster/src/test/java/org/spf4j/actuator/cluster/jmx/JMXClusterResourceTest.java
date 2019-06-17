@@ -17,6 +17,7 @@ package org.spf4j.actuator.cluster.jmx;
 
 import java.util.Arrays;
 import java.util.Collections;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.ServiceIntegrationBase;
 import static org.spf4j.actuator.ServiceIntegrationBase.getTarget;
 import org.spf4j.base.avro.jmx.OperationInvocation;
+import org.spf4j.jmx.Registry;
 
 /**
  *
@@ -40,6 +42,34 @@ public class JMXClusterResourceTest extends ServiceIntegrationBase {
   private static final Logger LOG = LoggerFactory.getLogger(JMXClusterResourceTest.class);
 
   @Test
+  public void testGetMbeansCluster() {
+    TestJmxEndpoint jmxEndpoint = new TestJmxEndpoint();
+    Registry.export(jmxEndpoint);
+    Object resp = getTarget().path("jmx/cluster/127.0.0.1")
+              .request(MediaType.APPLICATION_JSON).get(new GenericType<Object>() { });
+    LOG.debug("Jmx Response {} ", resp);
+    Object resp2 = getTarget().path("jmx/cluster/127.0.0.1/{mbean}/operations")
+              .resolveTemplate("mbean", "org.spf4j.actuator.cluster.jmx:name=TestJmxEndpoint")
+              .request(MediaType.APPLICATION_JSON).get(new GenericType<Object>() { });
+    LOG.debug("Jmx Bean operations {} ", resp2);
+  }
+
+
+  @Test(expected = WebApplicationException.class)
+  public void testErrorOperation() {
+    TestJmxEndpoint jmxEndpoint = new TestJmxEndpoint();
+    Registry.export(jmxEndpoint);
+    OperationInvocation invocation = new OperationInvocation("doErrorStuff",
+            Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+     Object resp = getTarget().path("jmx/cluster/127.0.0.1/{mbean}/operations")
+              .resolveTemplate("mbean", "org.spf4j.actuator.cluster.jmx:name=TestJmxEndpoint")
+              .request(MediaType.APPLICATION_JSON).
+             post(Entity.entity(invocation, MediaType.APPLICATION_JSON), new GenericType<Object>() { });
+     LOG.debug("Jmx {} operation  {} returned", "com.sun.management:type=DiagnosticCommand", "gcClassHistogram", resp);
+
+  }
+
+  @Test
   public void testGetAttributeCluster() {
      Object resp = getTarget().path("jmx/cluster/127.0.0.1/{mbean}/attributes/values/{attrName}")
               .resolveTemplate("mbean", "java.lang:name=Metaspace,type=MemoryPool")
@@ -52,7 +82,8 @@ public class JMXClusterResourceTest extends ServiceIntegrationBase {
  @Test
   public void testInvokeOperationCluster() {
     OperationInvocation invocation = new OperationInvocation("gcClassHistogram",
-            Arrays.asList("[Ljava.lang.String;"), Collections.singletonList(Collections.singletonList("-all")));
+            Arrays.asList(new String[0].getClass().getName()),
+            Collections.singletonList(Collections.singletonList("-all")));
      Object resp = getTarget().path("jmx/cluster/127.0.0.1/{mbean}/operations")
               .resolveTemplate("mbean", "com.sun.management:type=DiagnosticCommand")
               .request(MediaType.APPLICATION_JSON).

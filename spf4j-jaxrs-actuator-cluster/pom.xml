@@ -50,6 +50,10 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.glassfish.jersey.ext</groupId>
+      <artifactId>jersey-proxy-client</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.spf4j</groupId>
       <artifactId>spf4j-jaxrs-actuator</artifactId>
       <version>${project.version}</version>
