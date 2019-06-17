@@ -7,7 +7,6 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -54,15 +53,12 @@ public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWrite
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream)
           throws IOException {
-    ExtendedReflectData reflector = ExtendedReflectData.get();
     if (!(genericType instanceof ParameterizedType)) {
-      throw new IllegalStateException("ArrayStreamingOutput type parameters must be known " + genericType);
+      throw new IllegalStateException("StreamingArrayContent type parameters must be known " + genericType);
     }
+    ExtendedReflectData reflector = ExtendedReflectData.get();
     Type elType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
     Schema elemSchema = reflector.getSchema(elType);
-    if (elemSchema == null) {
-      elemSchema = reflector.createSchema(elType, t, new HashMap<>());
-    }
     Schema schema = Schema.createArray(elemSchema);
     protocol.serialize(httpHeaders::add, schema);
     try {

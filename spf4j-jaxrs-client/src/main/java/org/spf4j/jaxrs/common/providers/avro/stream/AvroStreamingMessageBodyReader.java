@@ -4,6 +4,7 @@ package org.spf4j.jaxrs.common.providers.avro.stream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -20,7 +21,6 @@ import org.spf4j.avro.DecodedSchema;
 import org.spf4j.io.MemorizingBufferedInputStream;
 import org.spf4j.jaxrs.ArrayWriter;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
-import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
 import org.spf4j.jaxrs.StreamingArrayContent;
 
 /**
@@ -74,8 +74,15 @@ public abstract class AvroStreamingMessageBodyReader implements MessageBodyReade
           final MultivaluedMap<String, String> httpHeaders, final InputStream pentityStream)
           throws IOException {
     Schema writerSchema = protocol.deserialize(httpHeaders::getFirst, (Class) type, genericType);
-    Type effectiveType = MessageBodyRWUtils.effectiveType(type, genericType);
-    Schema readerSchema = ExtendedReflectData.get().getSchema(effectiveType);
+
+    if (!(genericType instanceof ParameterizedType)) {
+      throw new IllegalStateException("StreamingArrayContent type parameters must be known " + genericType);
+    }
+    ExtendedReflectData reflector = ExtendedReflectData.get();
+    Type elType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+    Schema elemSchema = reflector.getSchema(elType);
+    Schema readerSchema = Schema.createArray(elemSchema);
+
     Decoder decoder = null;
     InputStream entityStream = wrapInputStream(pentityStream);
     if (writerSchema == null) {
@@ -95,30 +102,38 @@ public abstract class AvroStreamingMessageBodyReader implements MessageBodyReade
     if (decoder == null) {
       decoder = getDecoder(writerSchema, entityStream);
     }
-    return new StreamingArrayOutputImpl(decoder, readerSchema, writerSchema);
+    return new StreamingArrayOutputImpl(entityStream, decoder, readerSchema, writerSchema);
   }
 
   private static class StreamingArrayOutputImpl implements StreamingArrayContent {
 
     private final Decoder decoder;
     private final DatumReader reader;
+    private final InputStream entityStream;
 
-    StreamingArrayOutputImpl(final Decoder decoder, final Schema readerSchema, final Schema writerSchema) {
+
+    StreamingArrayOutputImpl(final InputStream entityStream, final Decoder decoder,
+            final Schema readerSchema, final Schema writerSchema) {
+      this.entityStream = entityStream;
       this.decoder = decoder;
       this.reader = new ReflectDatumReader(writerSchema.getElementType(), readerSchema.getElementType());
     }
 
     @Override
     public void write(final ArrayWriter output) throws IOException {
-      try {
+      try (ArrayWriter wr = output; InputStream is = entityStream;) {
         ArrayIterator arrayIterator = new ArrayIterator(decoder, reader);
         while (arrayIterator.hasNext()) {
-          output.accept(arrayIterator.next());
+          wr.accept(arrayIterator.next());
         }
-      } finally {
-        output.close();
       }
     }
+
+    @Override
+    public void close() throws IOException {
+      entityStream.close();
+    }
+
   }
 
 
