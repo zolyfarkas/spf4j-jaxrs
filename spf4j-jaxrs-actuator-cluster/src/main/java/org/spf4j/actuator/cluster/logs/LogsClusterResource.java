@@ -1,5 +1,10 @@
 package org.spf4j.actuator.cluster.logs;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.spf4j.jaxrs.server.AsyncResponseWrapper;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -103,6 +108,14 @@ public class LogsClusterResource {
     });
   }
 
+  @Operation(
+         description = "Get logs logged by the default appender aggregated from all nodes",
+         responses = {
+           @ApiResponse(
+                 responseCode = "200",
+                 content = @Content(array = @ArraySchema(schema = @Schema(implementation = LogRecord.class))))
+         }
+  )
   @GET
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream"})
@@ -114,6 +127,15 @@ public class LogsClusterResource {
     getClusterLogs(limit, filter, resOrder, "default", ar);
   }
 
+
+  @Operation(
+         description = "Get logs logged by a particular appender aggregated from all nodes",
+         responses = {
+           @ApiResponse(
+                 responseCode = "200",
+                 content = @Content(array = @ArraySchema(schema = @Schema(implementation = LogRecord.class))))
+         }
+  )
   @Path("{appenderName}")
   @GET
   @Produces(value = {"application/avro-x+json", "application/json",
