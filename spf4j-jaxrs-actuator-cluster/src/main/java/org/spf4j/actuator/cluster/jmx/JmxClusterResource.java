@@ -30,14 +30,11 @@ import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.glassfish.hk2.api.Immediate;
 import org.glassfish.jersey.client.proxy.WebResourceFactory;
 import org.spf4j.actuator.jmx.JmxRestApi;
 import org.spf4j.base.avro.NetworkService;
-import org.spf4j.base.avro.ServiceError;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.jaxrs.client.Spf4JClient;
@@ -80,22 +77,9 @@ public class JmxClusterResource {
   public JmxRestApi handleGet(@PathParam("node") final String node,
           @HeaderParam("Accept") @DefaultValue(MediaType.WILDCARD) final String accept) throws URISyntaxException {
     NetworkService httpService = cluster.getClusterInfo().getHttpService();
-    try {
       return WebResourceFactory.newResource(JmxRestApi.class, httpClient.target(
             new URI(httpService.getName(), null, node, httpService.getPort(), "/jmx/local", null, null)));
-    } catch (WebApplicationException ex) {
-      Response response = ex.getResponse();
-      ServiceError re;
-      try {
-        re = response.readEntity(ServiceError.class);
-      } catch (RuntimeException ex2) {
-        // not a standard Error.
-        throw new WebApplicationException("Error while accessing node " + node,
-              response.getStatus());
-      }
-      throw new WebApplicationException("Error while accessing node " + node,
-              Response.status(response.getStatus()).entity(re).build());
-    }
+
   }
 
 
