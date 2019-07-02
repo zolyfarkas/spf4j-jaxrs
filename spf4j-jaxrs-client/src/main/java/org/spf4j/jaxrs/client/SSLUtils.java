@@ -15,9 +15,12 @@
  */
 package org.spf4j.jaxrs.client;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -37,6 +40,15 @@ public final class SSLUtils {
 
   private SSLUtils() { }
 
+  public static Certificate generateCertificate(final Path caCertificate)
+          throws IOException, CertificateException {
+    try (InputStream caInput = new BufferedInputStream(Files.newInputStream(caCertificate))) {
+      CertificateFactory cf = CertificateFactory.getInstance("X.509");
+      return cf.generateCertificate(caInput);
+    }
+  }
+
+  
   public static Certificate generateCertificate(final byte[] caCertificate)
           throws IOException, CertificateException {
     try (InputStream caInput = new ByteArrayInputStream(caCertificate)) {
