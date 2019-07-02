@@ -67,6 +67,14 @@ public final class ClientBuilderUtil {
    */
   public static Spf4JClient createClientNonSpf4jRest(final long connectTimeoutMillis,
           final long defaultReadTimeoutMillis) {
+    javax.ws.rs.client.Client jaxRsClient = createClientBuilderNonSpf4jRest(connectTimeoutMillis,
+            defaultReadTimeoutMillis) .build();
+    return new Spf4JClient(jaxRsClient)
+            .withHedgePolicy(HedgePolicy.NONE);
+  }
+
+  public static ClientBuilder createClientBuilderNonSpf4jRest(final long connectTimeoutMillis,
+          final long defaultReadTimeoutMillis) {
     AvroFeature avroFeature = new AvroFeature(SchemaProtocol.NONE, SchemaResolver.NONE);
     ClientBuilder clBuilder = ClientBuilder
             .newBuilder()
@@ -76,10 +84,7 @@ public final class ClientBuilderUtil {
             .register(avroFeature)
             .property("jersey.config.client.useEncoding", "gzip"); //see ClientProperties is jersey 2.28+
     clBuilder = ClientBuilderUtil.setConnectTimeout(clBuilder, connectTimeoutMillis, TimeUnit.MILLISECONDS);
-    clBuilder = ClientBuilderUtil.setReadTimeout(clBuilder, defaultReadTimeoutMillis, TimeUnit.MILLISECONDS);
-    javax.ws.rs.client.Client jaxRsClient = clBuilder.build();
-    return new Spf4JClient(jaxRsClient)
-            .withHedgePolicy(HedgePolicy.NONE);
+    return ClientBuilderUtil.setReadTimeout(clBuilder, defaultReadTimeoutMillis, TimeUnit.MILLISECONDS);
   }
 
 
