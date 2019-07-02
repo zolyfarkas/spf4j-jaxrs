@@ -16,11 +16,14 @@
 package org.spf4j.jaxrs.client;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.KeyFactory;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -28,9 +31,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.function.Consumer;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+import org.spf4j.base.Base64;
 
 /**
  *
@@ -38,7 +45,8 @@ import javax.net.ssl.TrustManagerFactory;
  */
 public final class SSLUtils {
 
-  private SSLUtils() { }
+  private SSLUtils() {
+  }
 
   public static Certificate generateCertificate(final Path caCertificate)
           throws IOException, CertificateException {
@@ -48,7 +56,23 @@ public final class SSLUtils {
     }
   }
 
-  
+  public static RSAPrivateKey loadRSAPrivateKey(final Path keyFileName)
+          throws IOException, InvalidKeySpecException, NoSuchAlgorithmException {
+    StringBuilder buff = new StringBuilder(2048);
+    try (BufferedReader reader = Files.newBufferedReader(keyFileName, StandardCharsets.US_ASCII)) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        if (line.endsWith("PRIVATE KEY-----")) {
+          continue;
+        }
+      }
+    }
+    byte[] keyBin = Base64.decodeBase64(buff);
+    KeyFactory kf = KeyFactory.getInstance("RSA");
+    PKCS8EncodedKeySpec ks = new PKCS8EncodedKeySpec(keyBin);
+    return (RSAPrivateKey) kf.generatePrivate(ks);
+  }
+
   public static Certificate generateCertificate(final byte[] caCertificate)
           throws IOException, CertificateException {
     try (InputStream caInput = new ByteArrayInputStream(caCertificate)) {
@@ -57,7 +81,7 @@ public final class SSLUtils {
     }
   }
 
-  public static SSLContext buildSslContext(final Consumer<KeyStore>  keyStoreSetup) {
+  public static SSLContext buildSslContext(final Consumer<KeyStore> keyStoreSetup) {
     try {
       KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
       keyStore.load(null, null);
