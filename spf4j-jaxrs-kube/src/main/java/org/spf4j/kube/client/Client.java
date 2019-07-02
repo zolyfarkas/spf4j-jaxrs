@@ -111,7 +111,7 @@ public final class Client {
             .get(Endpoints.class);
   }
 
-  private Certificate generateCertificate(final byte[] caCertificate)
+  private static Certificate generateCertificate(final byte[] caCertificate)
           throws IOException, CertificateException {
     try (InputStream caInput = new ByteArrayInputStream(caCertificate)) {
       CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -119,7 +119,7 @@ public final class Client {
     }
   }
 
-  private SSLContext buildSslContext(final byte[] caCertificate) {
+  private static SSLContext buildSslContext(final byte[] caCertificate) {
     try {
       KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
       keyStore.load(null, null);
