@@ -15,27 +15,20 @@
  */
 package org.spf4j.kube.client;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.client.ClientProperties;
 import org.spf4j.http.DeadlineProtocol;
+import org.spf4j.jaxrs.client.SSLUtils;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
 import org.spf4j.jaxrs.client.security.providers.BearerAuthClientFilter;
@@ -111,30 +104,15 @@ public final class Client {
             .get(Endpoints.class);
   }
 
-  private static Certificate generateCertificate(final byte[] caCertificate)
-          throws IOException, CertificateException {
-    try (InputStream caInput = new ByteArrayInputStream(caCertificate)) {
-      CertificateFactory cf = CertificateFactory.getInstance("X.509");
-      return cf.generateCertificate(caInput);
-    }
-  }
 
   private static SSLContext buildSslContext(final byte[] caCertificate) {
-    try {
-      KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-      keyStore.load(null, null);
-      keyStore.setCertificateEntry("ca", generateCertificate(caCertificate));
-
-      TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-      tmf.init(keyStore);
-
-      SSLContext context = SSLContext.getInstance("TLSv1.2");
-      context.init(null, tmf.getTrustManagers(), null);
-      return context;
-    } catch (KeyStoreException | KeyManagementException | IOException
-            | NoSuchAlgorithmException | CertificateException ex) {
-      throw new RuntimeException(ex);
-    }
+    return SSLUtils.buildSslContext((keyStore)  -> {
+      try {
+        keyStore.setCertificateEntry("ca", SSLUtils.generateCertificate(caCertificate));
+      } catch (IOException | CertificateException | KeyStoreException ex) {
+        throw new RuntimeException(ex);
+      }
+    });
   }
 
   @Override
