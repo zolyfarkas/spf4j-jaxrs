@@ -23,7 +23,7 @@
   <artifactId>spf4j-jaxrs-kube</artifactId>
   <packaging>jar</packaging>
   <name>${project.artifactId}-${project.version}</name>
-  <description>jax-rs client side components</description>
+  <description>A simple kubertenes client that covers: peer discovery, token review, and role bindings</description>
   <parent>
     <groupId>org.spf4j</groupId>
     <artifactId>spf4j-jaxrs</artifactId>

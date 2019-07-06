@@ -35,7 +35,6 @@ import org.spf4j.kube.client.Client;
 import org.spf4j.kube.client.TokenReview;
 
 /**
- *
  * @author Zoltan Farkas
  */
 @Provider

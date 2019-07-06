@@ -58,6 +58,10 @@ public final class Client {
 
   private final WebTarget tokenReviewTarget;
 
+  private final WebTarget clusterRoleBindingsTarget;
+
+  private final WebTarget roleBindingsTarget;
+
   public Client(@Nullable final Supplier<String> apiToken,
           @Nullable final byte[] caCertificate) {
     this("kubernetes.default.svc", apiToken, caCertificate);
@@ -87,6 +91,8 @@ public final class Client {
                     + kubernetesMaster);
     apiTarget = rootTarget.path("api/v1");
     tokenReviewTarget = rootTarget.path("apis/authentication.k8s.io/v1/tokenreviews");
+    clusterRoleBindingsTarget = rootTarget.path("apis/rbac.authorization.k8s.io/v1/clusterrolebindings");
+    roleBindingsTarget = rootTarget.path("apis/rbac.authorization.k8s.io/v1/rolebindings");
   }
 
 
@@ -95,6 +101,13 @@ public final class Client {
             Entity.entity(new TokenReview(token), MediaType.APPLICATION_JSON), TokenReview.class).getStatus();
   }
 
+  public RoleBindings getClusterRoleBindings() {
+    return clusterRoleBindingsTarget.request(MediaType.APPLICATION_JSON).get(RoleBindings.class);
+  }
+
+  public RoleBindings getRoleBindings() {
+    return roleBindingsTarget.request(MediaType.APPLICATION_JSON).get(RoleBindings.class);
+  }
 
   public Endpoints getEndpoints(final String namesSpace, final String endpointName) {
     return apiTarget.path("namespaces/{namespace}/endpoints/{endpointName}")

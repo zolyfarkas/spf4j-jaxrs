@@ -28,6 +28,8 @@ import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyReader;
 import org.spf4j.kube.cluster.KubeCluster;
 import javax.ws.rs.core.MultivaluedHashMap;
+import org.apache.avro.Schema;
+import org.apache.avro.reflect.ExtendedReflectData;
 
 /**
  *
@@ -139,5 +141,17 @@ public class ClientTest {
     Assert.assertFalse(tokenReview.isAuthenticated());
   }
 
+
+  @Test
+  public void testRoleBindings() {
+    Schema schema = ExtendedReflectData.get().getSchema(RoleBindings.class);
+    Assert.assertNotNull(schema);
+    LOG.debug("schema", schema);
+    Client kubeCl = new Client("127.0.0.1:32768", null, null);
+    RoleBindings rb = kubeCl.getRoleBindings();
+    Assert.assertEquals("RoleBindingList", rb.getKind());
+    RoleBindings rb2 = kubeCl.getClusterRoleBindings();
+    Assert.assertEquals("ClusterRoleBindingList", rb2.getKind());
+  }
 
 }
