@@ -51,7 +51,7 @@ public final class RoleBindings {
 
   private MetaData metadata;
 
-  private List<ClusterRoleBinding> items;
+  private List<RoleBinding> items;
 
   public String getKind() {
     return kind;
@@ -69,11 +69,11 @@ public final class RoleBindings {
     this.metadata = metadata;
   }
 
-  public List<ClusterRoleBinding> getItems() {
+  public List<RoleBinding> getItems() {
     return items;
   }
 
-  public void setItems(final List<ClusterRoleBinding> items) {
+  public void setItems(final List<RoleBinding> items) {
     this.items = items;
   }
 
@@ -103,7 +103,7 @@ public final class RoleBindings {
 
   }
 
-  public static final class ClusterRoleBinding {
+  public static final class RoleBinding {
 
     @AvroDefault("[]")
     private List<Subject> subjects;

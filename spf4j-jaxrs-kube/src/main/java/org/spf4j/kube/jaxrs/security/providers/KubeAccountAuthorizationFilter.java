@@ -20,7 +20,8 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import java.security.Principal;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
+import java.util.function.Function;
+import javax.annotation.Nonnull;
 import javax.annotation.Priority;
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -30,6 +31,7 @@ import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.ext.Provider;
+import org.apache.avro.reflect.Nullable;
 import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.kube.client.Client;
 import org.spf4j.kube.client.TokenReview;
@@ -39,20 +41,29 @@ import org.spf4j.kube.client.TokenReview;
  */
 @Provider
 @Priority(Priorities.AUTHENTICATION)
-public final class ServiceAccountAuthorizationFilter implements ContainerRequestFilter {
+public final class KubeAccountAuthorizationFilter implements ContainerRequestFilter {
 
-  private static final SecurityContext NOT_AUTH = new SecurityContextImpl(null, null);
+  private static final SecurityContext NOT_AUTH = new SecurityContextImpl(null, null, (x) -> Boolean.FALSE);
 
   private static final String AUTH_METHOD = "Bearer";
 
-  private final BiFunction<String, String, SecurityContext> secResolver;
+  private final Authenticate secResolver;
+
+  private final KubeRoleMap roleMap;
 
   private final Client kubeClient;
 
+  interface Authenticate {
+    SecurityContext authenticate(String authStr, String scheme);
+  }
+
+
   @Inject
-  public ServiceAccountAuthorizationFilter(final Client kubeClient,
-          @ConfigProperty("jaxrs.service.auth.tokenCacheTimeMillis") @DefaultValue("1000") final long cacheMillis) {
+  public KubeAccountAuthorizationFilter(final Client kubeClient,
+          @ConfigProperty("jaxrs.service.auth.tokenCacheTimeMillis") @DefaultValue("1000") final long cacheMillis,
+          final KubeRoleMap roleMap) {
     this.kubeClient = kubeClient;
+    this.roleMap = roleMap;
     if (cacheMillis > 0) {
       LoadingCache<String, LoadingCache<String, SecurityContext>> cache
               = CacheBuilder.newBuilder()
@@ -80,7 +91,8 @@ public final class ServiceAccountAuthorizationFilter implements ContainerRequest
     if (!status.isAuthenticated()) {
       return NOT_AUTH;
     }
-    return new SecurityContextImpl(status.getUser(), scheme);
+    TokenReview.User user = status.getUser();
+    return new SecurityContextImpl(user, scheme, roleMap.getRoles(user.getUsername())::contains);
   }
 
   @Override
@@ -96,7 +108,7 @@ public final class ServiceAccountAuthorizationFilter implements ContainerRequest
     if (!auth.startsWith(AUTH_METHOD)) {
       return;
     }
-    SecurityContext sc = secResolver.apply(auth, requestContext.getUriInfo().getRequestUri().getScheme());
+    SecurityContext sc = secResolver.authenticate(auth, requestContext.getUriInfo().getRequestUri().getScheme());
     if (sc == NOT_AUTH) {
       return;
     }
@@ -113,20 +125,29 @@ public final class ServiceAccountAuthorizationFilter implements ContainerRequest
 
     private final TokenReview.User user;
     private final String scheme;
+    private final Function<String, Boolean> roles;
+    private final Principal principal;
 
-    SecurityContextImpl(final TokenReview.User user, final String scheme) {
+    SecurityContextImpl(@Nullable final TokenReview.User user,
+            @Nullable final String scheme, @Nonnull final Function<String, Boolean> roles) {
       this.user = user;
       this.scheme = scheme;
+      this.roles = roles;
+      this.principal = user == null ?  null : user::getUsername;
     }
 
     @Override
     public Principal getUserPrincipal() {
-      return () -> user.getUsername();
+      return principal;
     }
 
     @Override
     public boolean isUserInRole(final String role) {
-      return user.getGroups().contains(role);
+      boolean isGroup = user.getGroups().contains(role);
+      if (isGroup) {
+        return true;
+      }
+      return roles.apply(role);
     }
 
     @Override
