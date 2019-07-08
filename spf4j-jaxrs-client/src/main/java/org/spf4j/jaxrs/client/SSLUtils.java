@@ -31,6 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -48,11 +49,11 @@ public final class SSLUtils {
   private SSLUtils() {
   }
 
-  public static Certificate generateCertificate(final Path caCertificate)
+  public static X509Certificate generateCertificate(final Path caCertificate)
           throws IOException, CertificateException {
     try (InputStream caInput = new BufferedInputStream(Files.newInputStream(caCertificate))) {
       CertificateFactory cf = CertificateFactory.getInstance("X.509");
-      return cf.generateCertificate(caInput);
+      return (X509Certificate) cf.generateCertificate(caInput);
     }
   }
 
