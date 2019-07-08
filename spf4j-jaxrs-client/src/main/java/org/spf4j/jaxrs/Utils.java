@@ -34,6 +34,23 @@ public final class Utils {
     return builder.withExceptionPartialPredicate(WebApplicationException.class,
                     (WebApplicationException ex, Callable<? extends Object> c) -> {
                       Response response = ex.getResponse();
+                      String retryAfter = response.getHeaderString("Retry-After");
+                      if (retryAfter != null && !retryAfter.isEmpty()) {
+                        if (Character.isDigit(retryAfter.charAt(0))) {
+                          return RetryDecision.retry(Long.parseLong(retryAfter), TimeUnit.SECONDS, c);
+                        } else {
+                          return RetryDecision.retry(Duration.between(Instant.now(),
+                                  DateTimeFormatter.RFC_1123_DATE_TIME.parse(retryAfter,
+                                          Instant::from)).toNanos(),
+                                  TimeUnit.NANOSECONDS, c);
+                        }
+                      }
+                      String noRetry = response.getHeaderString("No-Retry");
+                      // Not standard,
+                      // but a way for the server to tell the client there is no point for the client to retry.
+                      if (noRetry == null) {
+                        return RetryDecision.abort();
+                      }
                       int status = response.getStatus();
                       switch (status) {
                         case 408:
@@ -50,17 +67,6 @@ public final class Utils {
                         case 522:
                         case 524:
                         case 599:
-                          String retryAfter = response.getHeaderString("Retry-After");
-                          if (retryAfter != null && !retryAfter.isEmpty()) {
-                            if (Character.isDigit(retryAfter.charAt(0))) {
-                              return RetryDecision.retry(Long.parseLong(retryAfter), TimeUnit.SECONDS, c);
-                            } else {
-                              return RetryDecision.retry(Duration.between(Instant.now(),
-                                      DateTimeFormatter.RFC_1123_DATE_TIME.parse(retryAfter,
-                                              Instant::from)).toNanos(),
-                                      TimeUnit.NANOSECONDS, c);
-                            }
-                          }
                           return RetryDecision.retryDefault(c);
                         default:
                           if (status >= 400 && status < 500) {
