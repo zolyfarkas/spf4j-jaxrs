@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
 import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.kube.client.Client;
@@ -38,8 +39,9 @@ public final class KubeRoleMap {
   private final Supplier<Map<String, Set<String>>> roleMapSupplier;
 
 
+  @Inject
   public KubeRoleMap(final Client kubeClient,
-          @ConfigProperty("jaxrs.service.auth.roleMapCacheTimeMillis") @DefaultValue("10000") final long cacheMillis) {
+          @ConfigProperty("jaxrs.service.auth.roleCacheTimeMillis") @DefaultValue("10000") final long cacheMillis) {
     this.roleMapSupplier = Suppliers.memoizeWithExpiration(() -> {
       Map<String, Set<String>> result = new HashMap<>();
       putRoleBindings(kubeClient.getClusterRoleBindings(), result);

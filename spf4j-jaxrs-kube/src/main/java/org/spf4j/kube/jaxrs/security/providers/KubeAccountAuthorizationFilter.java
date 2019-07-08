@@ -60,10 +60,12 @@ public final class KubeAccountAuthorizationFilter implements ContainerRequestFil
 
   @Inject
   public KubeAccountAuthorizationFilter(final Client kubeClient,
-          @ConfigProperty("jaxrs.service.auth.tokenCacheTimeMillis") @DefaultValue("1000") final long cacheMillis,
-          final KubeRoleMap roleMap) {
+          @ConfigProperty("jaxrs.service.auth.tokenCacheTimeMillis")
+          @DefaultValue("1000") final long cacheMillis,
+          @ConfigProperty("jaxrs.service.auth.roleCacheTimeMillis")
+          @DefaultValue("10000") final long roleCacheMillis) {
     this.kubeClient = kubeClient;
-    this.roleMap = roleMap;
+    this.roleMap = new KubeRoleMap(kubeClient, roleCacheMillis);
     if (cacheMillis > 0) {
       LoadingCache<String, LoadingCache<String, SecurityContext>> cache
               = CacheBuilder.newBuilder()
