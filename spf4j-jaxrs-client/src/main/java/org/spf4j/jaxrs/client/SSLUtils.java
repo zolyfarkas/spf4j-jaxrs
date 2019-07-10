@@ -66,6 +66,7 @@ public final class SSLUtils {
         if (line.endsWith("PRIVATE KEY-----")) {
           continue;
         }
+        buff.append(line);
       }
     }
     byte[] keyBin = Base64.decodeBase64(buff);
