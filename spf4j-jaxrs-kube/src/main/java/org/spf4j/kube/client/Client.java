@@ -119,7 +119,7 @@ public final class Client {
 
 
   private static SSLContext buildSslContext(final byte[] caCertificate) {
-    return SSLUtils.buildSslContext((keyStore)  -> {
+    return SSLUtils.buildTrustManagerSslContext((keyStore)  -> {
       try {
         keyStore.setCertificateEntry("ca", SSLUtils.generateCertificate(caCertificate));
       } catch (IOException | CertificateException | KeyStoreException ex) {
