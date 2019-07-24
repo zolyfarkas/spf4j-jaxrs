@@ -25,7 +25,7 @@ public interface HealthCheck {
 
     /**
      * Will run the health check.
-     * If health check is supposed to fail
+     * If health check is supposed to fail it should throw an Exception.
      * @param logger
      * @throws Exception
      */
