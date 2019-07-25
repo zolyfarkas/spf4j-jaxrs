@@ -51,9 +51,9 @@ import org.glassfish.grizzly.servlet.ServletRegistration;
 import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
-import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.filter.EncodingFilter;
+import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.glassfish.jersey.message.DeflateEncoder;
 import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -65,9 +65,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.apiBrowser.AvroModelConverter;
 import org.spf4j.actuator.apiBrowser.OpenApiResource;
-import org.spf4j.actuator.cluster.health.ClusterAllNodesCheck;
-import org.spf4j.actuator.cluster.health.ClusterAllNodesRegistration;
-import org.spf4j.actuator.health.HealthCheck;
+import org.spf4j.actuator.cluster.health.DefaultClusterHealthChecksBinder;
+import org.spf4j.actuator.health.checks.DefaultHealthChecksBinder;
 import org.spf4j.avro.SchemaClient;
 import org.spf4j.base.Arrays;
 import org.spf4j.base.avro.Converters;
@@ -260,8 +259,9 @@ public abstract class ServiceIntegrationBase {
       javax.servlet.ServletRegistration servletRegistration = srvContext.getServletRegistration("jersey");
       String initParameter = servletRegistration.getInitParameter("servlet.port");
       String bindAddr = servletRegistration.getInitParameter("servlet.bindAddr");
-      register(new ClusterBinder(bindAddr, Integer.parseInt(initParameter)));
-      register(new HealthChecksBinder());
+      register(new ClusterBinder(restClient, bindAddr, Integer.parseInt(initParameter)));
+      register(new DefaultHealthChecksBinder());
+      register(new DefaultClusterHealthChecksBinder());
       if (instance != null) {
         throw new IllegalStateException("Application already initialized " + instance);
       }
@@ -287,25 +287,6 @@ public abstract class ServiceIntegrationBase {
       return restClient;
     }
 
-    private static class HealthChecksBinder extends AbstractBinder {
-
-      @Override
-      protected void configure() {
-        bind(new HealthCheck.Registration() {
-          @Override
-          public String[] getPath() {
-            return new String[]{"nop"};
-          }
-
-          @Override
-          public HealthCheck getCheck() {
-            return HealthCheck.NOP;
-          }
-        }).to(HealthCheck.Registration.class);
-        bindAsContract(ClusterAllNodesCheck.class);
-        bind(ClusterAllNodesRegistration.class).to(HealthCheck.Registration.class);
-      }
-    }
   }
 
   private static class ClusterBinder extends AbstractBinder {
@@ -314,12 +295,15 @@ public abstract class ServiceIntegrationBase {
 
     private final int port;
 
+    private final Spf4JClient client;
+
     @Inject
-    ClusterBinder(
+    ClusterBinder(final Spf4JClient client,
             @ConfigProperty("servlet.bindAddr") final String bindAddr,
             @ConfigProperty("servlet.port") final int port) {
       this.bindAddr = bindAddr;
       this.port = port;
+      this.client = client;
     }
 
     @Override
@@ -331,6 +315,7 @@ public abstract class ServiceIntegrationBase {
                         port, NetworkProtocol.TCP)));
         bind(singleNodeCluster).to(Cluster.class);
         bind(singleNodeCluster).to(Service.class);
+        bind(client).to(Spf4JClient.class);
       } catch (UnknownHostException ex) {
         throw new RuntimeException(ex);
       }
