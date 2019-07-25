@@ -100,7 +100,7 @@ public final class ClusterAllNodesCheck implements HealthCheck {
 
   @Override
   public String info() {
-    return "A health checks, that runs and aggregates the health checks going against all cluster members";
+    return "A health checks, that runs and aggregates the health checks of all cluster members";
   }
 
   @Override
