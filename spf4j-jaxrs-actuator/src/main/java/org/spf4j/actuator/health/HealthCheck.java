@@ -20,6 +20,29 @@ public interface HealthCheck {
       String[] getPath();
 
       HealthCheck getCheck();
+
+      static Registration from(final String  path, final HealthCheck check) {
+        if (path.contains("/")) {
+          return from(path.split("/"), check);
+        } else {
+          return from(new String[] {path}, check);
+        }
+      }
+
+      static Registration from(final String[] path, final HealthCheck check) {
+        return new Registration() {
+          @Override
+          public String[] getPath() {
+            return path;
+          }
+
+          @Override
+          public HealthCheck getCheck() {
+            return check;
+          }
+        };
+      }
+
     }
 
 

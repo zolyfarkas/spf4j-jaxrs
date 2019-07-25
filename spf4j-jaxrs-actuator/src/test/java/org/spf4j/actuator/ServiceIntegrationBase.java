@@ -51,9 +51,9 @@ import org.glassfish.grizzly.servlet.ServletRegistration;
 import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
-import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.filter.EncodingFilter;
+import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.glassfish.jersey.message.DeflateEncoder;
 import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -65,7 +65,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.apiBrowser.AvroModelConverter;
 import org.spf4j.actuator.apiBrowser.OpenApiResource;
-import org.spf4j.actuator.health.HealthCheck;
+import org.spf4j.actuator.health.checks.DefaultHealthChecksBinder;
 import org.spf4j.avro.SchemaClient;
 import org.spf4j.base.Arrays;
 import org.spf4j.base.avro.Converters;
@@ -259,12 +259,12 @@ public abstract class ServiceIntegrationBase {
       String initParameter = servletRegistration.getInitParameter("servlet.port");
       String bindAddr = servletRegistration.getInitParameter("servlet.bindAddr");
       register(new ClusterBinder(bindAddr, Integer.parseInt(initParameter)));
-      register(new HealthChecksBinder());
+      register(new DefaultHealthChecksBinder());
+      packages("org.spf4j.actuator");
+      registerClasses(OpenApiResource.class);
       if (instance != null) {
         throw new IllegalStateException("Application already initialized " + instance);
       }
-      packages("org.spf4j.actuator");
-      registerClasses(OpenApiResource.class);
       instance = this;
     }
 
@@ -285,23 +285,6 @@ public abstract class ServiceIntegrationBase {
       return restClient;
     }
 
-    private static class HealthChecksBinder extends AbstractBinder {
-
-      @Override
-      protected void configure() {
-        bind(new HealthCheck.Registration() {
-          @Override
-          public String[] getPath() {
-            return new String[]{"nop"};
-          }
-
-          @Override
-          public HealthCheck getCheck() {
-            return HealthCheck.NOP;
-          }
-        }).to(HealthCheck.Registration.class);
-      }
-    }
   }
 
   private static class ClusterBinder extends AbstractBinder {

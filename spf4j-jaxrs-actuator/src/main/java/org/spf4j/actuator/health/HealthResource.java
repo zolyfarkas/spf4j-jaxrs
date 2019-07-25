@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
@@ -25,6 +26,7 @@ import org.spf4j.actuator.health.HealthCheck.Type;
 import org.spf4j.base.avro.HealthCheckInfo;
 import org.spf4j.base.avro.HealthRecord;
 import org.spf4j.base.avro.HealthStatus;
+import org.spf4j.base.avro.ServiceError;
 import org.spf4j.jaxrs.server.DebugDetailEntitlement;
 import org.spf4j.log.ExecContextLogger;
 import org.spf4j.jaxrs.ConfigProperty;
@@ -157,6 +159,10 @@ public class HealthResource {
     }
     String[] pathArr = toStrArray(path);
     HealthOrgNode hNode = checkSupplier.get().getHealthNode(pathArr);
+    if (hNode == null) {
+      return Response.status(404).entity(ServiceError.newBuilder().setCode(404)
+              .setMessage("No health check(s): " + Arrays.toString(pathArr)).build()).build();
+    }
     HealthRecord healthRecord = hNode.getHealthRecord("", host, LOG, isDebug, isDebugOnError);
     if (healthRecord.getStatus() == HealthStatus.HEALTHY) {
       return Response.ok(healthRecord).build();
