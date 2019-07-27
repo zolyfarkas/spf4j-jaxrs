@@ -51,6 +51,7 @@
     <module>spf4j-jaxrs-server</module>
     <module>spf4j-jaxrs-actuator</module>
     <module>spf4j-jaxrs-actuator-cluster</module>
+    <module>spf4j-jaxrs-grizzly</module>
   </modules>
 
   <dependencyManagement>
