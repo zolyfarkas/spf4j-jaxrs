@@ -39,6 +39,12 @@
       <version>${spf4j.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.spf4j</groupId>
+      <artifactId>spf4j-jaxrs-grizzly</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.glassfish.jersey.containers</groupId>
       <artifactId>jersey-container-grizzly2-servlet</artifactId>
       <exclusions>

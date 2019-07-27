@@ -19,12 +19,10 @@ import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.core.converter.ModelConverters;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
@@ -37,14 +35,10 @@ import javax.servlet.ServletContext;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
 import org.apache.avro.SchemaResolvers;
 import org.glassfish.grizzly.http.CompressionConfig;
-import org.glassfish.grizzly.http.server.ErrorPageGenerator;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
-import org.glassfish.grizzly.http.server.Request;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.servlet.FixedWebappContext;
 import org.glassfish.grizzly.servlet.ServletRegistration;
@@ -68,19 +62,15 @@ import org.spf4j.actuator.apiBrowser.OpenApiResource;
 import org.spf4j.actuator.cluster.health.DefaultClusterHealthChecksBinder;
 import org.spf4j.actuator.health.checks.DefaultHealthChecksBinder;
 import org.spf4j.avro.SchemaClient;
-import org.spf4j.base.Arrays;
-import org.spf4j.base.avro.Converters;
-import org.spf4j.base.avro.DebugDetail;
 import org.spf4j.base.avro.NetworkProtocol;
 import org.spf4j.base.avro.NetworkService;
-import org.spf4j.base.avro.ServiceError;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.Service;
 import org.spf4j.cluster.SingleNodeCluster;
 import org.spf4j.concurrent.LifoThreadPoolBuilder;
+import org.spf4j.grizzly.GrizzlyErrorPageGenerator;
 import org.spf4j.hk2.Spf4jBinder;
 import org.spf4j.http.DefaultDeadlineProtocol;
-import org.spf4j.io.ByteArrayBuilder;
 import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
@@ -93,7 +83,6 @@ import org.spf4j.jaxrs.common.providers.DirectStringMessageProvider;
 import org.spf4j.jaxrs.common.providers.GZipEncoderDecoder;
 import org.spf4j.jaxrs.common.providers.avro.AvroFeature;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
-import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyWriter;
 import org.spf4j.servlet.ExecutionContextFilter;
 
 /**
@@ -127,38 +116,8 @@ public abstract class ServiceIntegrationBase {
     servletRegistration.setLoadOnStartup(0);
     HttpServer srv = new HttpServer();
     srv.getServerConfiguration()
-            .setDefaultErrorPageGenerator(new ErrorPageGenerator() {
-              @Override
-              public String generate(final Request request, final int status,
-                      final String reasonPhrase, final String description, final Throwable exception) {
-                ServiceError err = ServiceError.newBuilder()
-                        .setCode(status)
-                        .setMessage(reasonPhrase + ';' + description)
-                        .setDetail(new DebugDetail("origin", Collections.EMPTY_LIST,
-                                exception != null ? Converters.convert(exception) : null, Collections.EMPTY_LIST))
-                        .build();
-                ByteArrayBuilder bab = new ByteArrayBuilder(256);
-                XJsonAvroMessageBodyWriter writer = new XJsonAvroMessageBodyWriter(DefaultSchemaProtocol.NONE);
-                try {
-                  writer.writeTo(err, err.getClass(), err.getClass(),
-                          Arrays.EMPTY_ANNOT_ARRAY, MediaType.APPLICATION_JSON_TYPE, new MultivaluedHashMap<>(2),
-                          bab);
-                } catch (RuntimeException ex) {
-                  if (exception != null) {
-                    ex.addSuppressed(exception);
-                  }
-                  LOG.error("Exception while writing detail", ex);
-                  throw ex;
-                } catch (IOException ex) {
-                  if (exception != null) {
-                    ex.addSuppressed(exception);
-                  }
-                  LOG.error("Exception while writing detail", ex);
-                  throw new UncheckedIOException(ex);
-                }
-                return bab.toString(StandardCharsets.UTF_8);
-              }
-            });
+            .setDefaultErrorPageGenerator(new GrizzlyErrorPageGenerator(
+                    new SchemaClient(new URI("https://dl.bintray.com/zolyfarkas/core"))));
 //  final ServerConfiguration config = server.getServerConfiguration();
 //  config.addHttpHandler(new StaticHttpHandler(docRoot), "/");
     final NetworkListener listener
