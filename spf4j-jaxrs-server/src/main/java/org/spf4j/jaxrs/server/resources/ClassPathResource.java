@@ -28,6 +28,7 @@ import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.base.CharSequences;
+import org.spf4j.log.ExecContextLogger;
 
 /**
  *
@@ -37,7 +38,7 @@ import org.spf4j.base.CharSequences;
 @SuppressFBWarnings("JAXRS_ENDPOINT")
 public class ClassPathResource {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ClassPathResource.class);
+  private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(ClassPathResource.class));
 
   private final String cpBase;
 
