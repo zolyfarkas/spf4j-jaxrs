@@ -111,7 +111,7 @@ public final class CsvParameterConverterProvider implements ParamConverterProvid
       List result = new ArrayList();
       try {
         CsvReader reader = csv.reader(new StringReader(value));
-        while (reader.next() != CsvReader.TokenType.END_DOCUMENT) {
+        while (reader.next().ordinal() < CsvReader.TokenType.END_ROW.ordinal()) {
           result.add(compConverter.fromString(reader.getElement().toString()));
         }
       } catch (IOException | CsvParseException ex) {
