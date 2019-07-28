@@ -20,6 +20,7 @@ import java.io.InputStream;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.spf4j.base.CharSequences;
 
@@ -53,7 +54,25 @@ public class ClassPathResource {
             .getResourceAsStream(cpBase + '/' + CharSequences.validatedFileName(path));
     return null == resource
         ? Response.status(404).build()
-        : Response.ok().entity(resource).build();
+        : Response.ok().entity(resource).type(getPathMediaType(path)).build();
+  }
+
+
+  private static MediaType getPathMediaType(final String path) {
+      int dIdx = path.lastIndexOf('.');
+      if (dIdx < 0) {
+        return MediaType.APPLICATION_OCTET_STREAM_TYPE;
+      }
+      int sIdx = path.lastIndexOf('/');
+      if (sIdx > dIdx) {
+        return MediaType.APPLICATION_OCTET_STREAM_TYPE;
+      }
+      String ext = path.substring(dIdx + 1);
+      MediaType mt = org.spf4j.jaxrs.server.MediaTypes.fromExtension(ext);
+      if (mt == null) {
+        return  MediaType.APPLICATION_OCTET_STREAM_TYPE;
+      }
+      return mt;
   }
 
 }
