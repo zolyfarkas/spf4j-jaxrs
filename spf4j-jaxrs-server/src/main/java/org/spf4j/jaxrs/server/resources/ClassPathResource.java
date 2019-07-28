@@ -34,8 +34,15 @@ public class ClassPathResource {
 
   private final String cpBase;
 
+  private final ClassLoader classLoader;
+
   public ClassPathResource(final String cpBase) {
+    this(cpBase, Thread.currentThread().getContextClassLoader());
+  }
+
+  public ClassPathResource(final String cpBase, final ClassLoader classLoader) {
     this.cpBase = cpBase;
+    this.classLoader = classLoader;
   }
 
   public String getCpBase() {
@@ -50,7 +57,7 @@ public class ClassPathResource {
   @GET
   @Path("{path:.*}")
   public Response staticResources(@PathParam("path")  final String path) {
-    final InputStream resource = Thread.currentThread().getContextClassLoader()
+    final InputStream resource = classLoader
             .getResourceAsStream(cpBase + '/' + CharSequences.validatedFileName(path));
     return null == resource
         ? Response.status(404).build()
