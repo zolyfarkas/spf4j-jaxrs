@@ -32,7 +32,7 @@ public class UtilsTest {
   public void testUtils() {
     long nanoTime = System.nanoTime();
     RetryDecision decision = Utils.DEFAULT_HTTP_RETRY_POLICY.getRetryPredicate(nanoTime, nanoTime + 1000000000L)
-            .getExceptionDecision(new ServiceUnavailableException(0L), null);
+            .getExceptionDecision(new ServiceUnavailableException(0L), () -> null);
     Assert.assertEquals(0L, decision.getDelayNanos());
     Assert.assertEquals(Type.Retry, decision.getDecisionType());
   }
