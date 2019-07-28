@@ -90,13 +90,14 @@ public class FilesResource {
       }
       return Response.ok(result, MediaType.APPLICATION_JSON).build();
     } else {
-         if (range != null && range.isByteRange()) {
+        MediaType fileMediaType = getFileMediaType(target);
+        if (range != null && range.isByteRange()) {
         List<Range<Long>> ranges = range.getRanges();
         if (ranges.size() == 1) {
           final Range<Long> r = ranges.get(0);
           return Response.status(206).entity(new StreamedResponseContent(
                   () -> new BufferedInputStream(Files.newInputStream(target)), r.lowerEndpoint(), r.upperEndpoint()))
-                  .encoding(MediaType.APPLICATION_OCTET_STREAM)
+                  .type(fileMediaType)
                   .header("Accept-Ranges", "bytes")
                   .header("Content-Range", "bytes " + r.lowerEndpoint() + '-' + r.upperEndpoint() + "/*")
                   .header("Content-Disposition", "attachment; filename=\"" + target.getFileName() + "\"")
@@ -104,11 +105,29 @@ public class FilesResource {
         }
       }
       return Response.ok(new StreamedResponseContent(() -> new BufferedInputStream(Files.newInputStream(target))),
-              MediaType.APPLICATION_OCTET_STREAM)
+              fileMediaType)
               .header("Accept-Ranges", "bytes")
               .header("Content-Disposition", "attachment; filename=\"" + target.getFileName() + "\"")
               .build();
     }
+  }
+
+  private static MediaType getFileMediaType(final Path filePath) {
+      Path fName = filePath.getFileName();
+      if (fName == null) {
+        throw new IllegalArgumentException("Invalid file " + filePath);
+      }
+      String fileName = fName.toString();
+      int dIdx = fileName.lastIndexOf('.');
+      if (dIdx < 0) {
+        return MediaType.APPLICATION_OCTET_STREAM_TYPE;
+      }
+      String ext = fileName.substring(dIdx + 1);
+      MediaType mt = org.spf4j.jaxrs.server.MediaTypes.fromExtension(ext);
+      if (mt == null) {
+        return  MediaType.APPLICATION_OCTET_STREAM_TYPE;
+      }
+      return mt;
   }
 
   @Override

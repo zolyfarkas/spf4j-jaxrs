@@ -15,15 +15,45 @@
  */
 package org.spf4j.jaxrs.server;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import javax.ws.rs.core.MediaType;
 
 /**
  *
  * @author Zoltan Farkas
  */
+@ParametersAreNonnullByDefault
 public final class MediaTypes {
+
+  private static final Properties EXT_MAPPINGS = loadExtensionMappings();
+
+  private static Properties loadExtensionMappings() {
+    Properties m = new Properties();
+    try {
+      Enumeration<URL> resources = Thread.currentThread().getContextClassLoader()
+              .getResources("/mt-mapping.properties");
+      while (resources.hasMoreElements()) {
+        URL url = resources.nextElement();
+        try (Reader stream = new InputStreamReader(url.openStream(),
+                StandardCharsets.UTF_8)) {
+          m.load(stream);
+        }
+      }
+      return m;
+    } catch (IOException ex) {
+      throw new ExceptionInInitializerError(ex);
+    }
+  }
 
   private MediaTypes() { }
 
@@ -54,6 +84,15 @@ public final class MediaTypes {
         return accept.getSubtype().equals(produces.getSubtype()) && accept.getType().equals(produces.getType());
       }
     }
+  }
+
+  @Nullable
+  public static MediaType fromExtension(final String extension) {
+    String mt = EXT_MAPPINGS.getProperty(extension);
+    if (mt == null) {
+      return null;
+    }
+    return MediaType.valueOf(mt);
   }
 
 }
