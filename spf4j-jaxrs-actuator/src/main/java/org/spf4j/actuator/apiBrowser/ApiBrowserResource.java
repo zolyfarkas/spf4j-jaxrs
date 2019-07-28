@@ -38,7 +38,7 @@ public class ApiBrowserResource {
     res = new ClassPathResource("org/spf4j/actuator/apiBrowser");
   }
 
-  @Path("apiBrowser")
+  @Path("apiBrowser/")
   public ClassPathResource getUI() {
     return res;
   }
