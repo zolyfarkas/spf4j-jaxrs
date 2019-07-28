@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.PathParam;
@@ -48,8 +49,15 @@ public class FilesResource {
 
   private final Path base;
 
+  private final boolean listDirectoryContents;
+
   public FilesResource(final Path local) {
+    this(local, true);
+  }
+
+  public FilesResource(final Path local, final boolean listDirectoryContents) {
     this.base = local;
+    this.listDirectoryContents = listDirectoryContents;
   }
 
   @javax.ws.rs.Path("{path:.*}")
@@ -66,6 +74,9 @@ public class FilesResource {
     }
     final Path target = ltarget;
     if (Files.isDirectory(target)) {
+      if (!this.listDirectoryContents) {
+        throw new ForbiddenException("Directory listing not allowed for " + path);
+      }
       List<FileEntry> result = new ArrayList<>();
       try (DirectoryStream<Path> stream = Files.newDirectoryStream(target)) {
         for (Path elem : stream) {
@@ -79,8 +90,7 @@ public class FilesResource {
       }
       return Response.ok(result, MediaType.APPLICATION_JSON).build();
     } else {
-
-      if (range != null && range.isByteRange()) {
+         if (range != null && range.isByteRange()) {
         List<Range<Long>> ranges = range.getRanges();
         if (ranges.size() == 1) {
           final Range<Long> r = ranges.get(0);
