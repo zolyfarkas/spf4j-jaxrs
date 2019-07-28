@@ -53,7 +53,7 @@ public final class Utils {
         String noRetry = response.getHeaderString("No-Retry");
         // Not standard,
         // but a way for the server to tell the client there is no point for the client to retry.
-        if (noRetry == null) {
+        if (noRetry != null) {
           return RetryDecision.abort();
         }
         int status = response.getStatus();
