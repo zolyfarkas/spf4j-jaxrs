@@ -41,7 +41,7 @@ public final class MediaTypes {
     Properties m = new Properties();
     try {
       Enumeration<URL> resources = Thread.currentThread().getContextClassLoader()
-              .getResources("/mt-mapping.properties");
+              .getResources("mt-mappings.properties");
       while (resources.hasMoreElements()) {
         URL url = resources.nextElement();
         try (Reader stream = new InputStreamReader(url.openStream(),

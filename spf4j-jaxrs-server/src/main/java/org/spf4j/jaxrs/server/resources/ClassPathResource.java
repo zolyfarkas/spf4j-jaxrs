@@ -16,12 +16,17 @@
 package org.spf4j.jaxrs.server.resources;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spf4j.base.CharSequences;
 
 /**
@@ -31,6 +36,8 @@ import org.spf4j.base.CharSequences;
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 @SuppressFBWarnings("JAXRS_ENDPOINT")
 public class ClassPathResource {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ClassPathResource.class);
 
   private final String cpBase;
 
@@ -56,12 +63,16 @@ public class ClassPathResource {
 
   @GET
   @Path("{path:.*}")
-  public Response staticResources(@PathParam("path")  final String path) {
-    final InputStream resource = classLoader
-            .getResourceAsStream(cpBase + '/' + CharSequences.validatedFileName(path));
-    return null == resource
-        ? Response.status(404).build()
-        : Response.ok().entity(resource).type(getPathMediaType(path)).build();
+  public Response staticResources(@PathParam("path")  final String path) throws IOException {
+    URL resource = classLoader.getResource(cpBase + '/' + CharSequences.validatedFileName(path));
+    if (resource == null) {
+      return Response.status(404).build();
+    }
+    URLConnection conn = resource.openConnection();
+    LOG.debug("Connection of type {}", conn.getClass());
+    conn.connect();
+    final InputStream is = conn.getInputStream();
+    return Response.ok().entity(is).type(getPathMediaType(path)).build();
   }
 
 
