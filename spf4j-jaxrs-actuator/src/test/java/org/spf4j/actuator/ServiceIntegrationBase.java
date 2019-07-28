@@ -55,8 +55,6 @@ import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.apiBrowser.AvroModelConverter;
 import org.spf4j.actuator.apiBrowser.OpenApiResource;
 import org.spf4j.actuator.health.checks.DefaultHealthChecksBinder;
@@ -90,8 +88,6 @@ import org.spf4j.servlet.ExecutionContextFilter;
  */
 @SuppressFBWarnings("CE_CLASS_ENVY")
 public abstract class ServiceIntegrationBase {
-
-  private static final Logger LOG = LoggerFactory.getLogger(ServiceIntegrationBase.class);
 
   private static HttpServer server;
   private static Spf4jWebTarget target;
