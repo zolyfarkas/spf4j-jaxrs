@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Collections;
+import java.util.List;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -44,13 +47,21 @@ public class ClassPathResource {
 
   private final ClassLoader classLoader;
 
+  private final List<String> welcomeFiles;
+
   public ClassPathResource(final String cpBase) {
-    this(cpBase, Thread.currentThread().getContextClassLoader());
+    this(cpBase, Thread.currentThread().getContextClassLoader(), Collections.EMPTY_LIST);
   }
 
-  public ClassPathResource(final String cpBase, final ClassLoader classLoader) {
+
+  public ClassPathResource(final String cpBase, final List<String> welcomeFiles) {
+    this(cpBase, Thread.currentThread().getContextClassLoader(), welcomeFiles);
+  }
+
+  public ClassPathResource(final String cpBase, final ClassLoader classLoader, final List<String> welcomeFiles) {
     this.cpBase = cpBase;
     this.classLoader = classLoader;
+    this.welcomeFiles = welcomeFiles;
   }
 
   public String getCpBase() {
@@ -65,7 +76,22 @@ public class ClassPathResource {
   @GET
   @Path("{path:.*}")
   public Response staticResources(@PathParam("path")  final String path) throws IOException {
-    URL resource = classLoader.getResource(cpBase + '/' + CharSequences.validatedFileName(path));
+    String urlStr = cpBase + '/' + CharSequences.validatedFileName(path);
+    URL resource = null;
+    if (urlStr.endsWith("/")) {
+      if (welcomeFiles.isEmpty()) {
+        throw new ForbiddenException("Directory listing not allowed for " + path);
+      }
+      for (String welcome : welcomeFiles) {
+         resource = classLoader.getResource(urlStr + welcome);
+         if (resource != null) {
+           break;
+         }
+      }
+
+    } else {
+      resource = classLoader.getResource(urlStr);
+    }
     if (resource == null) {
       return Response.status(404).build();
     }

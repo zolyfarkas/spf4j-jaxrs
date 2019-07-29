@@ -28,7 +28,6 @@ import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
@@ -62,7 +61,6 @@ public class FilesResource {
 
   @javax.ws.rs.Path("{path:.*}")
   @GET
-  @Produces({"application/json", "application/octet-stream"})
   @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // try-resources gen code
   public Response get(@PathParam("path") final List<PathSegment> path,
           @HeaderParam("Range") final HttpRange range) throws IOException {
