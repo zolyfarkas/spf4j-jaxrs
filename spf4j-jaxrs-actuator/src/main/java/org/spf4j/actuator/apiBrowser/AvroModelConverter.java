@@ -111,55 +111,56 @@ public final class AvroModelConverter implements ModelConverter {
     switch (aSchema.getType()) {
          case ARRAY:
            result = new ArraySchema().items(resolve(aSchema.getElementType(), resolved, context));
+           result.nullable(Boolean.FALSE);
            break;
          case BOOLEAN:
-           result = PrimitiveType.BOOLEAN.createProperty();
+           result = PrimitiveType.BOOLEAN.createProperty().nullable(Boolean.FALSE);
            break;
          case BYTES:
-           result = new BinarySchema();
+           result = new BinarySchema().nullable(Boolean.FALSE);
            break;
          case DOUBLE:
-           result = PrimitiveType.DOUBLE.createProperty();
+           result = PrimitiveType.DOUBLE.createProperty().nullable(Boolean.FALSE);
            break;
          case ENUM:
-           result = PrimitiveType.STRING.createProperty();
+           result = PrimitiveType.STRING.createProperty().nullable(Boolean.FALSE);
            result.setEnum(aSchema.getEnumStringSymbols());
            break;
          case FIXED:
-           result = new BinarySchema();
+           result = new BinarySchema().nullable(Boolean.FALSE);
            break;
          case FLOAT:
-           result = PrimitiveType.FLOAT.createProperty();
+           result = PrimitiveType.FLOAT.createProperty().nullable(Boolean.FALSE);
            break;
          case INT:
-           result = PrimitiveType.INT.createProperty();
+           result = PrimitiveType.INT.createProperty().nullable(Boolean.FALSE);
            break;
          case LONG:
-           result = PrimitiveType.LONG.createProperty();
+           result = PrimitiveType.LONG.createProperty().nullable(Boolean.FALSE);
            break;
          case STRING:
             if (logicalType != null) {
               switch (logicalType.getName()) {
                 case "date":
-                  result = PrimitiveType.DATE.createProperty();
+                  result = PrimitiveType.DATE.createProperty().nullable(Boolean.FALSE);
                   break;
                 case "instant":
-                  result = PrimitiveType.DATE_TIME.createProperty();
+                  result = PrimitiveType.DATE_TIME.createProperty().nullable(Boolean.FALSE);
                   break;
                 case "url":
-                  result = PrimitiveType.URL.createProperty();
+                  result = PrimitiveType.URL.createProperty().nullable(Boolean.FALSE);
                   break;
                 case "uri":
-                  result = PrimitiveType.URI.createProperty();
+                  result = PrimitiveType.URI.createProperty().nullable(Boolean.FALSE);
                   break;
                 case "uuid":
-                  result = PrimitiveType.UUID.createProperty();
+                  result = PrimitiveType.UUID.createProperty().nullable(Boolean.FALSE);
                   break;
                 default:
-                  result = PrimitiveType.STRING.createProperty();
+                  result = PrimitiveType.STRING.createProperty().nullable(Boolean.FALSE);
               }
             } else {
-              result = PrimitiveType.STRING.createProperty();
+              result = PrimitiveType.STRING.createProperty().nullable(Boolean.FALSE);
             }
            break;
          case NULL:
@@ -182,7 +183,6 @@ public final class AvroModelConverter implements ModelConverter {
             result = cs;
            }
            break;
-
          case RECORD:
            result = new ObjectSchema();
            resolved.put(aSchema, result);
@@ -192,10 +192,12 @@ public final class AvroModelConverter implements ModelConverter {
              fs = fs.description(field.doc() + "; " + fs.getDescription());
              result.addProperties(field.name(), fs);
            }
+           result.nullable(Boolean.FALSE);
            break;
          case MAP:
            result = new MapSchema();
            result.addExtension("avsc", aSchema);
+           result.nullable(Boolean.FALSE);
            break;
          default:
            throw new UnsupportedOperationException("Unsupported schema type " + aSchema);
