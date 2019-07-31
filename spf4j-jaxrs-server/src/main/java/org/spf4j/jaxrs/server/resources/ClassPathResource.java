@@ -23,6 +23,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Collections;
 import java.util.List;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -31,7 +32,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spf4j.base.CharSequences;
 import org.spf4j.log.ExecContextLogger;
 
 /**
@@ -74,10 +74,23 @@ public class ClassPathResource {
     return "ClassPathResource{" + "cpBase=" + cpBase + '}';
   }
 
+  static final String validateNoBackRef(final String path) {
+    if (path.contains("/../") || path.startsWith("../") || path.endsWith("/..") || "..".equals(path)) {
+      throw new ClientErrorException("Path " + path + " contains backreferences", 400);
+    }
+    return path;
+  }
+
+
   @GET
   @Path("{path:.*}")
   public Response staticResources(@PathParam("path")  final String path) throws IOException {
-    String urlStr = cpBase + '/' + CharSequences.validatedFileName(path);
+    String urlStr;
+    if (path.startsWith("/")) {
+      urlStr = cpBase + validateNoBackRef(path);
+    } else {
+      urlStr = cpBase + '/' + validateNoBackRef(path);
+    }
     URL resource = null;
     if (urlStr.endsWith("/")) {
       if (welcomeFiles.isEmpty()) {

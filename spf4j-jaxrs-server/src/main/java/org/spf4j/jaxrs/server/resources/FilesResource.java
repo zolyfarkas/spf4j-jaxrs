@@ -23,15 +23,19 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.PathSegment;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
-import org.spf4j.base.CharSequences;
+import org.spf4j.base.SuppressForbiden;
 import org.spf4j.base.avro.FileEntry;
 import org.spf4j.base.avro.FileType;
 import org.spf4j.http.HttpRange;
@@ -62,12 +66,15 @@ public class FilesResource {
   @javax.ws.rs.Path("{path:.*}")
   @GET
   @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // try-resources gen code
+  @SuppressForbiden // java.util.Date is my only choice.
   public Response get(@PathParam("path") final List<PathSegment> path,
-          @HeaderParam("Range") final HttpRange range) throws IOException {
+          @HeaderParam("Range") final HttpRange range, @Context final Request request) throws IOException {
     Path ltarget = base;
     for (PathSegment part : path) {
       String p = part.getPath();
-      CharSequences.validatedFileName(p);
+      if ("..".equals(p)) {
+        throw new ClientErrorException("Path " + path + " contains backreferences", 400);
+      }
       ltarget = ltarget.resolve(p);
     }
     final Path target = ltarget;
@@ -88,6 +95,11 @@ public class FilesResource {
       }
       return Response.ok(result, MediaType.APPLICATION_JSON).build();
     } else {
+        Date lastModifiedTime = new Date(Files.getLastModifiedTime(target).toMillis());
+        Response.ResponseBuilder rb = request.evaluatePreconditions(lastModifiedTime);
+        if (rb != null) {
+          return rb.build();
+        }
         MediaType fileMediaType = getFileMediaType(target);
         if (range != null && range.isByteRange()) {
         List<Range<Long>> ranges = range.getRanges();
@@ -96,6 +108,7 @@ public class FilesResource {
           return Response.status(206).entity(new StreamedResponseContent(
                   () -> new BufferedInputStream(Files.newInputStream(target)), r.lowerEndpoint(), r.upperEndpoint()))
                   .type(fileMediaType)
+                  .lastModified(lastModifiedTime)
                   .header("Accept-Ranges", "bytes")
                   .header("Content-Range", "bytes " + r.lowerEndpoint() + '-' + r.upperEndpoint() + "/*")
                   .header("Content-Disposition", "attachment; filename=\"" + target.getFileName() + "\"")
@@ -104,6 +117,7 @@ public class FilesResource {
       }
       return Response.ok(new StreamedResponseContent(() -> new BufferedInputStream(Files.newInputStream(target))),
               fileMediaType)
+              .lastModified(lastModifiedTime)
               .header("Accept-Ranges", "bytes")
               .header("Content-Disposition", "attachment; filename=\"" + target.getFileName() + "\"")
               .build();
