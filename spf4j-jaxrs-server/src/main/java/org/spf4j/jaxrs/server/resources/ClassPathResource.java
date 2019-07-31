@@ -15,6 +15,7 @@
  */
 package org.spf4j.jaxrs.server.resources;
 
+import avro.shaded.com.google.common.annotations.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.InputStream;
@@ -88,22 +89,23 @@ public class ClassPathResource {
            break;
          }
       }
-
     } else {
       resource = classLoader.getResource(urlStr);
     }
     if (resource == null) {
       return Response.status(404).build();
     }
+    LOG.debug("Getting resource {}", resource);
     URLConnection conn = resource.openConnection();
     LOG.debug("Connection of type {}", conn.getClass());
     conn.connect();
     final InputStream is = conn.getInputStream();
-    return Response.ok().entity(is).type(getPathMediaType(path)).build();
+    return Response.ok().entity(is).type(getPathMediaType(resource.getPath())).build();
   }
 
 
-  private static MediaType getPathMediaType(final String path) {
+  @VisibleForTesting
+  static MediaType getPathMediaType(final String path) {
       int dIdx = path.lastIndexOf('.');
       if (dIdx < 0) {
         return MediaType.APPLICATION_OCTET_STREAM_TYPE;
