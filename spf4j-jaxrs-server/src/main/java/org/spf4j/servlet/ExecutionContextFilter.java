@@ -363,7 +363,7 @@ public final class ExecutionContextFilter implements Filter {
       if (fwdFor == null) {
         return addr;
       } else {
-        return addr + '/' + fwdFor;
+        return addr + ',' + fwdFor;
       }
     } catch (RuntimeException ex2) {
       log.log(java.util.logging.Level.FINE, "Unable to obtain remote add", ex2);
