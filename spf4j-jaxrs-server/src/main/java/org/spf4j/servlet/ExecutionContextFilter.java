@@ -45,7 +45,6 @@ import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.http.DefaultDeadlineProtocol;
 import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
-import org.spf4j.io.Csv;
 import org.spf4j.io.LazyOutputStreamWrapper;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
 import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyWriter;
@@ -365,7 +364,7 @@ public final class ExecutionContextFilter implements Filter {
       if (fwdFor == null) {
         return addr;
       } else {
-        return addr + ',' + Csv.toCsvElement(fwdFor);
+        return fwdFor + ',' + addr;
       }
     } catch (RuntimeException ex2) {
       log.log(java.util.logging.Level.FINE, "Unable to obtain remote add", ex2);
