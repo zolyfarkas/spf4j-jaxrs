@@ -357,17 +357,17 @@ public final class ExecutionContextFilter implements Filter {
 
 
   private String getRemoteHost(final HttpServletRequest req) {
-    try { // see https://github.com/eclipse-ee4j/grizzly/issues/2042
-      return req.getRemoteHost();
-    } catch (RuntimeException ex) {
-      log.log(java.util.logging.Level.FINE, "Unable to obtain remote host", ex);
-      try {
-        return req.getRemoteAddr();
-      } catch (RuntimeException ex2) {
-        ex2.addSuppressed(ex);
-        log.log(java.util.logging.Level.FINE, "Unable to obtain remote add", ex2);
-        return "Unknown";
+    try {
+      String addr = req.getRemoteAddr();
+      String fwdFor = req.getHeader("x-forwarded-for");
+      if (fwdFor == null) {
+        return addr;
+      } else {
+        return addr + '/' + fwdFor;
       }
+    } catch (RuntimeException ex2) {
+      log.log(java.util.logging.Level.FINE, "Unable to obtain remote add", ex2);
+      return "Unknown";
     }
   }
 
