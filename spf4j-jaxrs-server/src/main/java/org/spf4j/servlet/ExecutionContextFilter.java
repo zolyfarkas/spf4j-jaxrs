@@ -32,7 +32,6 @@ import org.glassfish.jersey.uri.UriComponent;
 import org.spf4j.base.Arrays;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
-import org.spf4j.base.Methods;
 import org.spf4j.base.StackSamples;
 import org.spf4j.base.SysExits;
 import org.spf4j.base.Throwables;
@@ -40,7 +39,6 @@ import org.spf4j.base.TimeSource;
 import org.spf4j.base.avro.Converters;
 import org.spf4j.base.avro.DebugDetail;
 import org.spf4j.base.avro.ServiceError;
-import org.spf4j.base.avro.StackSampleElement;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.http.DefaultDeadlineProtocol;
 import org.spf4j.http.Headers;
@@ -246,6 +244,7 @@ public final class ExecutionContextFilter implements Filter {
       if (logAttrs == null) {
         logAttrs = new ArrayList<>(2);
       }
+      logContextProfile(log, ctx);
       logAttrs.add(LogAttribute.of("performanceError", "exec time > " + etn + " ns"));
       if (level.ordinal() < Level.ERROR.ordinal()) {
         level = level.ERROR;
@@ -256,6 +255,7 @@ public final class ExecutionContextFilter implements Filter {
         if (logAttrs == null) {
           logAttrs = new ArrayList<>(2);
         }
+        logContextProfile(log, ctx);
         logAttrs.add(LogAttribute.of("performanceWarning", "exec time > " + wtn + " ns"));
         if (level.ordinal() < Level.WARN.ordinal()) {
           level = level.WARN;
@@ -385,15 +385,13 @@ public final class ExecutionContextFilter implements Filter {
       LogUtils.logUpgrade(logger, org.spf4j.log.Level.INFO, "Detail on Error",
               traceId, log.toLogRecord("", ""));
     }
-    StackSamples stackSamples = ctx.getStackSamples();
+  }
+
+  private static void logContextProfile(final Logger logger, final ExecutionContext ctx) {
+    StackSamples stackSamples = ctx.getAndClearStackSamples();
     if (stackSamples != null) {
-        final List<StackSampleElement> samples = new ArrayList<>();
-        Converters.convert(Methods.ROOT, stackSamples, -1, 0,
-                (final StackSampleElement object, final long deadline) -> {
-          samples.add(object);
-        });
-      logger.log(java.util.logging.Level.INFO, "profileDetail", new Object[]{traceId,
-        new org.spf4j.base.avro.StackSamples(samples)});
+      logger.log(java.util.logging.Level.INFO, "Profile Detail", new Object[]{LogAttribute.traceId(ctx.getId()),
+        LogAttribute.profileSamples(stackSamples)});
     }
   }
 
