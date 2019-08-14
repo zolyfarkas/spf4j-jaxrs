@@ -15,8 +15,11 @@
  */
 package org.spf4j.jaxrs.common.providers.avro;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.HashMap;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.apache.avro.reflect.AvroSchema;
@@ -26,7 +29,10 @@ import org.apache.avro.reflect.ExtendedReflectData;
  *
  * @author Zoltan Farkas
  */
+@SuppressFBWarnings("PCAIL_POSSIBLE_CONSTANT_ALLOCATION_IN_LOOP") //Schema.Parser has state.
 public final class MessageBodyRWUtils {
+
+  private static final ExtendedReflectData RFLCTOR = ExtendedReflectData.get();
 
   private MessageBodyRWUtils() { }
 
@@ -42,28 +48,58 @@ public final class MessageBodyRWUtils {
     return res;
   }
 
+  @Nonnull
+  public static Schema getAvroSchemaFromType(final Class<?> type,
+          final Type genericType, @Nullable final Object object, final Annotation[] annotations) {
+    for (Annotation annot : annotations) {
+      if (annot.annotationType() == AvroSchema.class) {
+        return new Schema.Parser().parse(((AvroSchema) annot).value()); //todo cache parsing.
+      }
+    }
+    Type effectiveType = effectiveType(type, genericType);
+    Schema schema = null;
+    if (effectiveType != null) {
+      schema = RFLCTOR.getSchema(effectiveType);
+      if (schema == null) {
+        schema = RFLCTOR.createSchema(effectiveType, object, new HashMap<>());
+      }
+    } else {
+      if (object == null) {
+        return Schema.create(Schema.Type.NULL);
+      } else {
+        schema = RFLCTOR.createSchema(object.getClass(), object, new HashMap<>());
+      }
+    }
+    for (Annotation annot : annotations) {
+      if (annot.annotationType() == Nullable.class) {
+        schema = Schema.createUnion(Schema.create(Schema.Type.NULL), schema);
+      }
+    }
+    return schema;
+  }
+
   @Nullable
   public static Schema getAvroSchemaFromType(final Class<?> type,
           final Type genericType, final Annotation[] annotations) {
     for (Annotation annot : annotations) {
       if (annot.annotationType() == AvroSchema.class) {
-        return new Schema.Parser().parse(((AvroSchema) annot).value()); //todo cache prsing.
+        return new Schema.Parser().parse(((AvroSchema) annot).value()); //todo cache parsing.
       }
     }
     Type effectiveType = effectiveType(type, genericType);
     if (effectiveType == null) {
       return null;
     }
-    Schema readerSchema = ExtendedReflectData.get().getSchema(effectiveType);
-    if (readerSchema == null) {
+    Schema schema = RFLCTOR.getSchema(effectiveType);
+    if (schema == null) {
       return null;
     }
     for (Annotation annot : annotations) {
       if (annot.annotationType() == Nullable.class) {
-        readerSchema = Schema.createUnion(Schema.create(Schema.Type.NULL), readerSchema);
+        schema = Schema.createUnion(Schema.create(Schema.Type.NULL), schema);
       }
     }
-    return readerSchema;
+    return schema;
   }
 
   @Nullable
@@ -71,22 +107,22 @@ public final class MessageBodyRWUtils {
           final Type effectiveType, final Annotation[] annotations) {
     for (Annotation annot : annotations) {
       if (annot.annotationType() == AvroSchema.class) {
-        return new Schema.Parser().parse(((AvroSchema) annot).value()); //todo cache prsing.
+        return new Schema.Parser().parse(((AvroSchema) annot).value()); //todo cache parsing.
       }
     }
     if (effectiveType == null) {
       return null;
     }
-    Schema readerSchema = ExtendedReflectData.get().getSchema(effectiveType);
-    if (readerSchema == null) {
+    Schema schema = RFLCTOR.getSchema(effectiveType);
+    if (schema == null) {
       return null;
     }
     for (Annotation annot : annotations) {
       if (annot.annotationType() == Nullable.class) {
-        readerSchema = Schema.createUnion(Schema.create(Schema.Type.NULL), readerSchema);
+        schema = Schema.createUnion(Schema.create(Schema.Type.NULL), schema);
       }
     }
-    return readerSchema;
+    return schema;
   }
 
 

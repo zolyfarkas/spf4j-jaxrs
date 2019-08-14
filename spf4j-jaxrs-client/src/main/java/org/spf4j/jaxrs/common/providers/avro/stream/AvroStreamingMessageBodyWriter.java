@@ -14,11 +14,11 @@ import javax.ws.rs.ext.MessageBodyWriter;
 import org.apache.avro.Schema;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
-import org.apache.avro.reflect.ExtendedReflectData;
 import org.apache.avro.reflect.ExtendedReflectDatumWriter;
 import org.spf4j.avro.AvroArrayWriter;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 import org.spf4j.jaxrs.StreamingArrayContent;
+import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
 
 /**
  * @author Zoltan Farkas
@@ -56,9 +56,8 @@ public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWrite
     if (!(genericType instanceof ParameterizedType)) {
       throw new IllegalStateException("StreamingArrayContent type parameters must be known " + genericType);
     }
-    ExtendedReflectData reflector = ExtendedReflectData.get();
     Type elType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
-    Schema elemSchema = reflector.getSchema(elType);
+    Schema elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
     Schema schema = Schema.createArray(elemSchema);
     protocol.serialize(httpHeaders::add, schema);
     try {

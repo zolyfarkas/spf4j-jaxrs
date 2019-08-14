@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -15,7 +14,6 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
-import org.apache.avro.reflect.ExtendedReflectData;
 import org.apache.avro.reflect.ExtendedReflectDatumWriter;
 
 /**
@@ -54,12 +52,7 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream)
           throws IOException {
-    ExtendedReflectData reflector = ExtendedReflectData.get();
-    Type effectiveType = MessageBodyRWUtils.effectiveType(type, genericType);
-    Schema schema = reflector.getSchema(effectiveType);
-    if (schema == null) {
-      schema = reflector.createSchema(effectiveType, t, new HashMap<>());
-    }
+    Schema schema = MessageBodyRWUtils.getAvroSchemaFromType(type, genericType, t, annotations);
     protocol.serialize(httpHeaders::add, schema);
     try {
       DatumWriter writer = new ExtendedReflectDatumWriter(schema);
