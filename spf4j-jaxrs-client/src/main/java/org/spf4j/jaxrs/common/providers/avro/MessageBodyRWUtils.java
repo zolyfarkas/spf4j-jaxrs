@@ -15,8 +15,12 @@
  */
 package org.spf4j.jaxrs.common.providers.avro;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import javax.annotation.Nullable;
+import org.apache.avro.Schema;
+import org.apache.avro.reflect.AvroSchema;
+import org.apache.avro.reflect.ExtendedReflectData;
 
 /**
  *
@@ -37,4 +41,53 @@ public final class MessageBodyRWUtils {
     }
     return res;
   }
+
+  @Nullable
+  public static Schema getAvroSchemaFromType(final Class<?> type,
+          final Type genericType, final Annotation[] annotations) {
+    for (Annotation annot : annotations) {
+      if (annot.annotationType() == AvroSchema.class) {
+        return new Schema.Parser().parse(((AvroSchema) annot).value()); //todo cache prsing.
+      }
+    }
+    Type effectiveType = effectiveType(type, genericType);
+    if (effectiveType == null) {
+      return null;
+    }
+    Schema readerSchema = ExtendedReflectData.get().getSchema(effectiveType);
+    if (readerSchema == null) {
+      return null;
+    }
+    for (Annotation annot : annotations) {
+      if (annot.annotationType() == Nullable.class) {
+        readerSchema = Schema.createUnion(Schema.create(Schema.Type.NULL), readerSchema);
+      }
+    }
+    return readerSchema;
+  }
+
+  @Nullable
+  public static Schema getAvroSchemaFromType(
+          final Type effectiveType, final Annotation[] annotations) {
+    for (Annotation annot : annotations) {
+      if (annot.annotationType() == AvroSchema.class) {
+        return new Schema.Parser().parse(((AvroSchema) annot).value()); //todo cache prsing.
+      }
+    }
+    if (effectiveType == null) {
+      return null;
+    }
+    Schema readerSchema = ExtendedReflectData.get().getSchema(effectiveType);
+    if (readerSchema == null) {
+      return null;
+    }
+    for (Annotation annot : annotations) {
+      if (annot.annotationType() == Nullable.class) {
+        readerSchema = Schema.createUnion(Schema.create(Schema.Type.NULL), readerSchema);
+      }
+    }
+    return readerSchema;
+  }
+
+
 }

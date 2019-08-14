@@ -14,7 +14,6 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
-import org.apache.avro.reflect.ExtendedReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
 import org.spf4j.avro.DecodedSchema;
 import org.spf4j.io.MemorizingBufferedInputStream;
@@ -74,8 +73,7 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
           final InputStream pentityStream)
           throws IOException {
     Schema writerSchema = protocol.deserialize(httpHeaders::getFirst, type, genericType);
-    Type effectiveType = MessageBodyRWUtils.effectiveType(type, genericType);
-    Schema readerSchema = effectiveType == null ? null : ExtendedReflectData.get().getSchema(effectiveType);
+    Schema readerSchema = MessageBodyRWUtils.getAvroSchemaFromType(type, genericType, annotations);
     InputStream entityStream = wrapInputStream(pentityStream);
     Decoder decoder = null;
     if (writerSchema == null) {

@@ -14,7 +14,6 @@ import javax.ws.rs.ext.MessageBodyReader;
 import org.apache.avro.Schema;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
-import org.apache.avro.reflect.ExtendedReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
 import org.spf4j.avro.ArrayIterator;
 import org.spf4j.avro.DecodedSchema;
@@ -22,6 +21,7 @@ import org.spf4j.io.MemorizingBufferedInputStream;
 import org.spf4j.jaxrs.ArrayWriter;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 import org.spf4j.jaxrs.StreamingArrayContent;
+import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
 
 /**
  * @author Zoltan Farkas
@@ -78,9 +78,8 @@ public abstract class AvroStreamingMessageBodyReader implements MessageBodyReade
     if (!(genericType instanceof ParameterizedType)) {
       throw new IllegalStateException("StreamingArrayContent type parameters must be known " + genericType);
     }
-    ExtendedReflectData reflector = ExtendedReflectData.get();
     Type elType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
-    Schema elemSchema = reflector.getSchema(elType);
+    Schema elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
     Schema readerSchema = Schema.createArray(elemSchema);
 
     Decoder decoder = null;
