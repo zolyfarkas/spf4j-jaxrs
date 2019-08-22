@@ -70,8 +70,15 @@ public final class MessageBodyRWUtils {
         schema = RFLCTOR.createSchema(object.getClass(), object, new HashMap<>());
       }
     }
+    schema = makeNullableIfNeeded(annotations, schema);
+    return schema;
+  }
+
+  public static Schema makeNullableIfNeeded(final Annotation[] annotations, Schema schema) {
     for (Annotation annot : annotations) {
-      if (annot.annotationType() == Nullable.class) {
+      Class<? extends Annotation> annotationType = annot.annotationType();
+      if (annotationType == Nullable.class
+              || annotationType == org.apache.avro.reflect.Nullable.class) {
         schema = Schema.createUnion(Schema.create(Schema.Type.NULL), schema);
       }
     }
@@ -94,11 +101,7 @@ public final class MessageBodyRWUtils {
     if (schema == null) {
       return null;
     }
-    for (Annotation annot : annotations) {
-      if (annot.annotationType() == Nullable.class) {
-        schema = Schema.createUnion(Schema.create(Schema.Type.NULL), schema);
-      }
-    }
+    schema = makeNullableIfNeeded(annotations, schema);
     return schema;
   }
 
@@ -117,11 +120,7 @@ public final class MessageBodyRWUtils {
     if (schema == null) {
       return null;
     }
-    for (Annotation annot : annotations) {
-      if (annot.annotationType() == Nullable.class) {
-        schema = Schema.createUnion(Schema.create(Schema.Type.NULL), schema);
-      }
-    }
+    schema = makeNullableIfNeeded(annotations, schema);
     return schema;
   }
 
