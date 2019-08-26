@@ -34,7 +34,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
-import org.glassfish.hk2.api.Immediate;
 import org.spf4j.actuator.info.InfoResource;
 import org.spf4j.base.avro.NetworkService;
 import org.spf4j.base.avro.ProcessInfo;
@@ -50,7 +49,6 @@ import org.spf4j.jaxrs.client.Spf4JClient;
 @Path("info")
 @Produces(value = {"application/avro-x+json", "application/json",
   "application/avro+json", "application/avro", "application/octet-stream"})
-@Immediate
 @RolesAllowed("operator")
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 public class InfoResourceCluster {
