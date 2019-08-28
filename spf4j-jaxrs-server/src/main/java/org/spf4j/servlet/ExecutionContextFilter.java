@@ -390,7 +390,8 @@ public final class ExecutionContextFilter implements Filter {
   private static void logContextProfile(final Logger logger, final ExecutionContext ctx) {
     StackSamples stackSamples = ctx.getAndClearStackSamples();
     if (stackSamples != null) {
-      logger.log(java.util.logging.Level.INFO, "Profile Detail", new Object[]{LogAttribute.traceId(ctx.getId()),
+      logger.log(java.util.logging.Level.INFO, "Profile Detail for {0}",
+              new Object[]{ctx.getName(), LogAttribute.traceId(ctx.getId()),
         LogAttribute.profileSamples(stackSamples)});
     }
   }
