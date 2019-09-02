@@ -16,8 +16,11 @@
 package org.spf4j.actuator.apiBrowser;
 
 import java.net.URI;
+import java.net.URISyntaxException;
+import javax.annotation.Nullable;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -45,9 +48,16 @@ public class ApiBrowserResource {
 
   @Path("apiBrowser")
   @GET
-  public Response getUIIndex(@Context final UriInfo request) {
+  public Response getUIIndex(@Context final UriInfo request,
+          @HeaderParam("X-Forwarded-Proto") @Nullable final String forwardedProto)
+          throws URISyntaxException {
     URI uri = request.getRequestUri();
     URI redirect = uri.resolve(uri.getPath() + '/' + "index.html");
+    if (forwardedProto != null) {
+      redirect = new URI(forwardedProto, redirect.getUserInfo(), redirect.getHost(),
+              redirect.getPort(), redirect.getPath(),
+              redirect.getQuery(), redirect.getFragment());
+    }
     return Response.temporaryRedirect(redirect).build();
   }
 
