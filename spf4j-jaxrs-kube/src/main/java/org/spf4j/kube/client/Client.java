@@ -22,14 +22,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.client.ClientProperties;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.jaxrs.client.SSLUtils;
-import org.spf4j.jaxrs.client.Spf4JClient;
+import org.spf4j.jaxrs.client.Spf4jClientBuilder;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
 import org.spf4j.jaxrs.client.security.providers.BearerAuthClientFilter;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
@@ -70,8 +69,7 @@ public final class Client {
   public Client(final String kubernetesMaster,
           @Nullable final Supplier<String> apiToken,
           @Nullable final byte[] caCertificate) {
-    ClientBuilder clBuilder = ClientBuilder
-            .newBuilder()
+    Spf4jClientBuilder clBuilder = new Spf4jClientBuilder()
             .connectTimeout(2, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS);
     if (caCertificate != null) {
@@ -80,14 +78,14 @@ public final class Client {
     if (apiToken != null) {
       clBuilder = clBuilder.register(new BearerAuthClientFilter((hv) -> hv.append(apiToken.get())));
     }
-    Spf4jWebTarget rootTarget = new Spf4JClient(clBuilder
+    Spf4jWebTarget rootTarget = clBuilder
             .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE, true))
             .register(ClientCustomExecutorServiceProvider.class)
             .register(ClientCustomScheduledExecutionServiceProvider.class)
             .register(new XJsonAvroMessageBodyReader(SchemaProtocol.NONE))
             .register(new XJsonAvroMessageBodyWriter(SchemaProtocol.NONE))
             .property(ClientProperties.USE_ENCODING, "gzip")
-            .build()).target((caCertificate == null ? "http://" : "https://")
+            .build().target((caCertificate == null ? "http://" : "https://")
                     + kubernetesMaster);
     apiTarget = rootTarget.path("api/v1");
     tokenReviewTarget = rootTarget.path("apis/authentication.k8s.io/v1/tokenreviews");
