@@ -60,7 +60,7 @@ public class Spf4jURLStreamHandlerFactoryTest {
   public void testCustomProtocolJaxrs() throws IOException, URISyntaxException {
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     URL url =  MultiURLs.newURL(MultiURLs.Protocol.mhttp, "http://bla.nowhere", "http://www.google.com");
-    Spf4JClient cl = new Spf4JClient(ClientBuilder
+    Spf4JClient cl = Spf4JClient.create(ClientBuilder
             .newBuilder()
             .connectTimeout(2, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)

@@ -50,7 +50,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.failsafe.HedgePolicy;
 import org.spf4j.failsafe.RetryDecision;
-import org.spf4j.failsafe.concurrent.DefaultFailSafeExecutor;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.io.Streams;
 import org.spf4j.jaxrs.Utils;
@@ -127,20 +126,21 @@ public final class SchemaClient implements SchemaResolver {
             .newBuilder();
     ClientBuilderUtil.setConnectTimeout(builder, 2, TimeUnit.SECONDS);
     ClientBuilderUtil.setReadTimeout(builder, 30, TimeUnit.SECONDS);
-    return new Spf4JClient(builder
+    return Spf4JClient.create(builder
             .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE,
                     Boolean.parseBoolean(System.getProperty("spf4j.http.client.hideAuthorizationWhenLogging", "true"))))
             .register(ClientCustomExecutorServiceProvider.class)
             .register(ClientCustomScheduledExecutionServiceProvider.class)
             .property(ClientProperties.USE_ENCODING, "gzip")
-            .build(),
-            Utils.createHttpRetryPolicy((WebApplicationException ex, Callable<? extends Object> c) -> {
+            .build())
+            .withRetryPolicy(Utils.createHttpRetryPolicy((WebApplicationException ex, Callable<? extends Object> c) -> {
               Response response = ex.getResponse();
               if (404 == response.getStatus()) {
                 return RetryDecision.retryDefault(c);
               }
               return null;
-            }, 10), HedgePolicy.NONE, DefaultFailSafeExecutor.instance());
+            }, 10))
+            .withHedgePolicy(HedgePolicy.NONE);
   }
 
 
