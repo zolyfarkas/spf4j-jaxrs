@@ -33,7 +33,6 @@ import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import javax.servlet.ServletContext;
 import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Context;
 import org.apache.avro.SchemaResolvers;
 import org.glassfish.grizzly.http.CompressionConfig;
@@ -73,6 +72,7 @@ import org.spf4j.hk2.Spf4jBinder;
 import org.spf4j.http.DefaultDeadlineProtocol;
 import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.jaxrs.client.Spf4JClient;
+import org.spf4j.jaxrs.client.Spf4jClientBuilder;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
@@ -194,8 +194,7 @@ public abstract class ServiceIntegrationBase {
       }
       SchemaResolvers.registerDefault(schemaClient);
       AvroFeature avroFeature = new AvroFeature(new DefaultSchemaProtocol(schemaClient), schemaClient);
-      restClient = new Spf4JClient(ClientBuilder
-              .newBuilder()
+      restClient = new Spf4jClientBuilder()
               .connectTimeout(2, TimeUnit.SECONDS)
               .readTimeout(60, TimeUnit.SECONDS)
               .register(new ExecutionContextClientFilter(dp, true))
@@ -208,7 +207,7 @@ public abstract class ServiceIntegrationBase {
               .register(EncodingFilter.class)
               .register(avroFeature)
               .property(ClientProperties.USE_ENCODING, "gzip")
-              .build());
+              .build();
       register(new Spf4jBinder(schemaClient, restClient, (x) -> true));
       register(avroFeature);
       register(CsvParameterConverterProvider.class);
