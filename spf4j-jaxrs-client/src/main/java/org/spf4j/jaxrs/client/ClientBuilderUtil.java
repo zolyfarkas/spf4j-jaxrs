@@ -1,6 +1,7 @@
 
 package org.spf4j.jaxrs.client;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +19,7 @@ import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
  * Utility class to set connectTimeout for jax-rs 2.1, backward compat with 2.0
  * @author Zoltan Farkas
  */
+@SuppressFBWarnings("CE_CLASS_ENVY")
 public final class ClientBuilderUtil {
 
   private ClientBuilderUtil() { }
@@ -67,24 +69,21 @@ public final class ClientBuilderUtil {
    */
   public static Spf4JClient createClientNonSpf4jRest(final long connectTimeoutMillis,
           final long defaultReadTimeoutMillis) {
-    javax.ws.rs.client.Client jaxRsClient = createClientBuilderNonSpf4jRest(connectTimeoutMillis,
-            defaultReadTimeoutMillis) .build();
-    return new Spf4JClient(jaxRsClient)
-            .withHedgePolicy(HedgePolicy.NONE);
+    return  createClientBuilderNonSpf4jRest(connectTimeoutMillis,
+            defaultReadTimeoutMillis).build().withHedgePolicy(HedgePolicy.NONE);
   }
 
-  public static ClientBuilder createClientBuilderNonSpf4jRest(final long connectTimeoutMillis,
+  public static Spf4jClientBuilder createClientBuilderNonSpf4jRest(final long connectTimeoutMillis,
           final long defaultReadTimeoutMillis) {
     AvroFeature avroFeature = new AvroFeature(SchemaProtocol.NONE, SchemaResolver.NONE);
-    ClientBuilder clBuilder = ClientBuilder
-            .newBuilder()
+    Spf4jClientBuilder clBuilder = new Spf4jClientBuilder()
             .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE, true))
             .register(ClientCustomExecutorServiceProvider.class)
             .register(ClientCustomScheduledExecutionServiceProvider.class)
             .register(avroFeature)
             .property("jersey.config.client.useEncoding", "gzip"); //see ClientProperties is jersey 2.28+
-    clBuilder = ClientBuilderUtil.setConnectTimeout(clBuilder, connectTimeoutMillis, TimeUnit.MILLISECONDS);
-    return ClientBuilderUtil.setReadTimeout(clBuilder, defaultReadTimeoutMillis, TimeUnit.MILLISECONDS);
+    clBuilder.connectTimeout(connectTimeoutMillis, TimeUnit.MILLISECONDS);
+    return clBuilder.readTimeout(defaultReadTimeoutMillis, TimeUnit.MILLISECONDS);
   }
 
 
