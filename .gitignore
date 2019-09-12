@@ -15,3 +15,6 @@
 /spf4j-jaxrs-actuator/nbproject/
 /spf4j-jaxrs-actuator-cluster/target/
 /spf4j-jaxrs-grizzly/target/
+/release.properties
+/spf4j-jaxrs-server/nb-configuration.xml
+/spf4j-jaxrs-grizzly/nb-configuration.xml
