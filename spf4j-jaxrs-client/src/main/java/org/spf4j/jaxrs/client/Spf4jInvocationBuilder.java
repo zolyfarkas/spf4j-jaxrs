@@ -73,7 +73,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
     return this;
   }
 
-  public Spf4jInvocationBuilder withHttpReqTimeoutNanos(final long timeout, final TimeUnit tu) {
+  public Spf4jInvocationBuilder withHttpReqTimeout(final long timeout, final TimeUnit tu) {
     httpReqTimeoutNanos = tu.toNanos(timeout);
     return this;
   }
