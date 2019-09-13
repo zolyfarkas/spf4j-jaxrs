@@ -25,6 +25,9 @@ import java.util.Iterator;
 @CleanupObligation
 public interface CloseableIterable<T> extends Closeable, Iterable<T> {
 
+
+  void close();
+
   static <T> CloseableIterable<T> fromIterable(final Iterable<T> it) {
     return new CloseableIterable<T>() {
       @Override

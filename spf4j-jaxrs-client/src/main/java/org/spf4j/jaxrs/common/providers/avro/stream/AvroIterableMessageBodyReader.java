@@ -1,8 +1,10 @@
 package org.spf4j.jaxrs.common.providers.avro.stream;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.spf4j.jaxrs.CloseableIterable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Iterator;
@@ -116,8 +118,13 @@ public abstract class AvroIterableMessageBodyReader implements MessageBodyReader
     }
 
     @Override
-    public void close() throws IOException {
-      pentityStream.close();
+    @SuppressFBWarnings("EXS_EXCEPTION_SOFTENING_NO_CHECKED")
+    public void close() {
+      try {
+        pentityStream.close();
+      } catch (IOException ex) {
+        throw new UncheckedIOException(ex);
+      }
     }
 
     @Override
