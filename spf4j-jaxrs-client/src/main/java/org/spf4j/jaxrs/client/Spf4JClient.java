@@ -71,12 +71,12 @@ public final class Spf4JClient implements Client {
 
   private final AsyncRetryExecutor<Object, Callable<? extends Object>> executor;
 
-  Spf4JClient(final  Client cl) {
+  public Spf4JClient(final  Client cl) {
     this(cl, Utils.defaultRetryPolicy(), HedgePolicy.DEFAULT, DefaultFailSafeExecutor.instance());
   }
 
 
-  Spf4JClient(final  Client cl, final RetryPolicy retryPolicy, final HedgePolicy hedgePolicy,
+  public Spf4JClient(final  Client cl, final RetryPolicy retryPolicy, final HedgePolicy hedgePolicy,
           final FailSafeExecutor fsExec) {
     this.cl = cl;
     ClientConfig configuration = (ClientConfig) cl.getConfiguration();
