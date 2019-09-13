@@ -85,9 +85,9 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
     }
     if (writerSchema  == null && readerSchema == null) {
         throw new UnsupportedOperationException("Unable to deserialize " + type);
-    } else if (readerSchema != null) {
+    } else if (writerSchema == null && readerSchema != null) {
       writerSchema = readerSchema;
-    } else {
+    } else if (writerSchema != null && readerSchema == null) {
       readerSchema = writerSchema;
     }
     DatumReader reader = new ReflectDatumReader(writerSchema, readerSchema);
