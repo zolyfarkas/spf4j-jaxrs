@@ -1,5 +1,6 @@
 package org.spf4j.jaxrs;
 
+import com.google.common.base.Throwables;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.time.Instant;
@@ -7,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Response;
@@ -81,7 +83,16 @@ public final class Utils {
         return null;
       }
     })
-            .withRetryOnException(Exception.class, 2) // will retry any other exception twice.
+    .withExceptionPartialPredicate(ProcessingException.class,
+            (ProcessingException value, Callable<? extends Object> what) -> {
+      Throwable cause = Throwables.getRootCause(value);
+      if (org.spf4j.base.Throwables.isRetryable(cause)) {
+        return RetryDecision.retryDefault(what);
+      } else {
+        return RetryDecision.abort();
+      }
+    })
+    .withRetryOnException(Exception.class, 2) // will retry any other exception twice.
             .build();
   }
 
