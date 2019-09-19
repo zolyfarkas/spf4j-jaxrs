@@ -71,13 +71,16 @@ public final class Spf4JClient implements Client {
 
   private final AsyncRetryExecutor<Object, Callable<? extends Object>> executor;
 
+  private final ClientExceptionMapper exceptionMapper;
+
   public Spf4JClient(final  Client cl) {
-    this(cl, Utils.defaultRetryPolicy(), HedgePolicy.DEFAULT, DefaultFailSafeExecutor.instance());
+    this(cl, Utils.defaultRetryPolicy(), HedgePolicy.DEFAULT, DefaultFailSafeExecutor.instance(),
+            DefaultClientExceptionMapper.INSTANCE);
   }
 
 
   public Spf4JClient(final  Client cl, final RetryPolicy retryPolicy, final HedgePolicy hedgePolicy,
-          final FailSafeExecutor fsExec) {
+          final FailSafeExecutor fsExec, final ClientExceptionMapper exceptionMapper) {
     this.cl = cl;
     ClientConfig configuration = (ClientConfig) cl.getConfiguration();
     HttpUrlConnectorProvider httpUrlConnectorProvider = new HttpUrlConnectorProvider();
@@ -87,6 +90,7 @@ public final class Spf4JClient implements Client {
     this.hedgePolicy = hedgePolicy;
     this.fsExec = fsExec;
     this.executor = retryPolicy.async(hedgePolicy, fsExec);
+    this.exceptionMapper = exceptionMapper;
   }
 
   public static Spf4JClient  create(final Client cl) {
@@ -94,6 +98,10 @@ public final class Spf4JClient implements Client {
       return (Spf4JClient) cl;
     }
     return new Spf4JClient(cl);
+  }
+
+  public ClientExceptionMapper getExceptionMapper() {
+    return exceptionMapper;
   }
 
   public RetryPolicy getRetryPolicy() {
@@ -210,11 +218,15 @@ public final class Spf4JClient implements Client {
 
 
   public Spf4JClient withHedgePolicy(final HedgePolicy hp) {
-    return new Spf4JClient(cl, retryPolicy, hp, fsExec);
+    return new Spf4JClient(cl, retryPolicy, hp, fsExec, exceptionMapper);
   }
 
   public Spf4JClient withRetryPolicy(final RetryPolicy rp) {
-    return new Spf4JClient(cl, rp, hedgePolicy, fsExec);
+    return new Spf4JClient(cl, rp, hedgePolicy, fsExec, exceptionMapper);
+  }
+
+  public Spf4JClient withExceptionMapper(final ClientExceptionMapper pexceptionMapper) {
+    return new Spf4JClient(cl, retryPolicy, hedgePolicy, fsExec, pexceptionMapper);
   }
 
   @Override

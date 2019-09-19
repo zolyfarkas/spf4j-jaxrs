@@ -30,6 +30,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   private final Spf4JClient client;
   private final Invocation.Builder ib;
   private final Spf4jWebTarget target;
+
   private AsyncRetryExecutor<Object, Callable<? extends Object>> executor;
   private long timeoutNanos;
 
@@ -80,7 +81,8 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
 
   @Override
   public Spf4jInvocation build(final String method) {
-    return new Spf4jInvocation(ib.build(method), timeoutNanos, httpReqTimeoutNanos, executor, this.target, method);
+    return new Spf4jInvocation(ib.build(method), timeoutNanos, httpReqTimeoutNanos, executor, this.target,
+            method);
   }
 
   @Override
