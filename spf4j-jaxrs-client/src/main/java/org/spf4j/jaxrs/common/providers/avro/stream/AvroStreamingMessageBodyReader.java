@@ -70,15 +70,12 @@ public abstract class AvroStreamingMessageBodyReader implements MessageBodyReade
    */
   @Override
   public StreamingArrayContent readFrom(final Class<StreamingArrayContent<?>> type,
-          final Type genericType, final Annotation[] annotations, final MediaType mediaType,
+          final Type pgenericType, final Annotation[] annotations, final MediaType mediaType,
           final MultivaluedMap<String, String> httpHeaders, final InputStream pentityStream)
           throws IOException {
-    Schema writerSchema = protocol.deserialize(httpHeaders::getFirst, (Class) type, genericType);
-
-    if (!(genericType instanceof ParameterizedType)) {
-      throw new IllegalStateException("StreamingArrayContent type parameters must be known " + genericType);
-    }
-    Type elType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+    Schema writerSchema = protocol.deserialize(httpHeaders::getFirst, (Class) type, pgenericType);
+    ParameterizedType genericType = toParameterizedType(pgenericType);
+    Type elType = genericType.getActualTypeArguments()[0];
     Schema elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
     Schema readerSchema = Schema.createArray(elemSchema);
 
@@ -102,6 +99,26 @@ public abstract class AvroStreamingMessageBodyReader implements MessageBodyReade
       decoder = getDecoder(writerSchema, entityStream);
     }
     return new StreamingArrayOutputImpl(entityStream, decoder, readerSchema, writerSchema);
+  }
+
+  public static ParameterizedType toParameterizedType(final Type genericType) {
+    if (!(genericType instanceof ParameterizedType)) {
+      if (genericType instanceof Class) {
+        Type[] genericInterfaces = ((Class) genericType).getGenericInterfaces();
+        for (Type t : genericInterfaces) {
+          if  (t instanceof ParameterizedType) {
+            ParameterizedType pType = (ParameterizedType) t;
+            if (StreamingArrayContent.class.equals(pType.getRawType())) {
+              return pType;
+            }
+          }
+        }
+        throw new IllegalStateException("StreamingArrayContent type parameters must be known " + genericType);
+      } else {
+        throw new IllegalStateException("StreamingArrayContent type parameters must be known " + genericType);
+      }
+    }
+    return (ParameterizedType) genericType;
   }
 
   private static class StreamingArrayOutputImpl implements StreamingArrayContent {

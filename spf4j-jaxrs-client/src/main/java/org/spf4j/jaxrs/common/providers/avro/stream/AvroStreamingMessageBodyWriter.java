@@ -49,14 +49,12 @@ public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWrite
    */
   @Override
   public void writeTo(final StreamingArrayContent t, final Class<?> type,
-          final Type genericType, final Annotation[] annotations,
+          final Type pgenericType, final Annotation[] annotations,
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream)
           throws IOException {
-    if (!(genericType instanceof ParameterizedType)) {
-      throw new IllegalStateException("StreamingArrayContent type parameters must be known " + genericType);
-    }
-    Type elType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+    ParameterizedType genericType = AvroStreamingMessageBodyReader.toParameterizedType(pgenericType);
+    Type elType = genericType.getActualTypeArguments()[0];
     Schema elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
     Schema schema = Schema.createArray(elemSchema);
     protocol.serialize(httpHeaders::add, schema);
