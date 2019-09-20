@@ -78,6 +78,10 @@ public final class Spf4JClient implements Client {
             DefaultClientExceptionMapper.INSTANCE);
   }
 
+  public Spf4JClient(final  Client cl, final RetryPolicy retryPolicy, final HedgePolicy hedgePolicy,
+          final FailSafeExecutor fsExec) {
+    this(cl, retryPolicy, hedgePolicy, fsExec, DefaultClientExceptionMapper.INSTANCE);
+  }
 
   public Spf4JClient(final  Client cl, final RetryPolicy retryPolicy, final HedgePolicy hedgePolicy,
           final FailSafeExecutor fsExec, final ClientExceptionMapper exceptionMapper) {
