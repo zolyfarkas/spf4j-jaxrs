@@ -15,16 +15,20 @@
  */
 package org.spf4j.hk2;
 
+import com.google.common.reflect.TypeToken;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Context;
@@ -44,7 +48,7 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
 
   private final Configuration configuration;
 
-  private final CachingTypeMapWrapper<BiFunction<Injectee, ServiceHandle<?>, Object>> typeResolvers;
+  private final CachingTypeMapWrapper<Function<ConfigurationParam, Object>> typeResolvers;
 
   @Inject
   public ConfigurationInjector(@Context final Configuration configuration) {
@@ -74,10 +78,8 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
     }
   }
 
-
   @Nullable
-  private Object resolveString(final Injectee injectee, final ServiceHandle<?> handle) {
-    ConfigurationParam param = getConfigAnnotation(injectee);
+  private Object resolveString(final ConfigurationParam param) {
     if (param != null) {
       return getConfig(param.getPropertyName(), param.getDefaultValue());
     }
@@ -85,8 +87,7 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
   }
 
   @Nullable
-  private Object resolveInt(final Injectee injectee, final ServiceHandle<?> handle) {
-    ConfigurationParam param = getConfigAnnotation(injectee);
+  private Object resolveInt(final ConfigurationParam param) {
     if (param != null) {
       String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
@@ -109,8 +110,7 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
   }
 
   @Nullable
-  private Object resolveLong(final Injectee injectee, final ServiceHandle<?> handle) {
-    ConfigurationParam param = getConfigAnnotation(injectee);
+  private Object resolveLong(final ConfigurationParam param) {
     if (param != null) {
       String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
@@ -133,8 +133,7 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
   }
 
   @Nullable
-  private Object resolveDouble(final Injectee injectee, final ServiceHandle<?> handle) {
-    ConfigurationParam param = getConfigAnnotation(injectee);
+  private Object resolveDouble(final ConfigurationParam param) {
     if (param != null) {
       String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
@@ -157,8 +156,7 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
   }
 
   @Nullable
-  private Object resolveFloat(final Injectee injectee, final ServiceHandle<?> handle) {
-    ConfigurationParam param = getConfigAnnotation(injectee);
+  private Object resolveFloat(final ConfigurationParam param) {
     if (param != null) {
       String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
@@ -181,8 +179,7 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
   }
 
   @Nullable
-  private Object resolveBigDecimal(final Injectee injectee, final ServiceHandle<?> handle) {
-    ConfigurationParam param = getConfigAnnotation(injectee);
+  private Object resolveBigDecimal(final ConfigurationParam param) {
     if (param != null) {
       String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
@@ -202,8 +199,7 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
   }
 
   @Nullable
-  private Object resolveBigInteger(final Injectee injectee, final ServiceHandle<?> handle) {
-    ConfigurationParam param = getConfigAnnotation(injectee);
+  private Object resolveBigInteger(final ConfigurationParam param) {
     if (param != null) {
       String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
@@ -223,8 +219,7 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
   }
 
   @Nullable
-  private Object resolveBoolean(final Injectee injectee, final ServiceHandle<?> handle) {
-    ConfigurationParam param = getConfigAnnotation(injectee);
+  private Object resolveBoolean(final ConfigurationParam param) {
     if (param != null) {
       String prop = param.getPropertyName();
       Object val = configuration.getProperty(prop);
@@ -246,12 +241,45 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
   @Override
   @Nullable
   public Object resolve(final Injectee injectee, final ServiceHandle<?> handle) {
-    Type requiredType = injectee.getRequiredType();
-    BiFunction<Injectee, ServiceHandle<?>, Object> exact = typeResolvers.get(requiredType);
-    if (exact == null) {
-      return null;
+    ConfigurationParam cfgParam = getConfigAnnotation(injectee);
+    if (cfgParam == null) {
+      throw new IllegalStateException("Config annotations not present in " + injectee);
     }
-    return exact.apply(injectee, handle);
+    Type requiredType = injectee.getRequiredType();
+    if (requiredType instanceof ParameterizedType) {
+      ParameterizedType ptype = (ParameterizedType) requiredType;
+      TypeToken<?> tt = TypeToken.of(ptype);
+      if (tt.isSubtypeOf(Provider.class)) {
+        Function<ConfigurationParam, Object> typeConv
+                = typeResolvers.get(ptype.getActualTypeArguments()[0]);
+        return new Provider() {
+          @Override
+          public Object get() {
+            return typeConv.apply(cfgParam);
+          }
+        };
+      } else if (tt.isSubtypeOf(Supplier.class)) {
+        Function<ConfigurationParam, Object> typeConv
+                = typeResolvers.get(ptype.getActualTypeArguments()[0]);
+        return new Supplier() {
+          @Override
+          public Object get() {
+            return typeConv.apply(cfgParam);
+          }
+        };
+      } else {
+        throw new IllegalArgumentException("Unable to inject " + injectee);
+      }
+    }
+    Function<ConfigurationParam, Object> exact = typeResolvers.get(requiredType);
+    if (exact == null) {
+      Object res = configuration.getProperty(cfgParam.getPropertyName());
+      if (res == null) {
+        return cfgParam.getDefaultValue();
+      }
+      return res;
+    }
+    return exact.apply(cfgParam);
   }
 
   @Nullable

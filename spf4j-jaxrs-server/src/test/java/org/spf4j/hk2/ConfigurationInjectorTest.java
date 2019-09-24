@@ -15,8 +15,12 @@
  */
 package org.spf4j.hk2;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import org.spf4j.jaxrs.NoConfiguration;
 import javax.inject.Singleton;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.RuntimeType;
 import javax.ws.rs.core.Configuration;
 import org.glassfish.hk2.api.InjectionResolver;
 import org.glassfish.hk2.api.ServiceLocator;
@@ -28,6 +32,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.jvnet.hk2.annotations.Service;
 import org.spf4j.jaxrs.ConfigProperty;
+import org.spf4j.jaxrs.SystemConfiguration;
 
 
 /**
@@ -41,12 +46,21 @@ public class ConfigurationInjectorTest {
  public static final class TestClass {
    private final String value;
 
-    public TestClass(@ConfigProperty("myProp")  @DefaultValue("bubu") final  String value) {
+   private final Provider<String> providedValue;
+
+    @Inject
+    public TestClass(@ConfigProperty("myProp")  @DefaultValue("bubu") final  String value,
+            @ConfigProperty("myProp2") final Provider<String> providedValue) {
       this.value = value;
+      this.providedValue = providedValue;
     }
 
     public String getValue() {
       return value;
+    }
+
+    public String getValue2() {
+      return providedValue.get();
     }
 
 
@@ -63,13 +77,17 @@ public class ConfigurationInjectorTest {
         bind(ConfigurationInjector.class)
             .to(new TypeLiteral<InjectionResolver<ConfigProperty>>() { })
             .in(Singleton.class);
-        bind(NoConfiguration.class).to(Configuration.class);
+        bind(new SystemConfiguration(new NoConfiguration(RuntimeType.SERVER))).to(Configuration.class);
       }
 
     });
 
    TestClass service = loc.getService(TestClass.class);
    Assert.assertEquals("bubu", service.getValue());
+   Assert.assertNull(service.getValue2());
+   System.setProperty("myProp2", "boooo");
+   Assert.assertEquals("boooo", service.getValue2());
+   loc.shutdown();
   }
 
 }

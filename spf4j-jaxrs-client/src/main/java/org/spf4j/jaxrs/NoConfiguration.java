@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.hk2;
+package org.spf4j.jaxrs;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -30,9 +30,15 @@ import javax.ws.rs.core.Feature;
  */
 public final class NoConfiguration implements Configuration {
 
+  private final RuntimeType runtimeType;
+
+  public NoConfiguration(final RuntimeType runtimeType) {
+    this.runtimeType = runtimeType;
+  }
+
   @Override
   public RuntimeType getRuntimeType() {
-    return RuntimeType.SERVER;
+    return runtimeType;
   }
 
   @Override
@@ -84,6 +90,11 @@ public final class NoConfiguration implements Configuration {
   @Override
   public Set<Object> getInstances() {
     return Collections.EMPTY_SET;
+  }
+
+  @Override
+  public String toString() {
+    return "NoConfiguration{" + "runtimeType=" + runtimeType + '}';
   }
 
 }

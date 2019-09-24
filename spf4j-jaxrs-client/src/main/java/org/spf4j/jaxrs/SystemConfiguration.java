@@ -26,7 +26,8 @@ import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Feature;
 
 /**
- *
+ * A configuration that will retrieve the wrapped config and fallback
+ * to system properties and environment variables.
  * @author Zoltan Farkas
  */
 public final class SystemConfiguration implements Configuration {
