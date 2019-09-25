@@ -15,7 +15,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.reflect.ExtendedReflectDatumWriter;
-import org.spf4j.avro.AvroArrayWriter;
+import org.apache.avro.AvroArrayWriter;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 import org.spf4j.jaxrs.StreamingArrayContent;
 import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;

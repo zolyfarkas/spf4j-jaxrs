@@ -66,7 +66,7 @@ import org.spf4j.base.avro.jmx.OperationImpact;
 import org.spf4j.base.avro.jmx.OperationInvocation;
 import org.spf4j.http.ContextTags;
 import org.spf4j.http.HttpWarning;
-import org.spf4j.jaxrs.ArrayWriter;
+import org.spf4j.base.ArrayWriter;
 import org.spf4j.log.ExecContextLogger;
 import org.spf4j.jaxrs.StreamingArrayContent;
 
