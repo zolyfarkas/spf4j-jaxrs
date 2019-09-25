@@ -32,9 +32,8 @@ import javax.inject.Provider;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Context;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.glassfish.hk2.api.Injectee;
-import org.glassfish.hk2.api.InjectionResolver;
-import org.glassfish.hk2.api.ServiceHandle;
+import org.glassfish.jersey.internal.inject.Injectee;
+import org.glassfish.jersey.internal.inject.InjectionResolver;
 import org.spf4j.reflect.CachingTypeMapWrapper;
 import org.spf4j.reflect.GraphTypeMap;
 import org.spf4j.jaxrs.SystemConfiguration;
@@ -240,7 +239,7 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
   @Override
   @Nullable
   @SuppressFBWarnings("URV_INHERITED_METHOD_WITH_RELATED_TYPES")
-  public Object resolve(final Injectee injectee, final ServiceHandle<?> handle) {
+  public Object resolve(final Injectee injectee) {
     ConfigurationParam cfgParam = getConfigAnnotation(injectee);
     if (cfgParam == null) {
       throw new IllegalStateException("Config annotations not present in " + injectee);
@@ -311,6 +310,11 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
   @Override
   public String toString() {
     return "ConfigurationInjector{" + "configuration=" + configuration + '}';
+  }
+
+  @Override
+  public Class<ConfigProperty> getAnnotation() {
+    return ConfigProperty.class;
   }
 
   private static class ConfigSupplier implements Supplier, Provider {

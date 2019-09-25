@@ -59,6 +59,7 @@ public final class Spf4jInterceptionService implements InterceptionService {
     for (Annotation ann : annotations) {
       if (ann.annotationType().getName().startsWith("javax.ws.rs")) {
         hasJaxRs = true;
+        break;
       }
     }
     if (!hasJaxRs) {
