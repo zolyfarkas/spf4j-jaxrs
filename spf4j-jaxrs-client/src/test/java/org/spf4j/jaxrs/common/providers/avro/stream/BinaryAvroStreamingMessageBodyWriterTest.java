@@ -29,7 +29,7 @@ import org.apache.avro.SchemaResolver;
 import org.junit.Test;
 import org.spf4j.base.Arrays;
 import org.spf4j.base.avro.MediaType;
-import org.spf4j.jaxrs.ArrayWriter;
+import org.spf4j.base.ArrayWriter;
 import org.spf4j.jaxrs.CloseableIterable;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
 import org.spf4j.jaxrs.StreamingArrayContent;

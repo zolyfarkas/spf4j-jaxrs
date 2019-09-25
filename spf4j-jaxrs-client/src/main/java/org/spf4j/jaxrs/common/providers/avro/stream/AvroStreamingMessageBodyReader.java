@@ -18,7 +18,7 @@ import org.apache.avro.reflect.ReflectDatumReader;
 import org.spf4j.avro.ArrayIterator;
 import org.spf4j.avro.DecodedSchema;
 import org.spf4j.io.MemorizingBufferedInputStream;
-import org.spf4j.jaxrs.ArrayWriter;
+import org.spf4j.base.ArrayWriter;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 import org.spf4j.jaxrs.StreamingArrayContent;
 import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;

@@ -19,7 +19,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.lang.reflect.ParameterizedType;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spf4j.jaxrs.ArrayWriter;
+import org.spf4j.base.ArrayWriter;
 import org.spf4j.jaxrs.StreamingArrayContent;
 
 /**

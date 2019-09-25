@@ -21,7 +21,7 @@ import java.util.Arrays;
 import javax.annotation.concurrent.ThreadSafe;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
-import org.spf4j.jaxrs.ArrayWriter;
+import org.spf4j.base.ArrayWriter;
 
 /**
  *
