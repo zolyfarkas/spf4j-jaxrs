@@ -73,7 +73,7 @@ public class ConfigurationInjectorTest {
       @Override
       protected void configure() {
         bindAsContract(TestClass.class);
-        bind(ConfigurationInjector.class)
+        bind(HK2ConfigurationInjector.class)
             .to(new TypeLiteral<InjectionResolver<ConfigProperty>>() { })
             .in(Singleton.class);
         bind(new SystemConfiguration(new NoConfiguration(RuntimeType.SERVER))).to(Configuration.class);

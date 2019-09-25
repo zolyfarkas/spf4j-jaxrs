@@ -32,24 +32,26 @@ import javax.inject.Provider;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Context;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.glassfish.jersey.internal.inject.Injectee;
-import org.glassfish.jersey.internal.inject.InjectionResolver;
+import org.glassfish.hk2.api.Injectee;
+import org.glassfish.hk2.api.InjectionResolver;
+import org.glassfish.hk2.api.ServiceHandle;
 import org.spf4j.reflect.CachingTypeMapWrapper;
 import org.spf4j.reflect.GraphTypeMap;
 import org.spf4j.jaxrs.SystemConfiguration;
 
 /**
+ * a configuration injector for HK2.
  * @author Zoltan Farkas
  */
 @SuppressFBWarnings({"URV_UNRELATED_RETURN_VALUES", "UP_UNUSED_PARAMETER"})
-public final class ConfigurationInjector implements InjectionResolver<ConfigProperty> {
+public final class HK2ConfigurationInjector implements InjectionResolver<ConfigProperty> {
 
   private final Configuration configuration;
 
   private final CachingTypeMapWrapper<Function<ConfigurationParam, Object>> typeResolvers;
 
   @Inject
-  public ConfigurationInjector(@Context final Configuration configuration) {
+  public HK2ConfigurationInjector(@Context final Configuration configuration) {
     this.configuration = new SystemConfiguration(configuration);
     this.typeResolvers = new CachingTypeMapWrapper<>(new GraphTypeMap());
     this.typeResolvers.safePut(CharSequence.class, this::resolveString)
@@ -239,7 +241,7 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
   @Override
   @Nullable
   @SuppressFBWarnings("URV_INHERITED_METHOD_WITH_RELATED_TYPES")
-  public Object resolve(final Injectee injectee) {
+  public Object resolve(final Injectee injectee,  final ServiceHandle<?> root) {
     ConfigurationParam cfgParam = getConfigAnnotation(injectee);
     if (cfgParam == null) {
       throw new IllegalStateException("Config annotations not present in " + injectee);
@@ -310,11 +312,6 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
   @Override
   public String toString() {
     return "ConfigurationInjector{" + "configuration=" + configuration + '}';
-  }
-
-  @Override
-  public Class<ConfigProperty> getAnnotation() {
-    return ConfigProperty.class;
   }
 
   private static class ConfigSupplier implements Supplier, Provider {

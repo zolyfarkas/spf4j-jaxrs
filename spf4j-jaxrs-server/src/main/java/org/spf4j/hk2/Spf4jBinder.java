@@ -21,13 +21,19 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.core.GenericType;
 import org.apache.avro.SchemaResolver;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.glassfish.hk2.api.InjectionResolver;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
-import org.glassfish.jersey.internal.inject.InjectionResolver;
 import org.spf4j.avro.SchemaClient;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.server.DebugDetailEntitlement;
 import org.spf4j.jaxrs.server.Spf4jInterceptionService;
 
+/**
+ * A binder that binds:
+ * schema client, restclient, debug detail entitlements implementation,
+ * interception service to handle invocation logging, deprecation handling, configuration injection.
+ * @author Zoltan Farkas
+ */
 public final class Spf4jBinder extends AbstractBinder {
 
   private final SchemaClient schemaClient;
@@ -52,8 +58,8 @@ public final class Spf4jBinder extends AbstractBinder {
     bind(Spf4jInterceptionService.class)
             .to(org.glassfish.hk2.api.InterceptionService.class)
             .in(Singleton.class);
-    bind(ConfigurationInjector.class)
-            .to(new GenericType<InjectionResolver<ConfigProperty>>() { })
+    bind(HK2ConfigurationInjector.class)
+       .to(new GenericType<InjectionResolver<ConfigProperty>>() { })
             .in(Singleton.class);
   }
 
