@@ -24,7 +24,6 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Priority;
 import javax.inject.Inject;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -32,7 +31,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.reflect.Nullable;
-import org.spf4j.jaxrs.ConfigProperty;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.kube.client.Client;
 import org.spf4j.kube.client.TokenReview;
 
@@ -60,10 +59,10 @@ public final class KubeAccountAuthorizationFilter implements ContainerRequestFil
 
   @Inject
   public KubeAccountAuthorizationFilter(final Client kubeClient,
-          @ConfigProperty("jaxrs.service.auth.tokenCacheTimeMillis")
-          @DefaultValue("1000") final long cacheMillis,
-          @ConfigProperty("jaxrs.service.auth.roleCacheTimeMillis")
-          @DefaultValue("10000") final long roleCacheMillis) {
+          @ConfigProperty(name = "jaxrs.service.auth.tokenCacheTimeMillis", defaultValue = "1000")
+          final long cacheMillis,
+          @ConfigProperty(name = "jaxrs.service.auth.roleCacheTimeMillis", defaultValue = "10000")
+          final long roleCacheMillis) {
     this.kubeClient = kubeClient;
     this.roleMap = new KubeRoleMap(kubeClient, roleCacheMillis);
     if (cacheMillis > 0) {

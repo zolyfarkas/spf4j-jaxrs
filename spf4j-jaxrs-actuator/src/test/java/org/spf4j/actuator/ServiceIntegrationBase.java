@@ -35,6 +35,7 @@ import javax.servlet.ServletContext;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Context;
 import org.apache.avro.SchemaResolvers;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.grizzly.http.CompressionConfig;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
@@ -67,7 +68,6 @@ import org.spf4j.concurrent.LifoThreadPoolBuilder;
 import org.spf4j.grizzly.GrizzlyErrorPageGenerator;
 import org.spf4j.hk2.Spf4jBinder;
 import org.spf4j.http.DefaultDeadlineProtocol;
-import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.client.Spf4jClientBuilder;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
@@ -249,8 +249,8 @@ public abstract class ServiceIntegrationBase {
 
     @Inject
     ClusterBinder(
-            @ConfigProperty("servlet.bindAddr") final String bindAddr,
-            @ConfigProperty("servlet.port") final int port) {
+            @ConfigProperty(name = "servlet.bindAddr") final String bindAddr,
+            @ConfigProperty(name = "servlet.port") final int port) {
       this.bindAddr = bindAddr;
       this.port = port;
     }

@@ -29,15 +29,14 @@ import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Context;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.hk2.api.Injectee;
 import org.glassfish.hk2.api.InjectionResolver;
 import org.glassfish.hk2.api.ServiceHandle;
 import org.spf4j.reflect.CachingTypeMapWrapper;
 import org.spf4j.reflect.GraphTypeMap;
-import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.jaxrs.SystemConfiguration;
 
 /**
@@ -240,6 +239,7 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
 
   @Override
   @Nullable
+  @SuppressFBWarnings("URV_INHERITED_METHOD_WITH_RELATED_TYPES")
   public Object resolve(final Injectee injectee, final ServiceHandle<?> handle) {
     ConfigurationParam cfgParam = getConfigAnnotation(injectee);
     if (cfgParam == null) {
@@ -249,24 +249,10 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
     if (requiredType instanceof ParameterizedType) {
       ParameterizedType ptype = (ParameterizedType) requiredType;
       TypeToken<?> tt = TypeToken.of(ptype);
-      if (tt.isSubtypeOf(Provider.class)) {
+      if (tt.isSubtypeOf(Provider.class) || tt.isSubtypeOf(Supplier.class)) {
         Function<ConfigurationParam, Object> typeConv
                 = typeResolvers.get(ptype.getActualTypeArguments()[0]);
-        return new Provider() {
-          @Override
-          public Object get() {
-            return typeConv.apply(cfgParam);
-          }
-        };
-      } else if (tt.isSubtypeOf(Supplier.class)) {
-        Function<ConfigurationParam, Object> typeConv
-                = typeResolvers.get(ptype.getActualTypeArguments()[0]);
-        return new Supplier() {
-          @Override
-          public Object get() {
-            return typeConv.apply(cfgParam);
-          }
-        };
+        return new ConfigSupplier(typeConv, cfgParam);
       } else {
         throw new IllegalArgumentException("Unable to inject " + injectee);
       }
@@ -294,9 +280,10 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
       for (Annotation ann : parameterAnnotation) {
         Class<? extends Annotation> annotationType = ann.annotationType();
         if (annotationType == ConfigProperty.class) {
-          paramName = ((ConfigProperty) ann).value();
-        } else if (annotationType == DefaultValue.class) {
-          paramDefaultValue = ((DefaultValue) ann).value();
+          ConfigProperty cfgAnn = (ConfigProperty) ann;
+          paramName = cfgAnn.name();
+          paramDefaultValue =  cfgAnn.defaultValue();
+          break;
         }
       }
       if (paramName != null) {
@@ -305,8 +292,7 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
     } else {
       ConfigProperty cfg = elem.getAnnotation(ConfigProperty.class);
       if (cfg != null) {
-        DefaultValue defVal = elem.getAnnotation(DefaultValue.class);
-        result = new ConfigurationParam(cfg.value(), defVal == null ? null : defVal.value());
+        result = new ConfigurationParam(cfg.name(), cfg.defaultValue());
       }
     }
     return result;
@@ -325,6 +311,22 @@ public final class ConfigurationInjector implements InjectionResolver<ConfigProp
   @Override
   public String toString() {
     return "ConfigurationInjector{" + "configuration=" + configuration + '}';
+  }
+
+  private static class ConfigSupplier implements Supplier, Provider {
+
+    private final Function<ConfigurationParam, Object> typeConv;
+    private final ConfigurationParam cfgParam;
+
+    ConfigSupplier(final Function<ConfigurationParam, Object> typeConv, final ConfigurationParam cfgParam) {
+      this.typeConv = typeConv;
+      this.cfgParam = cfgParam;
+    }
+
+    @Override
+    public Object get() {
+      return typeConv.apply(cfgParam);
+    }
   }
 
 }

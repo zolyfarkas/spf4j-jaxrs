@@ -15,9 +15,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.base.avro.LogRecord;
 import org.spf4j.base.avro.Order;
-import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.log.AvroDataFileAppender;
 import org.spf4j.log.LogbackUtils;
 import org.spf4j.os.OperatingSystem;
@@ -36,7 +36,7 @@ public class LogsResource {
   private final String hostName;
 
   @Inject
-  public LogsResource(@ConfigProperty("hostName") @DefaultValue("") final String hostName) {
+  public LogsResource(@ConfigProperty(name = "hostName", defaultValue = "") final String hostName) {
     this.hostName = hostName.isEmpty() ? OperatingSystem.getHostName() : hostName;
   }
 

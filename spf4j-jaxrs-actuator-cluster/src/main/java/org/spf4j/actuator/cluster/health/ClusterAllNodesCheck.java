@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
-import javax.ws.rs.DefaultValue;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.spf4j.actuator.health.HealthCheck;
@@ -24,7 +24,6 @@ import org.spf4j.base.avro.NetworkService;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
-import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.jaxrs.client.Spf4JClient;
 
 /**
@@ -42,8 +41,7 @@ public final class ClusterAllNodesCheck implements HealthCheck {
   @Inject
   public ClusterAllNodesCheck(final Cluster cluster,
           final Spf4JClient httpClient,
-          @ConfigProperty("spf4j.health.cluster.timeoutMillis")
-          @DefaultValue("10000")
+          @ConfigProperty(name = "spf4j.health.cluster.timeoutMillis", defaultValue = "10000")
           final long timeouMillis) {
     this.cluster = cluster;
     this.httpClient = httpClient;

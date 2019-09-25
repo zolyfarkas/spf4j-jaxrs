@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 import javax.inject.Inject;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
@@ -15,6 +14,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.jersey.server.spi.ResponseErrorMapper;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
@@ -24,7 +24,6 @@ import org.spf4j.base.avro.DebugDetail;
 import org.spf4j.base.avro.ServiceError;
 import org.spf4j.log.Level;
 import org.spf4j.http.ContextTags;
-import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.jaxrs.server.DebugDetailEntitlement;
 import org.spf4j.jaxrs.server.MediaTypes;
 
@@ -53,7 +52,7 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
 
   @Inject
   public LoggingExceptionMapper(
-         @ConfigProperty("hostName") @DefaultValue("hostName") final String host,
+         @ConfigProperty(name = "hostName", defaultValue = "hostName") final String host,
          @Context final ContainerRequestContext reqCtx,
          final DebugDetailEntitlement allowClientDebug) {
     this.host = host;

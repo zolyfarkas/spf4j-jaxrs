@@ -19,6 +19,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.inject.Singleton;
 import javax.ws.rs.client.Client;
 import org.apache.avro.SchemaResolver;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.hk2.api.InjectionResolver;
 import org.glassfish.hk2.api.TypeLiteral;
@@ -26,7 +27,6 @@ import org.spf4j.avro.SchemaClient;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.server.DebugDetailEntitlement;
 import org.spf4j.jaxrs.server.Spf4jInterceptionService;
-import org.spf4j.jaxrs.ConfigProperty;
 
 public final class Spf4jBinder extends AbstractBinder {
 

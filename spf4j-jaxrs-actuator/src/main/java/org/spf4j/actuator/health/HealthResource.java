@@ -20,6 +20,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.health.HealthCheck.Type;
@@ -29,7 +30,6 @@ import org.spf4j.base.avro.HealthStatus;
 import org.spf4j.base.avro.ServiceError;
 import org.spf4j.jaxrs.server.DebugDetailEntitlement;
 import org.spf4j.log.ExecContextLogger;
-import org.spf4j.jaxrs.ConfigProperty;
 
 /**
  * @author Zoltan Farkas
@@ -51,7 +51,7 @@ public class HealthResource {
   @Inject
   public HealthResource(final Iterable<HealthCheck.Registration> healthChecks,
           final DebugDetailEntitlement ddEnt,
-          @ConfigProperty("hostName") @DefaultValue("hostName") final String host) {
+          @ConfigProperty(name = "hostName", defaultValue = "hostName") final String host) {
     this.ddEnt = ddEnt;
     this.host = host;
     checkSupplier = () -> {

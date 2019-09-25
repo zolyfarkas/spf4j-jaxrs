@@ -8,10 +8,10 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.hk2.api.Immediate;
 import org.slf4j.LoggerFactory;
 import org.spf4j.base.PackageInfo;
@@ -20,7 +20,6 @@ import org.spf4j.base.avro.ApplicationInfo;
 import org.spf4j.base.avro.ProcessInfo;
 import org.spf4j.cluster.Service;
 import org.spf4j.cluster.ServiceInfo;
-import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.log.ExecContextLogger;
 
 /**
@@ -43,7 +42,7 @@ public class InfoResource {
   private final String hostName;
 
   @Inject
-  public InfoResource(@ConfigProperty("hostName") @DefaultValue("127.0.0.1") final String hostName,
+  public InfoResource(@ConfigProperty(name = "hostName", defaultValue = "127.0.0.1") final String hostName,
           final Service service) {
     this.service = service;
     this.hostName = hostName;

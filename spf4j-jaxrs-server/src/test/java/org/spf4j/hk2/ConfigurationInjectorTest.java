@@ -19,9 +19,9 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import org.spf4j.jaxrs.NoConfiguration;
 import javax.inject.Singleton;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.core.Configuration;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.hk2.api.InjectionResolver;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.hk2.api.ServiceLocatorFactory;
@@ -31,7 +31,6 @@ import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.junit.Assert;
 import org.junit.Test;
 import org.jvnet.hk2.annotations.Service;
-import org.spf4j.jaxrs.ConfigProperty;
 import org.spf4j.jaxrs.SystemConfiguration;
 
 
@@ -49,8 +48,8 @@ public class ConfigurationInjectorTest {
    private final Provider<String> providedValue;
 
     @Inject
-    public TestClass(@ConfigProperty("myProp")  @DefaultValue("bubu") final  String value,
-            @ConfigProperty("myProp2") final Provider<String> providedValue) {
+    public TestClass(@ConfigProperty(name = "myProp", defaultValue = "bubu") final  String value,
+            @ConfigProperty(name = "myProp2") final Provider<String> providedValue) {
       this.value = value;
       this.providedValue = providedValue;
     }

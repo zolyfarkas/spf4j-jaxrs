@@ -17,6 +17,7 @@ package org.spf4j.hk2;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * @author Zoltan Farkas
@@ -31,7 +32,7 @@ public final class ConfigurationParam {
 
   public ConfigurationParam(final String propertyName, @Nullable final String defaultValue) {
     this.propertyName = propertyName;
-    this.defaultValue = defaultValue;
+    this.defaultValue = ConfigProperty.UNCONFIGURED_VALUE.equals(defaultValue) ? null : defaultValue;
   }
 
   public String getPropertyName() {

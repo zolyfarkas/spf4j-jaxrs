@@ -16,9 +16,8 @@
 package org.spf4j.actuator.logs;
 
 import java.nio.file.Paths;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.Path;
-import org.spf4j.jaxrs.ConfigProperty;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.jaxrs.server.resources.FilesResource;
 
 /**
@@ -31,8 +30,8 @@ public class LogFilesResource {
   private final FilesResource files;
 
 
-  public LogFilesResource(@ConfigProperty("application.logFilesPath")
-      @DefaultValue("/var/log") final String basePath) {
+  public LogFilesResource(@ConfigProperty(name = "application.logFilesPath", defaultValue = "/var/log")
+    final String basePath) {
     this.files = new FilesResource(Paths.get(basePath));
   }
 
