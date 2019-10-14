@@ -1,7 +1,7 @@
 package org.spf4j.jaxrs.common.providers.avro.stream;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.spf4j.jaxrs.CloseableIterable;
+import org.spf4j.base.CloseableIterable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
