@@ -1,5 +1,6 @@
 package org.spf4j.http;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.ZonedDateTime;
@@ -8,7 +9,10 @@ import java.util.Iterator;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import org.spf4j.base.CharSequences;
+import org.spf4j.base.Json;
+import org.spf4j.base.JsonWriteable;
 import org.spf4j.base.Slf4jMessageFormatter;
+import org.spf4j.io.AppendableWriter;
 import org.spf4j.io.csv.CharSeparatedValues;
 
 /**
@@ -16,7 +20,7 @@ import org.spf4j.io.csv.CharSeparatedValues;
  *
  * @author Zoltan Farkas
  */
-public final class HttpWarning {
+public final class HttpWarning implements JsonWriteable {
 
   /**
    * Warning status - Response is stale.
@@ -117,15 +121,19 @@ public final class HttpWarning {
   public String toString() {
     StringBuilder sb = new StringBuilder(32);
     try {
-     if (date != null) {
-       SPACE_SEP.writeCsvRowNoEOL(sb, code, agent, text, DateTimeFormatter.RFC_1123_DATE_TIME.format(date));
-     } else {
-       SPACE_SEP.writeCsvRowNoEOL(sb, code, agent, text);
-     }
+      writeStringTo(sb);
     } catch (IOException ex) {
       throw new UncheckedIOException(ex);
     }
     return sb.toString();
+  }
+
+  public void writeStringTo(final Appendable sb) throws IOException {
+    if (date != null) {
+      SPACE_SEP.writeCsvRowNoEOL(sb, code, agent, text, DateTimeFormatter.RFC_1123_DATE_TIME.format(date));
+    } else {
+      SPACE_SEP.writeCsvRowNoEOL(sb, code, agent, text);
+    }
   }
 
 
@@ -182,6 +190,23 @@ public final class HttpWarning {
     } else {
       return other.date == null;
     }
+  }
+
+  @Override
+  public void writeJsonTo(final Appendable appendable) throws IOException {
+    JsonGenerator gen = Json.FACTORY.createGenerator(new AppendableWriter(appendable));
+    gen.writeStartObject();
+    gen.writeFieldName("code");
+    gen.writeNumber(code);
+    gen.writeFieldName("agent");
+    gen.writeString(agent);
+    gen.writeFieldName("text");
+    gen.writeString(text);
+    if (date != null) {
+      gen.writeFieldName("date");
+      gen.writeString(DateTimeFormatter.RFC_1123_DATE_TIME.format(date));
+    }
+    gen.writeEndObject();
   }
 
 }
