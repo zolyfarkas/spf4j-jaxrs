@@ -52,6 +52,7 @@
     <module>spf4j-jaxrs-actuator</module>
     <module>spf4j-jaxrs-actuator-cluster</module>
     <module>spf4j-jaxrs-grizzly</module>
+    <module>spf4j-jaxrs-avro-sql</module>
   </modules>
 
   <dependencyManagement>

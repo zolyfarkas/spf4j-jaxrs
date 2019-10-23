@@ -18,3 +18,4 @@
 /release.properties
 /spf4j-jaxrs-server/nb-configuration.xml
 /spf4j-jaxrs-grizzly/nb-configuration.xml
+/spf4j-jaxrs-avro-sql/target/
