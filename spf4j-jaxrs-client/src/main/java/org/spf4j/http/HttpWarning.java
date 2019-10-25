@@ -1,11 +1,11 @@
 package org.spf4j.http;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Iterator;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import org.spf4j.base.CharSequences;
@@ -13,7 +13,6 @@ import org.spf4j.base.Json;
 import org.spf4j.base.JsonWriteable;
 import org.spf4j.base.Slf4jMessageFormatter;
 import org.spf4j.io.AppendableWriter;
-import org.spf4j.io.csv.CharSeparatedValues;
 
 /**
  * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
@@ -51,12 +50,73 @@ public final class HttpWarning implements JsonWriteable {
    */
   public static final int PERSISTENT_MISCELLANEOUS = 299;
 
-  private static final CharSeparatedValues SPACE_SEP = new CharSeparatedValues(' ', ',');
-
   private final int code;
   private final String agent;
   private final String text;
   private final ZonedDateTime date;
+
+  private static int parseString(final CharSequence source,
+          final int from,
+          final StringBuilder destination)  {
+    if (source.charAt(from) != '"') {
+      throw new IllegalArgumentException("No quoted-string at " + from + " in " + source);
+    }
+    boolean escaped = false;
+    boolean closed = false;
+    int i = from + 1;
+    OUTER:
+    for (int l = source.length(); i < l; i++) {
+      char charAt = source.charAt(i);
+      switch (charAt) {
+        case '\\':
+          if (escaped) {
+            destination.append(charAt);
+            escaped = false;
+          } else {
+            escaped = true;
+          }
+          break;
+        case '"':
+          if (escaped) {
+            destination.append(charAt);
+            escaped = false;
+          } else {
+            closed = true;
+            break OUTER;
+          }
+          break;
+        default:
+          destination.append(charAt);
+          if (escaped) {
+            escaped = false;
+          }
+          break;
+      }
+    }
+    if (!closed) {
+      throw new IllegalArgumentException("Not closed quoted-string in " + source);
+    }
+    return i + 1;
+  }
+
+
+  @SuppressFBWarnings("SF_SWITCH_NO_DEFAULT") // not really
+  private static void writeString(final CharSequence source,
+          final Appendable destination) throws IOException  {
+    destination.append('"');
+    for (int i = 0, l = source.length(); i < l; i++) {
+      char charAt = source.charAt(i);
+      switch (charAt) {
+        case '"':
+        case '\\':
+          destination.append('\\');
+        default:
+          destination.append(charAt);
+      }
+    }
+    destination.append('"');
+  }
+
 
   /**
    * Warning = "Warning" ":" 1#warning-value
@@ -72,20 +132,33 @@ public final class HttpWarning implements JsonWriteable {
    * @return
    */
   public static HttpWarning parse(final CharSequence headerValue) {
-    Iterable<Iterable<String>> parsed = SPACE_SEP.asIterable(CharSequences.reader(headerValue));
-    Iterable<String> line = parsed.iterator().next();
-    Iterator<String> lIt = line.iterator();
-    String codeStr = lIt.next();
-    int code = CharSequences.parseUnsignedInt(codeStr, 10, 0, codeStr.length());
-    String agent = lIt.next();
-    String text = lIt.next();
-    ZonedDateTime zdt;
-    if (lIt.hasNext()) {
-      zdt = DateTimeFormatter.RFC_1123_DATE_TIME.parse(lIt.next(), ZonedDateTime::from);
-    } else {
-      zdt = null;
+    int fsIdx = CharSequences.indexOf(headerValue, 0, headerValue.length(), ' ');
+    if (fsIdx < 0) {
+      throw new IllegalArgumentException("Invalid warning message: " + headerValue);
     }
-
+    int code;
+    try {
+      code = CharSequences.parseUnsignedInt(headerValue, 10, 0, fsIdx);
+    } catch (NumberFormatException ex) {
+      throw new IllegalArgumentException("Invalid warning message: " + headerValue, ex);
+    }
+    int agStartIdx = fsIdx + 1;
+    int ssIdx = CharSequences.indexOf(headerValue, agStartIdx, headerValue.length(), ' ');
+    if (ssIdx < 0) {
+      throw new IllegalArgumentException("Invalid warning message: " + headerValue);
+    }
+    String agent = headerValue.subSequence(agStartIdx, ssIdx).toString();
+    StringBuilder textB = new StringBuilder();
+    int txtEnd = parseString(headerValue, ssIdx + 1, textB);
+    String text = textB.toString();
+    ZonedDateTime zdt;
+    if (txtEnd >= headerValue.length()) {
+      zdt = null;
+    } else {
+      StringBuilder dateB = new StringBuilder();
+      parseString(headerValue, txtEnd + 1, dateB);
+      zdt = DateTimeFormatter.RFC_1123_DATE_TIME.parse(dateB, ZonedDateTime::from);
+    }
     return new HttpWarning(code, agent, zdt, text);
   }
 
@@ -129,13 +202,17 @@ public final class HttpWarning implements JsonWriteable {
   }
 
   public void writeStringTo(final Appendable sb) throws IOException {
+    sb.append(Integer.toString(code));
+    sb.append(' ');
+    sb.append(agent);
+    sb.append(' ');
+    writeString(text, sb);
     if (date != null) {
-      SPACE_SEP.writeCsvRowNoEOL(sb, code, agent, text, DateTimeFormatter.RFC_1123_DATE_TIME.format(date));
-    } else {
-      SPACE_SEP.writeCsvRowNoEOL(sb, code, agent, text);
+      sb.append(" \"");
+      DateTimeFormatter.RFC_1123_DATE_TIME.formatTo(date, sb);
+      sb.append('"');
     }
   }
-
 
   public int getCode() {
     return code;
@@ -207,6 +284,7 @@ public final class HttpWarning implements JsonWriteable {
       gen.writeString(DateTimeFormatter.RFC_1123_DATE_TIME.format(date));
     }
     gen.writeEndObject();
+    gen.flush();
   }
 
 }
