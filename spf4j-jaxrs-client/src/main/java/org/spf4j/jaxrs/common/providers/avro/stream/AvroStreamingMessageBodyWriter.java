@@ -55,8 +55,14 @@ public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWrite
           throws IOException {
     ParameterizedType genericType = AvroStreamingMessageBodyReader.toParameterizedType(pgenericType);
     Type elType = genericType.getActualTypeArguments()[0];
-    Schema elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
-    Schema schema = Schema.createArray(elemSchema);
+    Schema schema;
+    Schema elemSchema = t.getElementSchema();
+    if (elemSchema == null) {
+      elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
+      schema = Schema.createArray(elemSchema);
+    } else {
+      schema = Schema.createArray(elemSchema);
+    }
     protocol.serialize(httpHeaders::add, schema);
     try {
       DatumWriter writer = new ExtendedReflectDatumWriter(elemSchema);

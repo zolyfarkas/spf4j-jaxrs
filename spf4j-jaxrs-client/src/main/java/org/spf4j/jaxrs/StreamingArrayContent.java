@@ -17,13 +17,21 @@ package org.spf4j.jaxrs;
 
 import java.io.Closeable;
 import java.io.IOException;
+import javax.annotation.Nullable;
+import org.apache.avro.Schema;
 import org.spf4j.base.ArrayWriter;
 
 /**
  * Streaming Output, that will stream back an array.
  */
 public interface StreamingArrayContent<T> extends Closeable {
+
  void write(ArrayWriter<T> output) throws IOException;
+
+ @Nullable
+ default Schema getElementSchema() {
+   return null;
+ }
 
  default int getElementBufferSize() {
    return 64;
