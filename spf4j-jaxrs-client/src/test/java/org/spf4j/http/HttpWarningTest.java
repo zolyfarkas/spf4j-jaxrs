@@ -23,6 +23,15 @@ private static final Logger LOG = LoggerFactory.getLogger(HttpWarningTest.class)
     Assert.assertEquals(warning, nwarn);
   }
 
+  @Test
+  public void tesSerDeserNonAscii() {
+    HttpWarning warning = new HttpWarning(HttpWarning.MISCELLANEOUS, "super",  ZonedDateTime.now(), "aaaa \u0000 \t  \u1345 ");
+    LOG.debug("Warning {}", warning.toString(), warning);
+    HttpWarning nwarn = HttpWarning.parse(warning.toString());
+    Assert.assertEquals(warning, nwarn);
+  }
+
+
 
   @Test
   public void testParse() {

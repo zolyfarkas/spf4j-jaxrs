@@ -4,10 +4,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.io.UnsupportedEncodingException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import javax.annotation.Nullable;
+import javax.mail.internet.MimeUtility;
 import org.spf4j.base.CharSequences;
 import org.spf4j.base.Json;
 import org.spf4j.base.JsonWriteable;
@@ -109,6 +111,8 @@ public final class HttpWarning implements JsonWriteable {
       switch (charAt) {
         case '"':
         case '\\':
+        case '\n':
+        case '\r':
           destination.append('\\');
         default:
           destination.append(charAt);
@@ -150,7 +154,12 @@ public final class HttpWarning implements JsonWriteable {
     String agent = headerValue.subSequence(agStartIdx, ssIdx).toString();
     StringBuilder textB = new StringBuilder();
     int txtEnd = parseString(headerValue, ssIdx + 1, textB);
-    String text = textB.toString();
+    String text;
+    try {
+      text = MimeUtility.decodeText(textB.toString());
+    } catch (UnsupportedEncodingException ex) {
+      throw new IllegalArgumentException("Improperly encoded text message in header: " + headerValue, ex);
+    }
     ZonedDateTime zdt;
     if (txtEnd >= headerValue.length()) {
       zdt = null;
@@ -206,7 +215,7 @@ public final class HttpWarning implements JsonWriteable {
     sb.append(' ');
     sb.append(agent);
     sb.append(' ');
-    writeString(text, sb);
+    writeString(MimeUtility.encodeText(text), sb);
     if (date != null) {
       sb.append(" \"");
       DateTimeFormatter.RFC_1123_DATE_TIME.formatTo(date, sb);
