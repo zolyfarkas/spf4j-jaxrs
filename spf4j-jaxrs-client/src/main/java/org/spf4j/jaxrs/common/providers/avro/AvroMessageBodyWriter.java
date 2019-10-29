@@ -36,7 +36,7 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
           final Annotation[] annotations, final MediaType mediaType) {
     return IndexedRecord.class.isAssignableFrom(type) || (type != void.class &&  type != Void.class
             && !OutputStream.class.isAssignableFrom(type)
-            && !Writer.class.isAssignableFrom(type));
+            && !Writer.class.isAssignableFrom(type)  && !Iterable.class.isAssignableFrom(type));
   }
 
   public abstract Encoder getEncoder(Schema writerSchema, OutputStream os)

@@ -15,24 +15,11 @@
  */
 package org.spf4j.jaxrs;
 
-import java.io.Closeable;
-import java.io.IOException;
-import org.spf4j.base.ArrayWriter;
+import org.spf4j.base.CloseableIterable;
+
 
 /**
- * Streaming Output, that will stream back an array.
+ * @author Zoltan Farkas
  */
-public interface StreamingArrayContent<T> extends Closeable, AvroContainer, Buffered {
-
- void write(ArrayWriter<T> output) throws IOException;
-
- /**
-  * Jersey will lose the stream after a MessageBodyReader is finished unless the object implements Closeable.
-  *
-  * @throws IOException
-  */
- default void close() throws IOException {
-   // nothing to close by default.
- }
-
+public interface IterableArrayContent<T> extends CloseableIterable<T>, Buffered, AvroContainer {
 }

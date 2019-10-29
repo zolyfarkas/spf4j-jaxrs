@@ -15,24 +15,21 @@
  */
 package org.spf4j.jaxrs;
 
-import java.io.Closeable;
-import java.io.IOException;
-import org.spf4j.base.ArrayWriter;
+import javax.annotation.Nullable;
+import org.apache.avro.Schema;
 
 /**
- * Streaming Output, that will stream back an array.
+ * @author Zoltan Farkas
  */
-public interface StreamingArrayContent<T> extends Closeable, AvroContainer, Buffered {
-
- void write(ArrayWriter<T> output) throws IOException;
+public interface AvroContainer {
 
  /**
-  * Jersey will lose the stream after a MessageBodyReader is finished unless the object implements Closeable.
-  *
-  * @throws IOException
+  * return the element schema of the container.
+  * @return null if schema can be inferred from type.
   */
- default void close() throws IOException {
-   // nothing to close by default.
+ @Nullable
+ default Schema getElementSchema() {
+   return null;
  }
 
 }

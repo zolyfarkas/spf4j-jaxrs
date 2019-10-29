@@ -27,7 +27,7 @@ import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 /**
  * @author Zoltan Farkas
  */
-public abstract class AvroIterableMessageBodyReader implements MessageBodyReader<Iterable> {
+public abstract class AvroIterableMessageBodyReader implements MessageBodyReader<CloseableIterable> {
 
   private final SchemaProtocol protocol;
 
@@ -70,7 +70,8 @@ public abstract class AvroIterableMessageBodyReader implements MessageBodyReader
    * @inheritdoc
    */
   @Override
-  public Iterable readFrom(final Class<Iterable> type, final Type genericType, final Annotation[] annotations,
+  public CloseableIterable readFrom(final Class<CloseableIterable> type, final Type genericType,
+          final Annotation[] annotations,
           final MediaType mediaType, final MultivaluedMap<String, String> httpHeaders,
           final InputStream pentityStream)
           throws IOException {
