@@ -19,7 +19,6 @@ import org.apache.avro.AvroArrayWriter;
 import org.spf4j.jaxrs.AvroContainer;
 import org.spf4j.jaxrs.Buffered;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
-import org.spf4j.jaxrs.StreamingArrayContent;
 import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
 
 /**
@@ -40,7 +39,7 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
   @Override
   public boolean isWriteable(final Class<?> type, final Type genericType,
           final Annotation[] annotations, final MediaType mediaType) {
-    return StreamingArrayContent.class.isAssignableFrom(type);
+    return Iterable.class.isAssignableFrom(type);
   }
 
   public abstract Encoder getEncoder(Schema writerSchema, OutputStream os)
