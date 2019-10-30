@@ -281,7 +281,8 @@ public final class ExecutionContextFilter implements Filter {
         LogAttribute.of("clientHost", getRemoteHost(req)),
         LogAttribute.value("httpStatus", resp.getStatus()),
         LogAttribute.execTimeMicros(execTimeNanos, TimeUnit.NANOSECONDS),
-        LogAttribute.value("inBytes", req.getBytesRead()), LogAttribute.value("outBytes", resp.getBytesWritten())
+        LogAttribute.value("inBytes", req.getBytesRead()),
+        LogAttribute.value("outBytes", resp.getBytesWritten())
       };
     } else {
       args = new Object[7 + logAttrs.size()];
