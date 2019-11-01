@@ -1,6 +1,7 @@
 
 package org.spf4j.jaxrs.common.providers.avro;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
@@ -31,7 +32,9 @@ public final class SchemaMessageBodyWriter implements MessageBodyWriter<Schema> 
           final Annotation[] annotations, final MediaType mediaType,
           final MultivaluedMap<String, Object> httpHeaders, final OutputStream entityStream)
           throws IOException {
-    t.toJson(Json.FACTORY.createJsonGenerator(entityStream));
+    JsonGenerator gen = Json.FACTORY.createGenerator(entityStream);
+    t.toJson(gen);
+    gen.flush();
   }
 
 
