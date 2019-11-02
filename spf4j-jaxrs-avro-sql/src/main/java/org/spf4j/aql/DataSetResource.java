@@ -20,12 +20,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.specific.SpecificRecord;
 import org.glassfish.jersey.spi.Contract;
+import org.spf4j.base.Reflections;
 
 /**
  * @author Zoltan Farkas
@@ -38,7 +40,7 @@ public interface DataSetResource<T extends IndexedRecord> {
   }
 
   default Schema getSchema() {
-    Type[] intfs = this.getClass().getGenericInterfaces();
+    List<Type> intfs = Reflections.getImplementedGenericInterfaces(this.getClass());
     for (Type type : intfs) {
       TypeToken<?> tt = TypeToken.of(type);
       if (tt.getRawType() == DataSetResource.class) {
