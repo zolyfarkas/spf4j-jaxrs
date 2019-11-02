@@ -15,7 +15,7 @@
  */
 package org.spf4j.jaxrs.server.filters;
 
-import java.io.IOException;
+
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -23,6 +23,8 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spf4j.jaxrs.ProjectionSupport;
 
 /**
@@ -31,14 +33,17 @@ import org.spf4j.jaxrs.ProjectionSupport;
 @ProjectionSupport
 @Provider
 @Priority(Priorities.ENTITY_CODER)
-public class ProjectionFilter implements ContainerResponseFilter {
+public final class ProjectionFilter implements ContainerResponseFilter {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ProjectionFilter.class);
 
   @Override
   public void filter(final ContainerRequestContext requestContext,
-          final ContainerResponseContext responseContext) throws IOException {
+          final ContainerResponseContext responseContext) {
     MultivaluedMap<String, String> qp = requestContext.getUriInfo().getQueryParameters();
     String select = qp.getFirst("_select");
     Object entity = responseContext.getEntity();
+    LOG.debug("Projecting: {} entity: {}", select, entity);
   }
 
 }
