@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.jaxrs.server.filters;
+package org.spf4j.jaxrs.server.providers.filters;
 
 
 import javax.annotation.Priority;

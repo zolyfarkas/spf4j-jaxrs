@@ -28,14 +28,13 @@ import org.apache.calcite.tools.RelConversionException;
 import org.apache.calcite.tools.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spf4j.aql.DataSetResource;
-import org.spf4j.avro.calcite.AvroProjectableFilterableTable;
 import org.spf4j.avro.calcite.EmbededDataContext;
 import org.spf4j.avro.calcite.IndexedRecords;
 import org.spf4j.avro.calcite.Types;
-import org.spf4j.base.CloseableIterator;
 import org.spf4j.jaxrs.IterableArrayContent;
 import org.spf4j.log.ExecContextLogger;
+import org.spf4j.avro.calcite.AvroDataSetAsProjectableFilterableTable;
+import org.spf4j.aql.AvroDataSetContract;
 
 /**
  * @author Zoltan Farkas
@@ -51,17 +50,16 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
   private final Map<String, Schema> schemas;
 
   @Inject
-  public AvroQueryResourceImpl(final Iterable<DataSetResource> resources) {
+  public AvroQueryResourceImpl(final Iterable<AvroDataSetContract> resources) {
     SchemaPlus schema = Frameworks.createRootSchema(true);
     schemas = new HashMap<>();
-    for (DataSetResource res : resources) {
+    for (AvroDataSetContract res : resources) {
       String name = res.getName();
-      Schema tschema = res.getSchema();
+      Schema tschema = res.getElementSchema();
       schemas.put(name, tschema);
       LOG.debug("Registered {} table to schema", name);
-      schema.add(name, new AvroProjectableFilterableTable(tschema,
-              () -> CloseableIterator.from(res.getData(null, null).iterator())));
-      }
+      schema.add(name, new AvroDataSetAsProjectableFilterableTable(res));
+    }
     SqlParser.Config cfg = SqlParser.configBuilder()
             .setCaseSensitive(true)
             .setIdentifierMaxLength(255)
