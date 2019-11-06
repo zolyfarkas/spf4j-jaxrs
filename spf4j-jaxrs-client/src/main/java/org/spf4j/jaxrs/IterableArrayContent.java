@@ -29,8 +29,20 @@ import org.spf4j.base.CloseableIterable;
  */
 public interface IterableArrayContent<T> extends CloseableIterable<T>, Buffered, AvroContainer {
 
-  static <T>  IterableArrayContent<T> from(final Iterable<T> it, final Schema elementSchema) {
-    return from(it, () -> { }, 64, elementSchema);
+  static <T> IterableArrayContent<T> from(final Iterable<T> it, final Schema elementSchema) {
+    Closeable cl;
+    if (it instanceof Closeable) {
+      cl = (Closeable) it;
+    } else {
+      cl = () -> { };
+    }
+    int bufferSize;
+    if (it instanceof Buffered) {
+      bufferSize = ((Buffered) it).getElementBufferSize();
+    } else {
+      bufferSize = 64;
+    }
+    return from(it, cl, bufferSize, elementSchema);
   }
 
   static <T>  IterableArrayContent<T> from(final Iterable<T> it, final Closeable toClose,
