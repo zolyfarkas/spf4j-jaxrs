@@ -1,6 +1,8 @@
 package org.spf4j.jaxrs.aql;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -71,9 +73,13 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
     this.planner = Frameworks.getPlanner(config);
   }
 
-
   @Override
   public IterableArrayContent<GenericRecord> query(final String query) {
+    return query(new StringReader(query));
+  }
+
+  @Override
+  public IterableArrayContent<GenericRecord> query(final Reader query) {
     SqlNode parse;
     try {
       parse = planner.parse(query);
@@ -117,6 +123,7 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
   public String toString() {
     return "QueryResourceImpl{" + "schemas=" + schemas + '}';
   }
+
 
   private static class ReadablePlan extends Object {
 

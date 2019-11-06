@@ -16,8 +16,11 @@
 package org.spf4j.jaxrs.aql;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.io.Reader;
 import java.util.Map;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -36,6 +39,11 @@ public interface AvroQueryResource {
   @GET
   @Produces({"application/json", "application/avro+json", "application/avro"})
   IterableArrayContent<GenericRecord> query(@QueryParam("query") String query);
+
+  @POST
+  @Produces({"application/json", "application/avro+json", "application/avro"})
+  @Consumes("text/plain")
+  IterableArrayContent<GenericRecord> query(Reader query);
 
   @GET
   @Path("schemas")
