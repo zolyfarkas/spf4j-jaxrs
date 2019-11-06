@@ -35,6 +35,7 @@ import org.spf4j.jaxrs.IterableArrayContent;
 import org.spf4j.log.ExecContextLogger;
 import org.spf4j.avro.calcite.AvroDataSetAsProjectableFilterableTable;
 import org.spf4j.aql.AvroDataSetContract;
+import org.spf4j.avro.calcite.PlannerUtils;
 
 /**
  * @author Zoltan Farkas
@@ -90,7 +91,8 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
     } catch (RelConversionException ex) {
       throw new RuntimeException(ex);
     }
-    RelNode relNode = rel.project(); //PlannerUtils.pushDownPredicatesAndProjection(rel.project());
+    RelNode relNode = rel.project();
+    relNode = PlannerUtils.pushDownPredicatesAndProjection(relNode);
     LOG.debug("exec plan: {}", new ReadablePlan(relNode));
     RelDataType rowType = relNode.getRowType();
     LOG.debug("Return row type: {}", rowType);
