@@ -67,7 +67,15 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
     LOG.debug("Projecting: {} entity: {}", select, entity);
     Schema sourceSchema = MessageBodyRWUtils.getAvroSchemaFromType(responseContext.getEntityClass(),
             responseContext.getEntityType(), entity, responseContext.getEntityAnnotations());
-    Schema resultSchema = Schemas.project(sourceSchema, projection);
+    if (sourceSchema.getType() != Schema.Type.ARRAY) {
+      throw new IllegalStateException("you can only use " + this
+              + " with methods that return an array/collection/iterable");
+    }
+    Schema elementType = sourceSchema.getElementType();
+    Schema resultSchema = Schemas.project(elementType, projection);
+    if (resultSchema == null) {
+      throw new ClientErrorException("Invalid projection " + projection + " of " + elementType, 400);
+    }
     Closeable cl;
     if (entity instanceof Closeable) {
       cl = (Closeable) entity;
@@ -81,7 +89,7 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
       bufferSize = 64;
     }
     IterableArrayContent<IndexedRecord> projected = IterableArrayContent.from(Iterables.transform(entity,
-            (x) -> Schemas.project(resultSchema, sourceSchema, x)), cl, bufferSize,
+            (x) -> Schemas.project(elementType, sourceSchema, x)), cl, bufferSize,
             resultSchema);
     responseContext.setEntity(projected);
   }
