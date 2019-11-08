@@ -96,7 +96,7 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
   }
 
   @Override
-  public CharSequence plan(String query) {
+  public CharSequence plan(final String query) {
     return RelOptUtil.toString(parsePlan(new StringReader(query)));
   }
 
