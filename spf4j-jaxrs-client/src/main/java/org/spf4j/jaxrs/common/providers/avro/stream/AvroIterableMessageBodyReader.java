@@ -7,7 +7,9 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
@@ -27,7 +29,7 @@ import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 /**
  * @author Zoltan Farkas
  */
-public abstract class AvroIterableMessageBodyReader implements MessageBodyReader<CloseableIterable> {
+public abstract class AvroIterableMessageBodyReader implements MessageBodyReader<Iterable> {
 
   private final SchemaProtocol protocol;
 
@@ -42,7 +44,7 @@ public abstract class AvroIterableMessageBodyReader implements MessageBodyReader
   @Override
   public boolean isReadable(final Class<?> type, final Type genericType, final Annotation[] annotations,
           final MediaType mediaType) {
-    return CloseableIterable.class == type;
+    return CloseableIterable.class == type || Iterable.class == type;
   }
 
   /** Overwrite for decoders that are capable of decoding schema from stream  */
@@ -70,7 +72,7 @@ public abstract class AvroIterableMessageBodyReader implements MessageBodyReader
    * @inheritdoc
    */
   @Override
-  public CloseableIterable readFrom(final Class<CloseableIterable> type, final Type genericType,
+  public Iterable readFrom(final Class<Iterable> type, final Type genericType,
           final Annotation[] annotations,
           final MediaType mediaType, final MultivaluedMap<String, String> httpHeaders,
           final InputStream pentityStream)
@@ -96,14 +98,24 @@ public abstract class AvroIterableMessageBodyReader implements MessageBodyReader
     if (decoder == null) {
       decoder = getDecoder(writerSchema, entityStream);
     }
+    IterableAdaptor result;
     if (readerSchema.getType() == Schema.Type.ARRAY) {
       DatumReader reader = new ReflectDatumReader(writerSchema.getElementType(), readerSchema.getElementType());
-      return new IterableAdaptor(pentityStream, new ArrayIterator(decoder, reader));
+      result = new IterableAdaptor(pentityStream, new ArrayIterator(decoder, reader));
     } else if (readerSchema.getType() == Schema.Type.MAP) {
       DatumReader reader = new ReflectDatumReader(writerSchema.getValueType(), readerSchema.getValueType());
-      return new IterableAdaptor(pentityStream, new MapIterator(decoder, reader));
+      result = new IterableAdaptor(pentityStream, new MapIterator(decoder, reader));
     } else {
       throw new IllegalStateException("invalid reader schema " + readerSchema + " for " + genericType);
+    }
+    if (type == Iterable.class) {
+      List collect = new ArrayList();
+      for (Object o : result) {
+        collect.add(o);
+      }
+      return collect;
+    } else {
+      return result;
     }
   }
 

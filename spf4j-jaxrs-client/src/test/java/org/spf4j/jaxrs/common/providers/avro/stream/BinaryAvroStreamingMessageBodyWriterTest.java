@@ -66,7 +66,7 @@ public class BinaryAvroStreamingMessageBodyWriterTest {
     ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
     BinaryAvroIterableMessageBodyReader reader = new BinaryAvroIterableMessageBodyReader(
             new DefaultSchemaProtocol(SchemaResolver.NONE));
-    CloseableIterable<MediaType> rf = reader.readFrom(CloseableIterable.class,
+    Iterable<MediaType> rf = reader.readFrom(Iterable.class,
             new TypeToken<CloseableIterable<MediaType>>() { }.getType(),
             Arrays.EMPTY_ANNOT_ARRAY, new javax.ws.rs.core.MediaType("application", "avro"), headers, bis);
     Iterator<MediaType> iterator = rf.iterator();
