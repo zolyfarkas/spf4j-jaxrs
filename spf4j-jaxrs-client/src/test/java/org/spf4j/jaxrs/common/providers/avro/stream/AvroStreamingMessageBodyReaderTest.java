@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.spf4j.base.ArrayWriter;
 import org.spf4j.jaxrs.StreamingArrayContent;
+import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
 
 /**
  *
@@ -32,7 +33,7 @@ public class AvroStreamingMessageBodyReaderTest {
   @Test
   @SuppressFBWarnings("DM_NEW_FOR_GETCLASS")
   public void testStreamingTypeIntrospection() {
-    ParameterizedType pType = AvroStreamingMessageBodyReader
+    ParameterizedType pType = MessageBodyRWUtils
             .toParameterizedType(new StreamingArrayContent<String>() {
       @Override
       public void write(final ArrayWriter<String> output) {

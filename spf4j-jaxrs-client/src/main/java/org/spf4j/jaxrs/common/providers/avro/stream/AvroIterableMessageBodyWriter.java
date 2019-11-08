@@ -54,15 +54,17 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream)
           throws IOException {
-    ParameterizedType genericType = AvroStreamingMessageBodyReader.toParameterizedType(pgenericType);
-    Type elType = genericType.getActualTypeArguments()[0];
     Schema schema;
     Schema elemSchema = t instanceof AvroContainer ? ((AvroContainer) t).getElementSchema() : null;
+    Type elType;
     if (elemSchema == null) {
+      ParameterizedType genericType = MessageBodyRWUtils.toParameterizedType(pgenericType);
+      elType = genericType.getActualTypeArguments()[0];
       elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
       schema = Schema.createArray(elemSchema);
     } else {
       schema = Schema.createArray(elemSchema);
+      elType = Object.class;
     }
     protocol.serialize(httpHeaders::add, schema);
     try {

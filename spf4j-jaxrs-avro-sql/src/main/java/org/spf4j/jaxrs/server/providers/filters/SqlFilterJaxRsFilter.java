@@ -44,7 +44,7 @@ import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
  */
 @SqlFilterSupport
 @Provider
-@Priority(Priorities.ENTITY_CODER - 20)
+@Priority(Priorities.ENTITY_CODER - 5)
 public final class SqlFilterJaxRsFilter implements ContainerResponseFilter {
 
   private static final Logger LOG = LoggerFactory.getLogger(SqlFilterJaxRsFilter.class);
@@ -75,7 +75,7 @@ public final class SqlFilterJaxRsFilter implements ContainerResponseFilter {
             responseContext.getEntityType(), entity, responseContext.getEntityAnnotations());
     SqlRowPredicate predicate;
     try {
-      predicate = new SqlRowPredicate(where, sourceSchema);
+      predicate = new SqlRowPredicate(where, sourceSchema.getElementType());
     } catch (SqlParseException | ValidationException | RelConversionException ex) {
       throw new ClientErrorException("Invalid predicate " + where, 400, ex);
     }

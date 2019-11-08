@@ -89,7 +89,7 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
       bufferSize = 64;
     }
     IterableArrayContent<IndexedRecord> projected = IterableArrayContent.from(Iterables.transform(entity,
-            (x) -> Schemas.project(elementType, sourceSchema, x)), cl, bufferSize,
+            (x) -> Schemas.project(resultSchema, elementType, x)), cl, bufferSize,
             resultSchema);
     responseContext.setEntity(projected);
   }

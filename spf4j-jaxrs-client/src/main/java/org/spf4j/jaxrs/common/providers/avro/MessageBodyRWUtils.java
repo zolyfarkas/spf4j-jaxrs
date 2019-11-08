@@ -17,6 +17,7 @@ package org.spf4j.jaxrs.common.providers.avro;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import javax.annotation.Nonnull;
@@ -24,6 +25,7 @@ import javax.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.apache.avro.reflect.AvroSchema;
 import org.apache.avro.reflect.ExtendedReflectData;
+import org.spf4j.jaxrs.StreamingArrayContent;
 
 /**
  *
@@ -35,6 +37,26 @@ public final class MessageBodyRWUtils {
   private static final ExtendedReflectData RFLCTOR = ExtendedReflectData.get();
 
   private MessageBodyRWUtils() { }
+
+  public static ParameterizedType toParameterizedType(final Type genericType) {
+    if (!(genericType instanceof ParameterizedType)) {
+      if (genericType instanceof Class) {
+        Type[] genericInterfaces = ((Class) genericType).getGenericInterfaces();
+        for (Type t : genericInterfaces) {
+          if  (t instanceof ParameterizedType) {
+            ParameterizedType pType = (ParameterizedType) t;
+            if (StreamingArrayContent.class.equals(pType.getRawType())) {
+              return pType;
+            }
+          }
+        }
+        throw new IllegalStateException("StreamingArrayContent type parameters must be known " + genericType);
+      } else {
+        throw new IllegalStateException("StreamingArrayContent type parameters must be known " + genericType);
+      }
+    }
+    return (ParameterizedType) genericType;
+  }
 
   /**
    * when using dynamic resources, type can be an ArrayList.class, and genericType is Object.class.
