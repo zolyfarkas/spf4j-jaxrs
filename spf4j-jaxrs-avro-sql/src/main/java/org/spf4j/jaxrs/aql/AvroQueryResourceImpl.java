@@ -80,8 +80,31 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
 
   @Override
   public IterableArrayContent<GenericRecord> query(final Reader query) {
+    RelNode relNode = parsePlan(query);
+    LOG.debug("exec plan: {}", new ReadablePlan(relNode));
+    RelDataType rowType = relNode.getRowType();
+    LOG.debug("Return row type: {}", rowType);
+    Schema from = Types.from(rowType);
+    LOG.debug("Return row schema: {}", from);
+    Interpreter interpreter = new Interpreter(new EmbededDataContext(new JavaTypeFactoryImpl()), relNode);
+    return new IterableInterpreter(from, interpreter);
+  }
+
+  @Override
+  public CharSequence plan(final Reader query) {
+    return RelOptUtil.toString(parsePlan(query));
+  }
+
+  @Override
+  public CharSequence plan(String query) {
+    return RelOptUtil.toString(parsePlan(new StringReader(query)));
+  }
+
+
+  public RelNode parsePlan(final Reader query) {
     SqlNode parse;
     try {
+
       parse = planner.parse(query);
     } catch (SqlParseException ex) {
       throw new ClientErrorException("Cannot parse query: " + query, 400, ex);
@@ -98,14 +121,7 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
       throw new RuntimeException(ex);
     }
     RelNode relNode = rel.project();
-    relNode = PlannerUtils.pushDownPredicatesAndProjection(relNode);
-    LOG.debug("exec plan: {}", new ReadablePlan(relNode));
-    RelDataType rowType = relNode.getRowType();
-    LOG.debug("Return row type: {}", rowType);
-    Schema from = Types.from(rowType);
-    LOG.debug("Return row schema: {}", from);
-    Interpreter interpreter = new Interpreter(new EmbededDataContext(new JavaTypeFactoryImpl()), relNode);
-    return new IterableInterpreter(from, interpreter);
+    return PlannerUtils.pushDownPredicatesAndProjection(relNode);
   }
 
   @Override
@@ -123,6 +139,7 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
   public String toString() {
     return "QueryResourceImpl{" + "schemas=" + schemas + '}';
   }
+
 
 
   private static class ReadablePlan extends Object {

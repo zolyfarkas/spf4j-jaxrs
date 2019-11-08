@@ -45,6 +45,19 @@ public interface AvroQueryResource {
   @Consumes("text/plain")
   IterableArrayContent<GenericRecord> query(Reader query);
 
+
+  @GET
+  @Path("plan")
+  @Produces({"text/plain"})
+  CharSequence plan(@QueryParam("plan") String query);
+
+  @POST
+  @Path("plan")
+  @Produces({"text/plain"})
+  @Consumes("text/plain")
+  CharSequence plan(Reader query);
+
+
   @GET
   @Path("schemas")
   @Produces({"application/json"})
