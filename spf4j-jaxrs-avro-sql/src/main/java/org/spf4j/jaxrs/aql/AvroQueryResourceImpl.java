@@ -52,6 +52,8 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
 
   private final Map<String, Schema> schemas;
 
+  private final FrameworkConfig config;
+
   @Inject
   public AvroQueryResourceImpl(final Iterable<AvroDataSetContract> resources) {
     SchemaPlus schema = Frameworks.createRootSchema(true);
@@ -67,9 +69,10 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
             .setCaseSensitive(true)
             .setIdentifierMaxLength(255)
             .setLex(Lex.JAVA).build();
-    FrameworkConfig config = Frameworks.newConfigBuilder()
+    config = Frameworks.newConfigBuilder()
             .parserConfig(cfg)
-            .defaultSchema(schema).build();
+            .defaultSchema(schema)
+            .build();
     this.planner = Frameworks.getPlanner(config);
   }
 
@@ -121,6 +124,10 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
       throw new RuntimeException(ex);
     }
     RelNode relNode = rel.project();
+// Interpreter does not implement corelations
+//    relNode = RelDecorrelator.decorrelateQuery(relNode, config.getSqlToRelConverterConfig()
+//            .getRelBuilderFactory().create(relNode.getCluster(), null));
+//    LOG.debug("Decorelated plan {}", new ReadablePlan(relNode));
     return PlannerUtils.pushDownPredicatesAndProjection(relNode);
   }
 
