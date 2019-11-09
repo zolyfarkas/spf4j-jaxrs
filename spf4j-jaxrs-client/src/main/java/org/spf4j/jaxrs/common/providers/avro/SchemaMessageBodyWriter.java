@@ -1,7 +1,7 @@
-
 package org.spf4j.jaxrs.common.providers.avro;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.filter.FilteringGeneratorDelegate;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
@@ -11,7 +11,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
+import org.apache.avro.AvroNamesRefResolver;
 import org.apache.avro.Schema;
+import org.apache.avro.SchemaResolver;
 import org.spf4j.base.Json;
 
 /**
@@ -32,10 +34,10 @@ public final class SchemaMessageBodyWriter implements MessageBodyWriter<Schema> 
           final Annotation[] annotations, final MediaType mediaType,
           final MultivaluedMap<String, Object> httpHeaders, final OutputStream entityStream)
           throws IOException {
-    JsonGenerator gen = Json.FACTORY.createGenerator(entityStream);
-    t.toJson(gen);
-    gen.flush();
+    JsonGenerator jgen = Json.FACTORY.createGenerator(entityStream);
+    jgen = new FilteringGeneratorDelegate(jgen, NonSerPropertyFilter.INSTANCE, true, true);
+    t.toJson(new AvroNamesRefResolver(SchemaResolver.NONE), jgen);
+    jgen.flush();
   }
-
 
 }

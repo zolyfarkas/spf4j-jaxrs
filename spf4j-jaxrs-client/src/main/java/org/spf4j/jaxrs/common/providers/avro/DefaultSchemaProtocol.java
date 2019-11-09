@@ -17,7 +17,6 @@ package org.spf4j.jaxrs.common.providers.avro;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.filter.FilteringGeneratorDelegate;
-import com.fasterxml.jackson.core.filter.TokenFilter;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -100,24 +99,6 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
   @Override
   public String toString() {
     return "DefaultSchemaProtocol{" + "client=" + client + '}';
-  }
-
-  private static class NonSerPropertyFilter extends TokenFilter {
-
-    private static final NonSerPropertyFilter INSTANCE = new NonSerPropertyFilter();
-
-    @Override
-    @Nullable
-    public TokenFilter includeProperty(final String name) {
-      switch (name) {
-        case "doc":
-          return null;
-        case "java-class":
-          return null;
-        default:
-          return TokenFilter.INCLUDE_ALL;
-      }
-    }
   }
 
 }
