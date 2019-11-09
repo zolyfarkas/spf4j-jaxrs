@@ -120,6 +120,4 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
     }
   }
 
-
-
 }
