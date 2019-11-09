@@ -71,7 +71,11 @@ public final class SqlRowPredicateParameterConverterProvider implements ParamCon
     }
 
     @Override
-    public Predicate<? extends IndexedRecord> fromString(final String value) {
+    @Nullable
+    public Predicate<? extends IndexedRecord> fromString(@Nullable final String value) {
+      if (value == null) {
+        return null;
+      }
       try {
         return new SqlRowPredicate(value, rowSchema);
       } catch (SqlParseException | ValidationException | RelConversionException ex) {
