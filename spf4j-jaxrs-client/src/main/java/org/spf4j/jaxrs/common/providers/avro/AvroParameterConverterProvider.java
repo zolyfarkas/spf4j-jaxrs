@@ -1,6 +1,7 @@
 package org.spf4j.jaxrs.common.providers.avro;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.filter.FilteringGeneratorDelegate;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
@@ -64,7 +65,8 @@ public final class AvroParameterConverterProvider implements ParamConverterProvi
     public String toString(final Schema schema) {
       try {
         StringWriter sw = new StringWriter();
-        JsonGenerator jgen = Json.FACTORY.createJsonGenerator(sw);
+        JsonGenerator jgen = Json.FACTORY.createGenerator(sw);
+        jgen = new FilteringGeneratorDelegate(jgen, NonSerPropertyFilter.INSTANCE, true, true);
         schema.toJson(new AvroNamesRefResolver(client), jgen);
         jgen.flush();
         return sw.toString();

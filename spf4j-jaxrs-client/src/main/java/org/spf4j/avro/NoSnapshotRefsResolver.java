@@ -37,7 +37,9 @@ public final class NoSnapshotRefsResolver implements SchemaResolver {
   @Override
   public String getId(final Schema schema) {
     String id = client.getId(schema);
-    if (id.contains("SNAPSHOT")) { // no refs for dev builds.
+    if (id == null) {
+      return null;
+    } else if (id.contains("SNAPSHOT")) { // no refs for dev builds.
       return null;
     } else {
       return id;
@@ -48,5 +50,5 @@ public final class NoSnapshotRefsResolver implements SchemaResolver {
   public String toString() {
     return "NoSnapshotRefsResolver{" + "client=" + client + '}';
   }
- 
+
 }
