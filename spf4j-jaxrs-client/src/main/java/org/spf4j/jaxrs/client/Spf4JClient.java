@@ -41,6 +41,7 @@ import org.spf4j.failsafe.HedgePolicy;
 import org.spf4j.failsafe.RetryPolicy;
 import org.spf4j.failsafe.concurrent.DefaultFailSafeExecutor;
 import org.spf4j.failsafe.concurrent.FailSafeExecutor;
+import org.spf4j.jaxrs.common.providers.ProviderUtils;
 
 /**
  * A improved JAX-RS client, that will do the following in addition to the stock Jersey client:
@@ -141,11 +142,13 @@ public final class Spf4JClient implements Client {
     Set<Object> instances = config.getInstances();
     for (Object prov : instances) {
       if (prov instanceof ParamConverterProvider) {
-        paramConverters = new ArrayList<>(2);
+        if (paramConverters == null) {
+          paramConverters = new ArrayList<>(2);
+        }
         paramConverters.add((ParamConverterProvider) prov);
       }
     }
-    return paramConverters == null ? Collections.EMPTY_LIST : paramConverters;
+    return paramConverters == null ? Collections.EMPTY_LIST : ProviderUtils.ordered(paramConverters);
   }
 
 
