@@ -49,7 +49,7 @@ public interface AvroQueryResource {
   @GET
   @Path("plan")
   @Produces({"text/plain"})
-  CharSequence plan(@QueryParam("plan") String query);
+  CharSequence plan(@QueryParam("query") String query);
 
   @POST
   @Path("plan")
