@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.jaxrs.common.providers;
+package org.spf4j.jaxrs.common.providers.gp;
 
 /**
  *
@@ -60,11 +60,7 @@ package org.spf4j.jaxrs.common.providers;
  */
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
@@ -76,70 +72,64 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.inject.Singleton;
 import javax.ws.rs.ext.Provider;
 import org.glassfish.jersey.message.internal.AbstractMessageReaderWriterProvider;
-import static org.glassfish.jersey.message.internal.ReaderWriter.BUFFER_SIZE;
+import static org.glassfish.jersey.message.internal.AbstractMessageReaderWriterProvider.readFromAsString;
+import static org.glassfish.jersey.message.internal.AbstractMessageReaderWriterProvider.writeToAsString;
+import org.spf4j.jaxrs.RawSerialization;
 
 @Provider
 @Produces({"text/plain", "*/*"})
 @Consumes({"text/plain", "*/*"})
 @Singleton
-public final class CharSequenceMessageProvider extends AbstractMessageReaderWriterProvider<CharSequence> {
+public final class DirectStringMessageProvider extends AbstractMessageReaderWriterProvider<String> {
 
-  @Override
-  public boolean isReadable(final Class<?> type, final Type genericType, final Annotation[] annotations,
-          final MediaType mediaType) {
-    return CharSequence.class == type;
-  }
-
-  @Override
-  public CharSequence readFrom(
-          final Class<CharSequence> type,
-          final Type genericType,
-          final Annotation[] annotations,
-          final MediaType mediaType,
-          final MultivaluedMap<String, String> httpHeaders,
-          final InputStream entityStream) throws IOException {
-    return readFromAsString(new InputStreamReader(entityStream, getCharset(mediaType)));
-  }
-
-  private static CharSequence readFromAsString(final Reader reader) throws IOException {
-    StringBuilder sb = new StringBuilder(128);
-    char[] c = new char[BUFFER_SIZE];
-    int l;
-    while ((l = reader.read(c)) != -1) {
-      sb.append(c, 0, l);
+    @Override
+    public boolean isReadable(final Class<?> type, final Type genericType, final Annotation[] annotations,
+            final MediaType mediaType) {
+        return type == String.class  && isRaw(annotations);
     }
-    return sb;
-  }
 
-  @Override
-  public boolean isWriteable(final Class<?> type, final Type genericType, final Annotation[] annotations,
-          final MediaType mediaType) {
-    return CharSequence.class.isAssignableFrom(type) && DirectStringMessageProvider.isRaw(annotations);
-  }
+    @Override
+    public String readFrom(
+            final Class<String> type,
+            final Type genericType,
+            final Annotation[] annotations,
+            final MediaType mediaType,
+            final MultivaluedMap<String, String> httpHeaders,
+            final InputStream entityStream) throws IOException {
+        return readFromAsString(entityStream, mediaType);
+    }
 
-  @Override
-  public long getSize(final CharSequence s, final Class<?> type, final Type genericType, final Annotation[] annotations,
-          final MediaType mediaType) {
-    return s.length();
-  }
+    @Override
+    public boolean isWriteable(final Class<?> type, final Type genericType, final Annotation[] annotations,
+            final MediaType mediaType) {
+        return type == String.class && isRaw(annotations);
+    }
 
-  @Override
-  public void writeTo(
-          final CharSequence t,
-          final Class<?> type,
-          final Type genericType,
-          final Annotation[] annotations,
-          final MediaType mediaType,
-          final MultivaluedMap<String, Object> httpHeaders,
-          final OutputStream entityStream) throws IOException {
-    writeToAsString(t, entityStream, mediaType);
-  }
+    static boolean isRaw(final Annotation[] annotations) {
+      for (Annotation a :annotations) {
+        if (a.annotationType() == RawSerialization.class) {
+          return true;
+        }
+      }
+      return false;
+    }
 
-  public static void writeToAsString(final CharSequence s, final OutputStream out, final MediaType type)
-          throws IOException {
-    Writer osw = new OutputStreamWriter(out, getCharset(type));
-    osw.append(s);
-    osw.flush();
-  }
+    @Override
+    public long getSize(final String s, final Class<?> type, final Type genericType, final Annotation[] annotations,
+            final MediaType mediaType) {
+        return s.length();
+    }
 
+    @Override
+    public void writeTo(
+            final String t,
+            final Class<?> type,
+            final Type genericType,
+            final Annotation[] annotations,
+            final MediaType mediaType,
+            final MultivaluedMap<String, Object> httpHeaders,
+            final OutputStream entityStream) throws IOException {
+        writeToAsString(t, entityStream, mediaType);
+    }
 }
+

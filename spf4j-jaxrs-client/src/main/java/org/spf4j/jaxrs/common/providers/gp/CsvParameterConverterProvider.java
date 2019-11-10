@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.jaxrs.common.providers;
+package org.spf4j.jaxrs.common.providers.gp;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
@@ -25,6 +25,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.ws.rs.ext.ParamConverter;
@@ -35,6 +36,7 @@ import org.spf4j.io.csv.CsvParseException;
 import org.spf4j.io.csv.CsvReader;
 import org.spf4j.io.csv.CsvWriter;
 import org.spf4j.jaxrs.CsvParam;
+import org.spf4j.jaxrs.common.providers.ProviderUtils;
 
 /**
  * @author Zoltan Farkas
@@ -57,7 +59,10 @@ public final class CsvParameterConverterProvider implements ParamConverterProvid
 
   @Nullable
   private <T> ParamConverter getOthersConverter(final Class<T> clasz, final Type type, final Annotation[] annotations) {
-    for (ParamConverterProvider prov : providers) {
+    for (ParamConverterProvider prov : ProviderUtils.ordered(providers)) {
+      if (prov instanceof NullabilityParameterConverterProvider) {
+        continue;
+      }
       ParamConverter<T> converter = prov.getConverter(clasz, type, annotations);
       if (converter != null) {
         return converter;
@@ -107,10 +112,7 @@ public final class CsvParameterConverterProvider implements ParamConverterProvid
     }
 
     @Override
-    public Iterable fromString(@Nullable final String value) {
-      if (value == null) {
-        return null;
-      }
+    public Iterable fromString(@Nonnull final String value) {
       List result = new ArrayList();
       try {
         CsvReader reader = csv.reader(new StringReader(value));
@@ -124,7 +126,7 @@ public final class CsvParameterConverterProvider implements ParamConverterProvid
     }
 
     @Override
-    public String toString(final Iterable itrble) {
+    public String toString(@Nonnull final Iterable itrble) {
       StringWriter sw = new StringWriter(32);
       CsvWriter writer = csv.writer(sw);
       for (Object obj : itrble) {
