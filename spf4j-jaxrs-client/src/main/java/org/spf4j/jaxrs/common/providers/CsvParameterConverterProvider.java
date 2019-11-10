@@ -107,7 +107,10 @@ public final class CsvParameterConverterProvider implements ParamConverterProvid
     }
 
     @Override
-    public Iterable fromString(final String value) {
+    public Iterable fromString(@Nullable final String value) {
+      if (value == null) {
+        return null;
+      }
       List result = new ArrayList();
       try {
         CsvReader reader = csv.reader(new StringReader(value));
