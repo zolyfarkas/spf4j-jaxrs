@@ -19,3 +19,6 @@
 /spf4j-jaxrs-server/nb-configuration.xml
 /spf4j-jaxrs-grizzly/nb-configuration.xml
 /spf4j-jaxrs-avro-sql/target/
+/.idea/
+/pom.xml.versionsBackup
+/spf4j-jaxrs.iml
