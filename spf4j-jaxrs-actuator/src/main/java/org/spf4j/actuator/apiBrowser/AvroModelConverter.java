@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.apache.avro.LogicalType;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.reflect.ExtendedReflectData;
 import org.spf4j.avro.schema.Schemas;
 
@@ -55,20 +57,26 @@ public final class AvroModelConverter implements ModelConverter {
   @Override
   public Schema resolve(final AnnotatedType atype, final ModelConverterContext context,
           final Iterator<ModelConverter> chain) {
-    ExtendedReflectData reflector = ExtendedReflectData.get();
     Type type = atype.getType();
     Type actualType;
     if (type instanceof JavaType) {
       JavaType javaType = (JavaType) type;
       if (javaType.isArrayType() || javaType.isCollectionLikeType()) {
         actualType = java.lang.reflect.Array.newInstance(javaType.getContentType().getRawClass(), 0).getClass();
+      } else if (javaType.isTypeOrSubTypeOf(Iterable.class) && javaType.hasGenericTypes()) {
+        JavaType containedType = javaType.containedType(0);
+        Class<?> rawContainedClass = containedType.getRawClass();
+        if (rawContainedClass == GenericRecord.class || rawContainedClass == IndexedRecord.class) {
+          rawContainedClass = Object.class;
+        }
+        actualType = java.lang.reflect.Array.newInstance(rawContainedClass, 0).getClass();
       } else {
-        actualType = javaType.getRawClass();
+        actualType = javaType;
       }
     } else {
       actualType = type;
     }
-    org.apache.avro.Schema aSchema = reflector.getSchema(actualType);
+    org.apache.avro.Schema aSchema = ExtendedReflectData.get().getSchema(actualType);
     if (aSchema == null) { // fallback to jackson model introspector
       return jackson.resolve(atype, context, chain);
     }
