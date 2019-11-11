@@ -36,6 +36,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import org.apache.avro.LogicalType;
 import org.apache.avro.reflect.ExtendedReflectData;
+import org.spf4j.avro.schema.Schemas;
 
 /**
  *
@@ -74,22 +75,13 @@ public final class AvroModelConverter implements ModelConverter {
     return resolve(aSchema, new IdentityHashMap<>(), context);
   }
 
-  private static boolean isNullableUnion(final org.apache.avro.Schema aSchema) {
-    for (org.apache.avro.Schema s : aSchema.getTypes()) {
-      if (s.getType() == org.apache.avro.Schema.Type.NULL) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   @Nullable
   private static org.apache.avro.Schema nullableSchema(final org.apache.avro.Schema aSchema) {
     List<org.apache.avro.Schema> types = aSchema.getTypes();
     if (types.size() != 2) {
       return null;
     }
-    if (!isNullableUnion(aSchema)) {
+    if (!Schemas.isNullableUnion(aSchema)) {
       return null;
     }
     for (org.apache.avro.Schema s : types) {
