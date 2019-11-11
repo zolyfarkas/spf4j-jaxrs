@@ -196,7 +196,7 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
         @Override
         public GenericRecord next() {
           Object[] row = it.next();
-          LOG.debug("RawRow {}",  row);
+          LOG.debug("Raw Row {}",  (Object) row);
           GenericRecord record = IndexedRecords.fromRecord(rowSchema, row);
           LOG.debug("Row",  record);
           return record;
