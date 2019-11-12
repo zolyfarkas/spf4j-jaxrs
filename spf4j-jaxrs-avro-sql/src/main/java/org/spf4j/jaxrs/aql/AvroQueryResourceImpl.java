@@ -9,6 +9,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Path;
+import javax.ws.rs.core.GenericEntity;
+import javax.ws.rs.core.Response;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.reflect.AvroSchema;
@@ -38,12 +40,14 @@ import org.spf4j.log.ExecContextLogger;
 import org.spf4j.avro.calcite.AvroDataSetAsProjectableFilterableTable;
 import org.spf4j.aql.AvroDataSetContract;
 import org.spf4j.avro.calcite.PlannerUtils;
+import org.spf4j.http.Headers;
+import org.spf4j.http.HttpWarning;
 
 /**
  * @author Zoltan Farkas
  */
 @Path("avql/query")
-@SuppressFBWarnings("EXS_EXCEPTION_SOFTENING_NO_CHECKED")
+@SuppressFBWarnings({ "EXS_EXCEPTION_SOFTENING_NO_CHECKED",  "SIC_INNER_SHOULD_BE_STATIC_ANON" })
 public final class AvroQueryResourceImpl implements AvroQueryResource {
 
   private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(AvroQueryResourceImpl.class));
@@ -77,20 +81,30 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
   }
 
   @Override
-  public IterableArrayContent<GenericRecord> query(final String query) {
+  public Response query(final String query) {
     return query(new StringReader(query));
   }
 
   @Override
-  public IterableArrayContent<GenericRecord> query(final Reader query) {
+  public Response query(final Reader query) {
     RelNode relNode = parsePlan(query);
     LOG.debug("exec plan: {}", new ReadablePlan(relNode));
     RelDataType rowType = relNode.getRowType();
     LOG.debug("Return row type: {}", rowType);
     Schema from = Types.from(rowType);
     LOG.debug("Return row schema: {}", from);
-    Interpreter interpreter = new Interpreter(new EmbededDataContext(new JavaTypeFactoryImpl()), relNode);
-    return new IterableInterpreter(from, interpreter);
+    EmbededDataContext dc = new EmbededDataContext(new JavaTypeFactoryImpl());
+    Interpreter interpreter = new Interpreter(dc, relNode);
+    Response.ResponseBuilder rb = Response.ok(
+            new GenericEntity<IterableArrayContent<GenericRecord>>(new IterableInterpreter(from, interpreter)) { });
+    Map<String, String> deprecations = (Map<String, String>) dc.get(EmbededDataContext.DEPRECATIONS);
+    if (deprecations != null && !deprecations.isEmpty()) {
+      for (Map.Entry<String, String> dep : deprecations.entrySet()) {
+        rb.header(Headers.WARNING, new HttpWarning(HttpWarning.MISCELLANEOUS, "deprecation",
+          "Deprecated " + dep.getKey() + "; " + dep.getValue()));
+      }
+    }
+    return rb.build();
   }
 
   @Override
@@ -124,10 +138,6 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
       throw new RuntimeException(ex);
     }
     RelNode relNode = rel.project();
-// Interpreter does not implement corelations
-//    relNode = RelDecorrelator.decorrelateQuery(relNode, config.getSqlToRelConverterConfig()
-//            .getRelBuilderFactory().create(relNode.getCluster(), null));
-//    LOG.debug("Decorelated plan {}", new ReadablePlan(relNode));
     return PlannerUtils.pushDownPredicatesAndProjection(relNode);
   }
 

@@ -25,9 +25,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Response;
 import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericRecord;
-import org.spf4j.jaxrs.IterableArrayContent;
 
 /**
  * REST avro sql endpoint.
@@ -38,12 +37,12 @@ public interface AvroQueryResource {
 
   @GET
   @Produces({"application/json", "application/avro+json", "application/avro"})
-  IterableArrayContent<GenericRecord> query(@QueryParam("query") String query);
+  Response query(@QueryParam("query") String query);
 
   @POST
   @Produces({"application/json", "application/avro+json", "application/avro"})
   @Consumes("text/plain")
-  IterableArrayContent<GenericRecord> query(Reader query);
+  Response query(Reader query);
 
 
   @GET
