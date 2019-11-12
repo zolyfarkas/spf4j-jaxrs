@@ -20,7 +20,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.ext.ParamConverter;
@@ -32,6 +31,7 @@ import org.apache.avro.specific.SpecificRecord;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.tools.RelConversionException;
 import org.apache.calcite.tools.ValidationException;
+import org.spf4j.avro.SqlPredicate;
 import org.spf4j.avro.calcite.SqlRowPredicate;
 
 /**
@@ -45,7 +45,7 @@ public final class SqlRowPredicateParameterConverterProvider implements ParamCon
   @Override
   @Nullable
   public <T> ParamConverter<T> getConverter(final Class<T> clasz, final Type type, final Annotation[] annotations) {
-    if (Predicate.class.isAssignableFrom(clasz) && type instanceof ParameterizedType) {
+    if (SqlPredicate.class.isAssignableFrom(clasz) && type instanceof ParameterizedType) {
       Type typeArgument = ((ParameterizedType) type).getActualTypeArguments()[0];
       TypeToken<?> tt = TypeToken.of(typeArgument);
       if (tt.isSubtypeOf(SpecificRecord.class)) {
@@ -62,7 +62,7 @@ public final class SqlRowPredicateParameterConverterProvider implements ParamCon
     return null;
   }
 
-  private static class ParamConverterImpl implements ParamConverter<Predicate<? extends IndexedRecord>> {
+  private static class ParamConverterImpl implements ParamConverter<SqlPredicate<? extends IndexedRecord>> {
 
     private final Schema rowSchema;
 
@@ -72,7 +72,7 @@ public final class SqlRowPredicateParameterConverterProvider implements ParamCon
 
     @Override
     @Nullable
-    public Predicate<? extends IndexedRecord> fromString(@Nullable final String value) {
+    public SqlPredicate<? extends IndexedRecord> fromString(@Nullable final String value) {
       if (value == null) {
         return null;
       }
@@ -84,8 +84,8 @@ public final class SqlRowPredicateParameterConverterProvider implements ParamCon
     }
 
     @Override
-    public String toString(final Predicate<? extends IndexedRecord> value) {
-      return value.toString();
+    public String toString(final SqlPredicate<? extends IndexedRecord> value) {
+      return value.getSqlString();
     }
   }
 
