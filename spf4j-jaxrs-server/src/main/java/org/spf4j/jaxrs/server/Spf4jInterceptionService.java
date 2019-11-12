@@ -203,7 +203,7 @@ public final class Spf4jInterceptionService implements InterceptionService {
       ExecutionContext current = ExecutionContexts.current();
       CountingHttpServletResponse resp = current.get(ContextTags.HTTP_RESP);
       for (HttpWarning warning: warnings) {
-        current.add(ContextTags.HTTP_WARNINGS, warning);
+        ContextTags.HTTP_WARNINGS.addToContext(current, warning);
         resp.addHeader(Headers.WARNING, warning.toString());
       }
       return invocation.proceed();

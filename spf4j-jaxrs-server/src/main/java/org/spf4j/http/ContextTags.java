@@ -1,8 +1,10 @@
 
 package org.spf4j.http;
 
+import gnu.trove.set.hash.THashSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContext.Tag;
 import org.spf4j.log.Level;
@@ -47,31 +49,7 @@ public final class ContextTags {
   /**
    * Http warnings attached to current execution context.
    */
-  public static final Tag<List<HttpWarning>> HTTP_WARNINGS =  new Tag<List<HttpWarning>>() {
-    @Override
-    public String toString() {
-      return "HW";
-    }
-
-    @Override
-    public List<HttpWarning> combine(final List<HttpWarning> existing, final List<HttpWarning> current) {
-      if (existing == null) {
-        return current;
-      } else {
-        List<HttpWarning> result = new ArrayList<>(existing.size() + current.size());
-        result.addAll(existing);
-        result.addAll(current);
-        return result;
-      }
-    }
-
-    @Override
-    public boolean pushOnClose(final ExecutionContext.Relation relation) {
-      return relation == ExecutionContext.Relation.CHILD_OF;
-    }
-
-
-  };
+  public static final TagImpl HTTP_WARNINGS =  new TagImpl();
 
   /**
    * Upgrade the log level of the standard LOG entry for the context.
@@ -111,6 +89,44 @@ public final class ContextTags {
       return "HRESP";
     }
   };
+
+  public static final class TagImpl implements Tag<Set<HttpWarning>> {
+
+    @Override
+    public String toString() {
+      return "HW";
+    }
+
+    public void addToContext(final ExecutionContext ctx, final HttpWarning warning) {
+      ctx.compute(this, (k, v) -> {
+        Set<HttpWarning> result;
+        if (v == null) {
+          result = new THashSet<>(2);
+        } else {
+          result = v;
+        }
+        result.add(warning);
+        return result;
+      });
+    }
+
+    @Override
+    public Set<HttpWarning> combine(final Set<HttpWarning> existing, final Set<HttpWarning> current) {
+      if (existing == null) {
+        return current;
+      } else {
+        Set<HttpWarning> result = new THashSet<>(existing.size() + current.size());
+        result.addAll(existing);
+        result.addAll(current);
+        return result;
+      }
+    }
+
+    @Override
+    public boolean pushOnClose(final ExecutionContext.Relation relation) {
+      return relation == ExecutionContext.Relation.CHILD_OF;
+    }
+  }
 
 
 }

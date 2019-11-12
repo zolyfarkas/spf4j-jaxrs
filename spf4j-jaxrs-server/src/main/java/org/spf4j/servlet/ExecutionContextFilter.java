@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -263,7 +264,7 @@ public final class ExecutionContextFilter implements Filter {
       }
     }
     boolean clientWarning = false;
-    List<HttpWarning> warnings = ctx.get(ContextTags.HTTP_WARNINGS);
+    Set<HttpWarning> warnings = ctx.get(ContextTags.HTTP_WARNINGS);
     if (warnings != null) {
       if (logAttrs == null) {
         logAttrs = new ArrayList<>(warnings);
