@@ -44,7 +44,7 @@ import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
  */
 @ProjectionSupport
 @Provider
-@Priority(Priorities.ENTITY_CODER - 10)
+@Priority(Priorities.ENTITY_CODER + 10)
 public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
 
   private static final Logger LOG = LoggerFactory.getLogger(ProjectionJaxRsFilter.class);
