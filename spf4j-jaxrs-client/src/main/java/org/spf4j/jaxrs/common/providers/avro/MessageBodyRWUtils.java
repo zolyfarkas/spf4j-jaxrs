@@ -25,6 +25,7 @@ import javax.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.apache.avro.reflect.AvroSchema;
 import org.apache.avro.reflect.ExtendedReflectData;
+import org.spf4j.jaxrs.AvroContainer;
 import org.spf4j.jaxrs.StreamingArrayContent;
 
 /**
@@ -73,6 +74,9 @@ public final class MessageBodyRWUtils {
   @Nonnull
   public static Schema getAvroSchemaFromType(final Class<?> type,
           final Type genericType, @Nullable final Object object, final Annotation[] annotations) {
+    if (object instanceof AvroContainer) {
+      return Schema.createArray(((AvroContainer) object).getElementSchema());
+    }
     for (Annotation annot : annotations) {
       if (annot.annotationType() == AvroSchema.class) {
         return new Schema.Parser().parse(((AvroSchema) annot).value()); //todo cache parsing.
