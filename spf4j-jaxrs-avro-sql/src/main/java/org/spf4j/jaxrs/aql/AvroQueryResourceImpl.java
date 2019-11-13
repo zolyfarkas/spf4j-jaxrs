@@ -9,7 +9,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.Response;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
@@ -95,8 +94,7 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
     LOG.debug("Return row schema: {}", from);
     EmbededDataContext dc = new EmbededDataContext(new JavaTypeFactoryImpl());
     Interpreter interpreter = new Interpreter(dc, relNode);
-    Response.ResponseBuilder rb = Response.ok(
-            new GenericEntity<IterableArrayContent<GenericRecord>>(new IterableInterpreter(from, interpreter)) { });
+    Response.ResponseBuilder rb = Response.ok(new IterableInterpreter(from, interpreter));
     Map<String, String> deprecations = (Map<String, String>) dc.get(EmbededDataContext.DEPRECATIONS);
     if (deprecations != null && !deprecations.isEmpty()) {
       for (Map.Entry<String, String> dep : deprecations.entrySet()) {

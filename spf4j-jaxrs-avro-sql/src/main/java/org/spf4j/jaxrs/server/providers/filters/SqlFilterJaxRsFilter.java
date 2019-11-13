@@ -73,14 +73,15 @@ public final class SqlFilterJaxRsFilter implements ContainerResponseFilter {
     LOG.debug("Filtering: {} entity: {}", where, entity);
     Schema sourceSchema = MessageBodyRWUtils.getAvroSchemaFromType(responseContext.getEntityClass(),
             responseContext.getEntityType(), entity, responseContext.getEntityAnnotations());
+    Schema sourceCompType = sourceSchema.getElementType();
     SqlRowPredicate predicate;
     try {
-      predicate = new SqlRowPredicate(where, sourceSchema.getElementType());
+      predicate = new SqlRowPredicate(where, sourceCompType);
     } catch (SqlParseException | ValidationException | RelConversionException ex) {
       throw new ClientErrorException("Invalid predicate " + where, 400, ex);
     }
     Iterable<IndexedRecord> filtered = Iterables.filter(entity, predicate::test);
-    IterableArrayContent<IndexedRecord> fresp = IterableArrayContent.from(filtered, cl, bufferSize, sourceSchema);
+    IterableArrayContent<IndexedRecord> fresp = IterableArrayContent.from(filtered, cl, bufferSize, sourceCompType);
     responseContext.setEntity(fresp);
   }
 
