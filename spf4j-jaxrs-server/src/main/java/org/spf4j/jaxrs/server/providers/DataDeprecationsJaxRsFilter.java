@@ -17,6 +17,8 @@ package org.spf4j.jaxrs.server.providers;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -39,8 +41,17 @@ public final class DataDeprecationsJaxRsFilter implements ContainerResponseFilte
 
   @Override
   public void filter(final ContainerRequestContext requestContext, final ContainerResponseContext responseContext) {
-    Schema respSchema = MessageBodyRWUtils.getAvroSchemaFromType(responseContext.getEntityClass(),
-            responseContext.getEntityType(), responseContext.getEntity(), responseContext.getEntityAnnotations());
+    Schema respSchema;
+    Object entity = responseContext.getEntity();
+    try {
+       respSchema = MessageBodyRWUtils.getAvroSchemaFromType(responseContext.getEntityClass(),
+            responseContext.getEntityType(), entity, responseContext.getEntityAnnotations());
+    } catch (RuntimeException e) {
+      Logger logger = Logger.getLogger(DataDeprecationsJaxRsFilter.class.getName());
+      logger.log(Level.FINE, "No schema available for {0}", entity);
+      logger.log(Level.FINE, "Schema unavailability reason", e);
+      return;
+    }
     Map<String, String> deprecations = new HashMap<>(4);
     Schemas.deprecations(respSchema, deprecations::put);
     if (deprecations.isEmpty()) {
