@@ -180,7 +180,8 @@ public class JmxResource implements JmxRestApi {
           } catch (AttributeNotFoundException | InstanceNotFoundException ex) {
             throw new NotFoundException(ex);
           } catch (RuntimeMBeanException ex) {
-            ExecutionContexts.current().add(ContextTags.HTTP_WARNINGS, new HttpWarning(HttpWarning.MISCELLANEOUS,
+            ContextTags.HTTP_WARNINGS.addToContext(ExecutionContexts.current(),
+                    new HttpWarning(HttpWarning.MISCELLANEOUS,
                     "jmx", ex.getMessage()));
             LOG.warn("Unable to read value for {}", attr.getName(), attr, ex);
           }
