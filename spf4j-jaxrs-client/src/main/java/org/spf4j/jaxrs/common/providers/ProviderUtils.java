@@ -15,11 +15,14 @@
  */
 package org.spf4j.jaxrs.common.providers;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
+import javax.ws.rs.core.MediaType;
 import org.spf4j.base.Reflections;
 
 /**
@@ -67,4 +70,10 @@ public final class ProviderUtils {
     });
     return result;
   }
+
+  public static Charset getCharset(final MediaType m) {
+    String name = m.getParameters().get(MediaType.CHARSET_PARAMETER);
+    return name == null ? StandardCharsets.UTF_8 : Charset.forName(name);
+  }
+
 }
