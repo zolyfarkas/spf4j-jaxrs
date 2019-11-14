@@ -16,6 +16,10 @@
 package org.spf4j.jaxrs.aql;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.io.Reader;
 import java.util.Map;
 import javax.ws.rs.Consumes;
@@ -37,11 +41,33 @@ public interface AvroQueryResource {
 
   @GET
   @Produces({"application/json", "application/avro+json", "application/avro"})
+  @Operation(
+         description = "Run a SQL query, for a list of queryable entities please see schemas endpoint",
+         responses = {
+           @ApiResponse(
+                 description = "Return a resultset (array of objects)",
+                 responseCode = "200",
+                 content = @Content(array = @ArraySchema(schema
+                                = @io.swagger.v3.oas.annotations.media.Schema(implementation = Object.class))
+                         ))
+         }
+  )
   Response query(@QueryParam("query") String query);
 
   @POST
   @Produces({"application/json", "application/avro+json", "application/avro"})
   @Consumes("text/plain")
+  @Operation(
+         description = "Run a SQL query, for a list of queryable entities please see schemas endpoint",
+         responses = {
+           @ApiResponse(
+                 description = "Return a resultset (array of objects)",
+                 responseCode = "200",
+                 content = @Content(array = @ArraySchema(schema
+                                = @io.swagger.v3.oas.annotations.media.Schema(implementation = Object.class))
+                         ))
+         }
+  )
   Response query(Reader query);
 
 
