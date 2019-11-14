@@ -35,6 +35,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import org.apache.avro.Schema;
+import org.apache.calcite.rel.RelNode;
 
 /**
  * REST avro sql endpoint.
@@ -85,14 +86,14 @@ public interface AvroQueryResource {
 
   @GET
   @Path("plan")
-  @Produces({"text/plain"})
-  CharSequence plan(@QueryParam("query") String query);
+  @Produces({"text/plain", "application/json"})
+  RelNode plan(@QueryParam("query") String query);
 
   @POST
   @Path("plan")
-  @Produces({"text/plain"})
+  @Produces({"text/plain", "application/json"})
   @Consumes("text/plain")
-  CharSequence plan(Reader query);
+  RelNode plan(Reader query);
 
 
   @GET
