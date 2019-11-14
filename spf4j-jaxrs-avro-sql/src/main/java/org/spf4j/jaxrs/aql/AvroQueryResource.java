@@ -17,8 +17,12 @@ package org.spf4j.jaxrs.aql;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.io.Reader;
 import java.util.Map;
@@ -52,13 +56,20 @@ public interface AvroQueryResource {
                          ))
          }
   )
-  Response query(@QueryParam("query") String query);
+  Response query(
+          @Parameter(name = "query", in = ParameterIn.QUERY,
+            schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = String.class),
+            description = "sql select statement", example = "select a,b,c from t where ...")
+          @QueryParam("query") String query);
 
   @POST
   @Produces({"application/json", "application/avro+json", "application/avro"})
   @Consumes("text/plain")
   @Operation(
          description = "Run a SQL query, for a list of queryable entities please see schemas endpoint",
+         requestBody = @RequestBody(content = @Content(
+                 examples = @ExampleObject(value = "select a,b,c from t where ..."),
+                 schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = String.class))),
          responses = {
            @ApiResponse(
                  description = "Return a resultset (array of objects)",
@@ -68,7 +79,8 @@ public interface AvroQueryResource {
                          ))
          }
   )
-  Response query(Reader query);
+  Response query(
+          Reader query);
 
 
   @GET
