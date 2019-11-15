@@ -97,6 +97,18 @@ public interface AvroQueryResource {
 
 
   @GET
+  @Path("schema")
+  @Produces({"application/json"})
+  Schema schema(@QueryParam("query") String query);
+
+  @POST
+  @Path("schema")
+  @Produces({"application/json"})
+  @Consumes("text/plain")
+  Schema schema(Reader query);
+
+
+  @GET
   @Path("schemas")
   @Produces({"application/json"})
   Map<String, Schema> schemas();

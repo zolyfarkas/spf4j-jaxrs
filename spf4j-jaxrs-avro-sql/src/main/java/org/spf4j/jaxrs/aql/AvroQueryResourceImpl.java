@@ -154,6 +154,16 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
     return "QueryResourceImpl{" + "schemas=" + schemas + '}';
   }
 
+  @Override
+  public Schema schema(final String query) {
+    return schema(new StringReader(query));
+  }
+
+  @Override
+  public Schema schema(final Reader query) {
+    return Types.from(parsePlan(query).getRowType());
+  }
+
 
 
   private static class ReadablePlan extends Object {
