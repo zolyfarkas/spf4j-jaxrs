@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.jaxrs.server.providers.msg_rw;
+package org.spf4j.jaxrs.aql.server.providers.msg_rw;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,8 +35,8 @@ import org.spf4j.jaxrs.common.providers.ProviderUtils;
  * @author Zoltan Farkas
  */
 @Provider
-@Produces("application/json")
-public final class PlanJsonMessageBodyWriter implements MessageBodyWriter<RelNode> {
+@Produces("text/plain")
+public final class PlanTextMessageBodyWriter implements MessageBodyWriter<RelNode> {
 
   @Override
   public boolean isWriteable(final Class<?> type, final Type genericType,
@@ -48,7 +48,7 @@ public final class PlanJsonMessageBodyWriter implements MessageBodyWriter<RelNod
   public void writeTo(final RelNode t, final Class<?> type, final Type genericType, final Annotation[] annotations,
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream) throws IOException {
-    String dumpPlan = RelOptUtil.dumpPlan("", t, SqlExplainFormat.JSON, SqlExplainLevel.ALL_ATTRIBUTES);
+    String dumpPlan = RelOptUtil.dumpPlan("", t, SqlExplainFormat.TEXT, SqlExplainLevel.ALL_ATTRIBUTES);
     entityStream.write(dumpPlan.getBytes(ProviderUtils.getCharset(mediaType)));
   }
 

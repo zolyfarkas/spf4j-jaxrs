@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.jaxrs.server.providers.filters;
+package org.spf4j.jaxrs.aql.server.providers.filters;
 
 
 import com.google.common.collect.Iterables;
 import java.io.Closeable;
-import java.util.List;
 import javax.annotation.Priority;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Priorities;
@@ -29,53 +28,36 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
+import org.apache.calcite.sql.parser.SqlParseException;
+import org.apache.calcite.tools.RelConversionException;
+import org.apache.calcite.tools.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spf4j.avro.schema.Schemas;
-import org.spf4j.io.Csv;
-import org.spf4j.io.csv.CsvParseException;
+import org.spf4j.avro.calcite.SqlRowPredicate;
 import org.spf4j.jaxrs.Buffered;
 import org.spf4j.jaxrs.IterableArrayContent;
-import org.spf4j.jaxrs.ProjectionSupport;
+import org.spf4j.jaxrs.SqlFilterSupport;
 import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
 
 /**
  * @author Zoltan Farkas
  */
-@ProjectionSupport
+@SqlFilterSupport
 @Provider
-@Priority(Priorities.ENTITY_CODER + 10)
-public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
+@Priority(Priorities.ENTITY_CODER + 15)
+public final class SqlFilterJaxRsFilter implements ContainerResponseFilter {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ProjectionJaxRsFilter.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SqlFilterJaxRsFilter.class);
 
   @Override
   public void filter(final ContainerRequestContext requestContext,
           final ContainerResponseContext responseContext) {
     MultivaluedMap<String, String> qp = requestContext.getUriInfo().getQueryParameters();
-    String select = qp.getFirst("_project");
-    if (select == null) {
+    String where = qp.getFirst("_where");
+    if (where == null) {
       return;
     }
-    List<String> projection;
-    try {
-      projection = Csv.readRow(select);
-    } catch (CsvParseException ex) {
-      throw new ClientErrorException("Invalid projection " + select, 400, ex);
-    }
-    Iterable<? extends IndexedRecord> entity = (Iterable<? extends IndexedRecord>) responseContext.getEntity();
-    LOG.debug("Projecting: {} entity: {}", select, entity);
-    Schema sourceSchema = MessageBodyRWUtils.getAvroSchemaFromType(responseContext.getEntityClass(),
-            responseContext.getEntityType(), entity, responseContext.getEntityAnnotations());
-    if (sourceSchema.getType() != Schema.Type.ARRAY) {
-      throw new IllegalStateException("you can only use " + this
-              + " with methods that return an array/collection/iterable");
-    }
-    Schema elementType = sourceSchema.getElementType();
-    Schema resultSchema = Schemas.project(elementType, projection);
-    if (resultSchema == null) {
-      throw new ClientErrorException("Invalid projection " + projection + " of " + elementType, 400);
-    }
+    Iterable<IndexedRecord> entity = (Iterable<IndexedRecord>) responseContext.getEntity();
     Closeable cl;
     if (entity instanceof Closeable) {
       cl = (Closeable) entity;
@@ -88,10 +70,19 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
     } else {
       bufferSize = 64;
     }
-    IterableArrayContent<IndexedRecord> projected = IterableArrayContent.from(Iterables.transform(entity,
-            (x) -> Schemas.project(resultSchema, elementType, x)), cl, bufferSize,
-            resultSchema);
-    responseContext.setEntity(projected);
+    LOG.debug("Filtering: {} entity: {}", where, entity);
+    Schema sourceSchema = MessageBodyRWUtils.getAvroSchemaFromType(responseContext.getEntityClass(),
+            responseContext.getEntityType(), entity, responseContext.getEntityAnnotations());
+    Schema sourceCompType = sourceSchema.getElementType();
+    SqlRowPredicate predicate;
+    try {
+      predicate = new SqlRowPredicate(where, sourceCompType);
+    } catch (SqlParseException | ValidationException | RelConversionException ex) {
+      throw new ClientErrorException("Invalid predicate " + where, 400, ex);
+    }
+    Iterable<IndexedRecord> filtered = Iterables.filter(entity, predicate::test);
+    IterableArrayContent<IndexedRecord> fresp = IterableArrayContent.from(filtered, cl, bufferSize, sourceCompType);
+    responseContext.setEntity(fresp);
   }
 
 }
