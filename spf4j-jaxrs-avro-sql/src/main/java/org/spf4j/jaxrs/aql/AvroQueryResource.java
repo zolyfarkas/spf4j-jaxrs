@@ -33,7 +33,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import org.apache.avro.Schema;
 import org.apache.calcite.rel.RelNode;
 
@@ -61,7 +63,8 @@ public interface AvroQueryResource {
           @Parameter(name = "query", in = ParameterIn.QUERY,
             schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = String.class),
             description = "sql select statement", example = "select a,b,c from t where ...")
-          @QueryParam("query") String query);
+          @QueryParam("query") String query,
+          @Context SecurityContext secCtx);
 
   @POST
   @Produces({"application/json", "application/avro+json", "application/avro"})
@@ -81,41 +84,42 @@ public interface AvroQueryResource {
          }
   )
   Response query(
-          Reader query);
+          Reader query,
+          @Context SecurityContext secCtx);
 
 
   @GET
   @Path("plan")
   @Produces({"text/plain", "application/json"})
-  RelNode plan(@QueryParam("query") String query);
+  RelNode plan(@QueryParam("query") String query, @Context SecurityContext secCtx);
 
   @POST
   @Path("plan")
   @Produces({"text/plain", "application/json"})
   @Consumes("text/plain")
-  RelNode plan(Reader query);
+  RelNode plan(Reader query, @Context SecurityContext secCtx);
 
 
   @GET
   @Path("schema")
   @Produces({"application/json"})
-  Schema schema(@QueryParam("query") String query);
+  Schema schema(@QueryParam("query") String query, @Context SecurityContext secCtx);
 
   @POST
   @Path("schema")
   @Produces({"application/json"})
   @Consumes("text/plain")
-  Schema schema(Reader query);
+  Schema schema(Reader query, @Context SecurityContext secCtx);
 
 
   @GET
   @Path("schemas")
   @Produces({"application/json"})
-  Map<String, Schema> schemas();
+  Map<String, Schema> schemas(@Context SecurityContext secCtx);
 
   @GET
   @Path("schemas/{entityName}")
   @Produces({"application/json"})
-  Schema entitySchema(@PathParam("entityName") String entityName);
+  Schema entitySchema(@PathParam("entityName") String entityName, @Context SecurityContext secCtx);
 
 }
