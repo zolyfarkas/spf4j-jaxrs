@@ -12,7 +12,6 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import org.apache.avro.Schema;
@@ -93,12 +92,12 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
   }
 
   @Override
-  public Response query(final String query, @Context final SecurityContext secCtx) {
+  public Response query(final String query, final SecurityContext secCtx) {
     return query(new StringReader(query), secCtx);
   }
 
   @Override
-  public Response query(final Reader query, @Context final SecurityContext secCtx) {
+  public Response query(final Reader query, final SecurityContext secCtx) {
     RelNode relNode = parsePlan(query);
     LOG.debug("exec plan: {}", new ReadablePlan(relNode));
     RelDataType rowType = relNode.getRowType();
@@ -120,12 +119,12 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
   }
 
   @Override
-  public RelNode plan(final Reader query, @Context final SecurityContext secCtx) {
+  public RelNode plan(final Reader query, final SecurityContext secCtx) {
     return parsePlan(query);
   }
 
   @Override
-  public RelNode plan(final String query, @Context final SecurityContext secCtx) {
+  public RelNode plan(final String query, final SecurityContext secCtx) {
     return plan(new StringReader(query), secCtx);
   }
 
@@ -154,12 +153,12 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
 
   @Override
   @AvroSchema("{ \"type\" : \"map\", \"values\" : { \"type\" : \"string\" , \"logicalType\" : \"avsc\"} } ")
-  public Map<String, Schema> schemas(@Context final SecurityContext secCtx) {
+  public Map<String, Schema> schemas(final SecurityContext secCtx) {
     return schemas;
   }
 
   @Override
-  public Schema entitySchema(final String entityName, @Context final SecurityContext secCtx) {
+  public Schema entitySchema(final String entityName, final SecurityContext secCtx) {
     return schemas.get(entityName);
   }
 
@@ -169,12 +168,12 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
   }
 
   @Override
-  public Schema schema(final String query, @Context final SecurityContext secCtx) {
+  public Schema schema(final String query, final SecurityContext secCtx) {
     return schema(new StringReader(query), secCtx);
   }
 
   @Override
-  public Schema schema(final Reader query, @Context final SecurityContext secCtx) {
+  public Schema schema(final Reader query, final SecurityContext secCtx) {
     return Types.from(parsePlan(query).getRowType());
   }
 

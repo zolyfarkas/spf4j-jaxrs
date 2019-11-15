@@ -17,7 +17,9 @@ package org.spf4j.jaxrs.aql;
 
 import java.security.Principal;
 import java.util.Properties;
+import org.glassfish.jersey.spi.Contract;
 
+@Contract
 public interface AbacAuthorizer {
 
   /**
