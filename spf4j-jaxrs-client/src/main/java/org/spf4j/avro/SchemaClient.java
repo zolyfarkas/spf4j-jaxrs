@@ -43,6 +43,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.apache.avro.AvroNamesRefResolver;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
 import org.glassfish.jersey.client.ClientProperties;
@@ -193,7 +194,9 @@ public final class SchemaClient implements SchemaResolver {
         }
         Path schemaPath = root.resolve(schemaName.replace('.', '/') + ".avsc");
         try (BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(schemaPath))) {
-          return new Schema.Parser().parse(bis);
+          Schema.Parser parser = new Schema.Parser(new AvroNamesRefResolver(this));
+          parser.setValidate(false);
+          return parser.parse(bis);
         }
       }
     }
