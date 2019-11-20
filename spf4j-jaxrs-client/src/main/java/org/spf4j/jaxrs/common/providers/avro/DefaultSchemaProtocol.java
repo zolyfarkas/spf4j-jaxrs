@@ -55,7 +55,9 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
     if (schemaRefStr == null) {
       return null;
     } else {
-      return new Schema.Parser(new AvroNamesRefResolver(client)).parse(schemaRefStr);
+      Schema.Parser parser = new Schema.Parser(new AvroNamesRefResolver(client));
+      parser.setValidate(false);
+      return parser.parse(schemaRefStr);
     }
   }
 
