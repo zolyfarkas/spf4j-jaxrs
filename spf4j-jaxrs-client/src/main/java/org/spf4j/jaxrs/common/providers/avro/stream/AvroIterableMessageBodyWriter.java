@@ -66,11 +66,18 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
           Collection o = (Collection) t;
           if (o.isEmpty()) {
             elType = Object.class;
-            schema = Schema.createArray(Schema.createArray(Schema.create(Schema.Type.NULL)));
+            elemSchema = Schema.create(Schema.Type.NULL);
+            schema = Schema.createArray(Schema.createArray(elemSchema));
           } else {
-            elType = o.iterator().next().getClass();
-            schema = Schema.createArray(MessageBodyRWUtils.getAvroSchemaFromType(elType,
-                    Arrays.EMPTY_ANNOT_ARRAY));
+            Object elemVal = o.iterator().next();
+            Class<? extends Object> aClass = elemVal.getClass();
+            elType = aClass;
+            elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(aClass, elType, elemVal,
+                    Arrays.EMPTY_ANNOT_ARRAY);
+            if (elemSchema == null) {
+               throw new IllegalStateException("Cannot serialize " + elType);
+            }
+            schema = Schema.createArray(elemSchema);
           }
         } else {
           throw new IllegalStateException("Cannot serialize " + t);
@@ -78,6 +85,9 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
       } else {
         elType = genericType.getActualTypeArguments()[0];
         elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
+        if (elemSchema == null) {
+           throw new IllegalStateException("Cannot serialize " + t);
+        }
         schema = Schema.createArray(elemSchema);
       }
     } else {
