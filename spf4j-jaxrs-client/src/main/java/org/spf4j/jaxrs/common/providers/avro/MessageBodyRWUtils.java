@@ -75,7 +75,10 @@ public final class MessageBodyRWUtils {
   public static Schema getAvroSchemaFromType(final Class<?> type,
           final Type genericType, @Nullable final Object object, final Annotation[] annotations) {
     if (object instanceof AvroContainer) {
-      return Schema.createArray(((AvroContainer) object).getElementSchema());
+      Schema elementSchema = ((AvroContainer) object).getElementSchema();
+      if (elementSchema != null) {
+        return Schema.createArray(elementSchema);
+      }
     }
     for (Annotation annot : annotations) {
       if (annot.annotationType() == AvroSchema.class) {
