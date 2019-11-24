@@ -25,8 +25,8 @@ import javax.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.apache.avro.reflect.AvroSchema;
 import org.apache.avro.reflect.ExtendedReflectData;
+import org.spf4j.base.Reflections;
 import org.spf4j.jaxrs.AvroContainer;
-import org.spf4j.jaxrs.StreamingArrayContent;
 
 /**
  *
@@ -39,21 +39,22 @@ public final class MessageBodyRWUtils {
 
   private MessageBodyRWUtils() { }
 
-  public static ParameterizedType toParameterizedType(final Type genericType) {
+
+
+  public static ParameterizedType toParameterizedType(final Class<?> of, final Type genericType) {
     if (!(genericType instanceof ParameterizedType)) {
       if (genericType instanceof Class) {
-        Type[] genericInterfaces = ((Class) genericType).getGenericInterfaces();
-        for (Type t : genericInterfaces) {
+        for (Type t : Reflections.getImplementedGenericInterfaces((Class) genericType)) {
           if  (t instanceof ParameterizedType) {
             ParameterizedType pType = (ParameterizedType) t;
-            if (StreamingArrayContent.class.equals(pType.getRawType())) {
+            if (of.equals(pType.getRawType())) {
               return pType;
             }
           }
         }
-        throw new IllegalStateException("StreamingArrayContent type parameters must be known " + genericType);
+        throw new IllegalStateException(of.getName() + " type parameters must be known " + genericType);
       } else {
-        throw new IllegalStateException("StreamingArrayContent type parameters must be known " + genericType);
+        throw new IllegalStateException(of.getName() + " type parameters must be known " + genericType);
       }
     }
     return (ParameterizedType) genericType;

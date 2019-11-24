@@ -34,7 +34,7 @@ public class AvroStreamingMessageBodyReaderTest {
   @SuppressFBWarnings("DM_NEW_FOR_GETCLASS")
   public void testStreamingTypeIntrospection() {
     ParameterizedType pType = MessageBodyRWUtils
-            .toParameterizedType(new StreamingArrayContent<String>() {
+            .toParameterizedType(StreamingArrayContent.class, new StreamingArrayContent<String>() {
       @Override
       public void write(final ArrayWriter<String> output) {
         throw new UnsupportedOperationException("Not supported yet.");

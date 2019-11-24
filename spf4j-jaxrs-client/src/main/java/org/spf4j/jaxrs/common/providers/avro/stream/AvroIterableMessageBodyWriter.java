@@ -58,7 +58,7 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
     Schema elemSchema = t instanceof AvroContainer ? ((AvroContainer) t).getElementSchema() : null;
     Type elType;
     if (elemSchema == null) {
-      ParameterizedType genericType = MessageBodyRWUtils.toParameterizedType(pgenericType);
+      ParameterizedType genericType = MessageBodyRWUtils.toParameterizedType(Iterable.class, pgenericType);
       elType = genericType.getActualTypeArguments()[0];
       elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
       schema = Schema.createArray(elemSchema);
