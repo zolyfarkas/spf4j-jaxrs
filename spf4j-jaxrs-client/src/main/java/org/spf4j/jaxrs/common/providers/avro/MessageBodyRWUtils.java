@@ -40,7 +40,7 @@ public final class MessageBodyRWUtils {
   private MessageBodyRWUtils() { }
 
 
-
+  @Nullable
   public static ParameterizedType toParameterizedType(final Class<?> of, final Type genericType) {
     if (!(genericType instanceof ParameterizedType)) {
       if (genericType instanceof Class) {
@@ -52,9 +52,9 @@ public final class MessageBodyRWUtils {
             }
           }
         }
-        throw new IllegalStateException(of.getName() + " type parameters must be known " + genericType);
+        return null;
       } else {
-        throw new IllegalStateException(of.getName() + " type parameters must be known " + genericType);
+        return null;
       }
     }
     return (ParameterizedType) genericType;

@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -16,6 +17,7 @@ import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.reflect.ExtendedReflectDatumWriter;
 import org.apache.avro.AvroArrayWriter;
+import org.spf4j.base.Arrays;
 import org.spf4j.jaxrs.AvroContainer;
 import org.spf4j.jaxrs.Buffered;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
@@ -59,9 +61,25 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
     Type elType;
     if (elemSchema == null) {
       ParameterizedType genericType = MessageBodyRWUtils.toParameterizedType(Iterable.class, pgenericType);
-      elType = genericType.getActualTypeArguments()[0];
-      elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
-      schema = Schema.createArray(elemSchema);
+      if (genericType == null) {
+        if (t instanceof Collection) {
+          Collection o = (Collection) t;
+          if (o.isEmpty()) {
+            elType = Object.class;
+            schema = Schema.createArray(Schema.createArray(Schema.create(Schema.Type.NULL)));
+          } else {
+            elType = o.iterator().next().getClass();
+            schema = Schema.createArray(MessageBodyRWUtils.getAvroSchemaFromType(elType,
+                    Arrays.EMPTY_ANNOT_ARRAY));
+          }
+        } else {
+          throw new IllegalStateException("Cannot serialize " + t);
+        }
+      } else {
+        elType = genericType.getActualTypeArguments()[0];
+        elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
+        schema = Schema.createArray(elemSchema);
+      }
     } else {
       schema = Schema.createArray(elemSchema);
       elType = Object.class;
