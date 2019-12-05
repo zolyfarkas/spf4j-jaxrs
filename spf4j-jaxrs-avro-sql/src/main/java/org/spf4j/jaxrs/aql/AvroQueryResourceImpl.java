@@ -58,8 +58,6 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
 
   private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(AvroQueryResourceImpl.class));
 
-  private final Planner planner;
-
   private final Map<String, Schema> schemas;
 
   private final FrameworkConfig config;
@@ -86,7 +84,6 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
             .parserConfig(cfg)
             .defaultSchema(schema)
             .build();
-    this.planner = Frameworks.getPlanner(config);
     if (authorizer == null)   {
       this.authorizer = AbacAuthorizer.NO_ACCESS;
     } else {
@@ -96,6 +93,10 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
 
   public FrameworkConfig getConfig() {
     return config;
+  }
+
+  private Planner getPlanner() {
+     return Frameworks.getPlanner(config);
   }
 
 
@@ -137,6 +138,7 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
   }
 
   public RelNode parsePlan(final Reader query) {
+    Planner planner = getPlanner();
     SqlNode parse;
     try {
 
