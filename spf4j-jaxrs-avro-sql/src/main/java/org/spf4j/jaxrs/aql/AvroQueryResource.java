@@ -46,6 +46,13 @@ import org.apache.calcite.rel.RelNode;
 @SuppressFBWarnings("JAXRS_ENDPOINT")
 public interface AvroQueryResource {
 
+
+  /**
+   * Execute a SQL query against the available resources(tables)
+   * @param query the query string
+   * @param secCtx the security context.
+   * @return query result-set.
+   */
   @GET
   @Produces({"application/json", "application/avro+json", "application/avro"})
   @Operation(
@@ -66,6 +73,13 @@ public interface AvroQueryResource {
           @QueryParam("query") String query,
           @Context SecurityContext secCtx);
 
+
+  /**
+   * Execute a SQL query against the available resources(tables)
+   * @param query the query string
+   * @param secCtx the security context.s
+   * @return query result-set.
+   */
   @POST
   @Produces({"application/json", "application/avro+json", "application/avro"})
   @Consumes("text/plain")
@@ -88,11 +102,23 @@ public interface AvroQueryResource {
           @Context SecurityContext secCtx);
 
 
+  /**
+   * Retrieve the query plan for the executed query.
+   * @param query the query string.
+   * @param secCtx the security context.
+   * @return query execution plan.
+   */
   @GET
   @Path("plan")
   @Produces({"text/plain", "application/json"})
   RelNode plan(@QueryParam("query") String query, @Context SecurityContext secCtx);
 
+  /**
+   * Retrieve the query plan for the executed query.
+   * @param query the query string.
+   * @param secCtx he security context.
+   * @return query execution plan.
+   */
   @POST
   @Path("plan")
   @Produces({"text/plain", "application/json"})
@@ -100,11 +126,23 @@ public interface AvroQueryResource {
   RelNode plan(Reader query, @Context SecurityContext secCtx);
 
 
+  /**
+   * Retrieve the schema of the result-set returned by the query.
+   * @param query the query string.
+   * @param secCtx the security context.
+   * @return avro schema of the result-set.
+   */
   @GET
   @Path("schema")
   @Produces({"application/json"})
   Schema schema(@QueryParam("query") String query, @Context SecurityContext secCtx);
 
+  /**
+   * Retrieve the schema of the result-set returned by the query.
+   * @param query the query string.
+   * @param secCtx the security context.
+   * @return avro schema of the result-set.
+   */
   @POST
   @Path("schema")
   @Produces({"application/json"})
@@ -112,11 +150,22 @@ public interface AvroQueryResource {
   Schema schema(Reader query, @Context SecurityContext secCtx);
 
 
+  /**
+   * Get the table schemas available for query.
+   * @param secCtx the security context.
+   * @return a map of avro schemas.
+   */
   @GET
   @Path("schemas")
   @Produces({"application/json"})
   Map<String, Schema> schemas(@Context SecurityContext secCtx);
 
+  /**
+   * Get a specific table schema.
+   * @param entityName the table name.
+   * @param secCtx the security context.
+   * @return avro schema of the table.
+   */
   @GET
   @Path("schemas/{entityName}")
   @Produces({"application/json"})

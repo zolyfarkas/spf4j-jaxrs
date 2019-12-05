@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Properties;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
@@ -50,8 +51,10 @@ import org.spf4j.http.HttpWarning;
  * @author Zoltan Farkas
  */
 @Path("avql/query")
-@SuppressFBWarnings({ "EXS_EXCEPTION_SOFTENING_NO_CHECKED",  "SIC_INNER_SHOULD_BE_STATIC_ANON" })
-public final class AvroQueryResourceImpl implements AvroQueryResource {
+@SuppressFBWarnings({ "EXS_EXCEPTION_SOFTENING_NO_CHECKED" })
+@Singleton
+@SuppressWarnings("checkstyle:DesignForExtension")
+public class AvroQueryResourceImpl implements AvroQueryResource {
 
   private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(AvroQueryResourceImpl.class));
 
@@ -90,6 +93,11 @@ public final class AvroQueryResourceImpl implements AvroQueryResource {
       this.authorizer = authorizer;
     }
   }
+
+  public FrameworkConfig getConfig() {
+    return config;
+  }
+
 
   @Override
   public Response query(final String query, final SecurityContext secCtx) {
