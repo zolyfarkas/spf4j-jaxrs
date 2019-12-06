@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import javax.annotation.Nullable;
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.ClientErrorException;
@@ -89,6 +90,11 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
     } else {
       this.authorizer = authorizer;
     }
+  }
+
+  @PostConstruct
+  public void warmup() {
+    query("select 1", SaSecurityContext.INSTANCE);
   }
 
   public FrameworkConfig getConfig() {
