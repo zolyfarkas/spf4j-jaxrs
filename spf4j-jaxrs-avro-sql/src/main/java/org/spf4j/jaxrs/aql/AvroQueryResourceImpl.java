@@ -35,6 +35,7 @@ import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
 import org.apache.calcite.tools.RelConversionException;
 import org.apache.calcite.tools.ValidationException;
+import org.glassfish.hk2.api.Immediate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.avro.calcite.EmbededDataContext;
@@ -55,6 +56,7 @@ import org.spf4j.http.HttpWarning;
 @SuppressFBWarnings({ "EXS_EXCEPTION_SOFTENING_NO_CHECKED" })
 @Singleton
 @SuppressWarnings("checkstyle:DesignForExtension")
+@Immediate
 public class AvroQueryResourceImpl implements AvroQueryResource {
 
   private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(AvroQueryResourceImpl.class));
