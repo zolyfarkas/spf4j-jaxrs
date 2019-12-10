@@ -245,7 +245,7 @@ public final class ExecutionContextFilter implements Filter {
       if (logAttrs == null) {
         logAttrs = new ArrayList<>(2);
       }
-      logContextProfile(log, ctx);
+      logContextProfile(log, execTimeNanos, ctx);
       logAttrs.add(LogAttribute.of("performanceError", "exec time > " + etn + " ns"));
       if (level.ordinal() < Level.ERROR.ordinal()) {
         level = level.ERROR;
@@ -256,7 +256,7 @@ public final class ExecutionContextFilter implements Filter {
         if (logAttrs == null) {
           logAttrs = new ArrayList<>(2);
         }
-        logContextProfile(log, ctx);
+        logContextProfile(log, execTimeNanos, ctx);
         logAttrs.add(LogAttribute.of("performanceWarning", "exec time > " + wtn + " ns"));
         if (level.ordinal() < Level.WARN.ordinal()) {
           level = level.WARN;
@@ -389,12 +389,13 @@ public final class ExecutionContextFilter implements Filter {
     }
   }
 
-  private static void logContextProfile(final Logger logger, final ExecutionContext ctx) {
+  private static void logContextProfile(final Logger logger, final long execTimeNanos, final ExecutionContext ctx) {
     StackSamples stackSamples = ctx.getAndClearStackSamples();
     if (stackSamples != null) {
       logger.log(java.util.logging.Level.INFO, "Profile Detail for {0}",
               new Object[]{ctx.getName(), LogAttribute.traceId(ctx.getId()),
-        LogAttribute.profileSamples(stackSamples)});
+                LogAttribute.execTimeMicros(execTimeNanos, TimeUnit.NANOSECONDS),
+                LogAttribute.profileSamples(stackSamples)});
     }
   }
 
