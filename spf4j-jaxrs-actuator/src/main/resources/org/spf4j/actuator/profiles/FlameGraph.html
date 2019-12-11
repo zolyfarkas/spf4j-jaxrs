@@ -115,7 +115,7 @@
     // Example of how to set fixed chart height
     // flameGraph.height(540);
 
-    d3.json("stacks.json", function(error, data) {
+    d3.json("{{this}}", function(error, data) {
       if (error) return console.warn(error);
       d3.select("#chart")
           .datum(data)
