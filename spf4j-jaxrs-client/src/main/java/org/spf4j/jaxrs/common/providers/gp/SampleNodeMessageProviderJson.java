@@ -34,6 +34,7 @@ import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
 import org.glassfish.jersey.message.internal.AbstractMessageReaderWriterProvider;
+import org.spf4j.io.PushbackInputStreamEx;
 import org.spf4j.stackmonitor.SampleNode;
 
 /**
@@ -54,8 +55,14 @@ public final class SampleNodeMessageProviderJson
 
   @Override
   public SampleNode readFrom(final Class<SampleNode> type, final Type type1, final Annotation[] antns,
-          final MediaType mt, final MultivaluedMap<String, String> mm, final InputStream in)
+          final MediaType mt, final MultivaluedMap<String, String> mm, final InputStream pin)
           throws IOException {
+    PushbackInputStreamEx in = new PushbackInputStreamEx(pin);
+    int read = in.read();
+    if (read < 0) {
+      return null;
+    }
+    in.unread(read);
     Charset charset = AbstractMessageReaderWriterProvider.getCharset(mt);
     try (BufferedReader br = new BufferedReader(new InputStreamReader(in, charset))) {
       return SampleNode.parse(br).getSecond();
@@ -71,6 +78,9 @@ public final class SampleNodeMessageProviderJson
   public void writeTo(final SampleNode t, final Class<?> type, final Type type1, final Annotation[] antns,
           final MediaType mt, final MultivaluedMap<String, Object> mm, final OutputStream out)
           throws IOException {
+    if (t == null) {
+      return;
+    }
     Charset charset = AbstractMessageReaderWriterProvider.getCharset(mt);
     try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out, charset))) {
       t.writeJsonTo(bw);
