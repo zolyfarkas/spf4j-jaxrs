@@ -18,6 +18,7 @@ import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.base.avro.LogRecord;
 import org.spf4j.base.avro.Order;
+import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.log.AvroDataFileAppender;
 import org.spf4j.log.LogbackUtils;
 import org.spf4j.os.OperatingSystem;
@@ -43,6 +44,7 @@ public class LogsResource {
   @GET
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream"})
+  @ProjectionSupport
   public List<LogRecord> getLocalLogs(
           @QueryParam("tailOffset") @DefaultValue("0") final long tailOffset,
           @QueryParam("limit") @DefaultValue("1000") final int limit,
@@ -55,6 +57,7 @@ public class LogsResource {
   @GET
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream"})
+  @ProjectionSupport
   public List<LogRecord> getLocalLogs(@QueryParam("tailOffset") @DefaultValue("0") final long tailOffset,
           @QueryParam("limit") @DefaultValue("1000") final int limit,
           @QueryParam("filter") @Nullable final String filter,

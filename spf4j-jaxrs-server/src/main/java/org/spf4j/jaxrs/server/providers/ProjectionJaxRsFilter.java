@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.jaxrs.aql.server.providers.filters;
+package org.spf4j.jaxrs.server.providers;
 
 
 import com.google.common.collect.Iterables;

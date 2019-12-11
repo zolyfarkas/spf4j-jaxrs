@@ -43,6 +43,7 @@ import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
 import org.spf4j.concurrent.DefaultExecutor;
+import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
 import org.spf4j.log.LogPrinter;
@@ -119,6 +120,7 @@ public class LogsClusterResource {
   @GET
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream"})
+  @ProjectionSupport
   public void getClusterLogs(@QueryParam("limit") @DefaultValue("1000") final int limit,
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
@@ -140,6 +142,7 @@ public class LogsClusterResource {
   @GET
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream"})
+  @ProjectionSupport
   public void getClusterLogs(@QueryParam("limit") @DefaultValue("1000") final int limit,
           @QueryParam("filter") @Nullable final String filter,
            @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
