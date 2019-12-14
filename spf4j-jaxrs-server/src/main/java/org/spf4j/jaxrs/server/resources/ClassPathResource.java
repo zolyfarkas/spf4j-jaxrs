@@ -69,6 +69,10 @@ public class ClassPathResource {
     return cpBase;
   }
 
+  public List<String> getWelcomeFiles() {
+    return welcomeFiles;
+  }
+
   @Override
   public String toString() {
     return "ClassPathResource{" + "cpBase=" + cpBase + '}';

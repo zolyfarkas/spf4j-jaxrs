@@ -142,6 +142,14 @@ public class FilesResource {
       return mt;
   }
 
+  public Path getBase() {
+    return base;
+  }
+
+  public boolean isListDirectoryContents() {
+    return listDirectoryContents;
+  }
+
   @Override
   public String toString() {
     return "FilesResource{" + "base=" + base + '}';
