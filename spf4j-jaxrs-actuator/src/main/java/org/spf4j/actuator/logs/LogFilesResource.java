@@ -16,6 +16,7 @@
 package org.spf4j.actuator.logs;
 
 import java.nio.file.Paths;
+import javax.inject.Inject;
 import javax.ws.rs.Path;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.jaxrs.server.resources.FilesResource;
@@ -24,11 +25,12 @@ import org.spf4j.jaxrs.server.resources.FilesResource;
  * @author Zoltan Farkas
  */
 @Path("logFiles")
-public final class LogFilesResource {
+@SuppressWarnings("checkstyle:DesignForExtension") // jersey does not find sub-resource otherwise.
+public class LogFilesResource {
 
   private final FilesResource files;
 
-
+  @Inject
   public LogFilesResource(@ConfigProperty(name = "application.logFilesPath", defaultValue = "/var/log")
     final String basePath) {
     this.files = new FilesResource(Paths.get(basePath));
