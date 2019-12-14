@@ -24,8 +24,7 @@ import org.spf4j.jaxrs.server.resources.FilesResource;
  * @author Zoltan Farkas
  */
 @Path("logFiles")
-@SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
-public class LogFilesResource {
+public final class LogFilesResource {
 
   private final FilesResource files;
 
