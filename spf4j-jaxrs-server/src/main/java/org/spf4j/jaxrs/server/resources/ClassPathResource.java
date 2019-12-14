@@ -88,7 +88,7 @@ public class ClassPathResource {
 
   @GET
   @Path("{path:.*}")
-  public Response staticResources(@PathParam("path")  final String path) throws IOException {
+  public Response staticResources(@PathParam("path") final String path) throws IOException {
     String urlStr;
     if (path.startsWith("/")) {
       urlStr = cpBase + validateNoBackRef(path);

@@ -23,8 +23,10 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
@@ -63,12 +65,19 @@ public class FilesResource {
     this.listDirectoryContents = listDirectoryContents;
   }
 
+  @GET
+  public Response get(@HeaderParam("Range") @Nullable final HttpRange range,
+          @Context final Request request) throws IOException {
+    return get(Collections.emptyList(), range, request);
+  }
+
   @javax.ws.rs.Path("{path:.*}")
   @GET
   @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // try-resources gen code
   @SuppressForbiden // java.util.Date is my only choice.
   public Response get(@PathParam("path") final List<PathSegment> path,
-          @HeaderParam("Range") final HttpRange range, @Context final Request request) throws IOException {
+          @HeaderParam("Range") @Nullable final HttpRange range,
+          @Context final Request request) throws IOException {
     Path ltarget = base;
     for (PathSegment part : path) {
       String p = part.getPath();
