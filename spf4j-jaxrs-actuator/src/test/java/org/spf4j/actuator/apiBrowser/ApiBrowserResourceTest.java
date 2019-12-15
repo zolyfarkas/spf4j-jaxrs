@@ -38,7 +38,7 @@ public class ApiBrowserResourceTest extends ServiceIntegrationBase {
             .request(MediaType.WILDCARD_TYPE).get(CharSequence.class);
     LOG.debug("application openapi", json);
     Assert.assertNotNull(json);
-    Assert.assertThat(json.toString(), Matchers.containsString("html"));
+    Assert.assertThat(json.toString(), Matchers.containsString("_project"));
   }
 
 

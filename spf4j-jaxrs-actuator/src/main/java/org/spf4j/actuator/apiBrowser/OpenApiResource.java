@@ -26,6 +26,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import io.swagger.v3.oas.integration.api.OpenApiContext;
 import io.swagger.v3.oas.models.OpenAPI;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +44,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -106,9 +109,11 @@ public class OpenApiResource extends BaseOpenApiResource {
             .ctxId(ctxId)
             .buildContext(true);
     OpenAPI oas = ctx.read();
-    boolean pretty = false;
+    final boolean pretty;
     if (ctx.getOpenApiConfiguration() != null && Boolean.TRUE.equals(ctx.getOpenApiConfiguration().isPrettyPrint())) {
       pretty = true;
+    } else {
+      pretty = false;
     }
 
     if (oas != null) {
@@ -131,15 +136,33 @@ public class OpenApiResource extends BaseOpenApiResource {
     if (oas == null) {
       return Response.status(404).build();
     }
-
+    final OpenAPI result = oas;
     if (StringUtils.isNotBlank(type) && type.trim().equalsIgnoreCase("yaml")) {
       return Response.status(Response.Status.OK)
-              .entity(pretty ? Yaml.pretty(oas) : Yaml.mapper().writeValueAsString(oas))
+              .entity(new StreamingOutput() {
+                @Override
+                public void write(final OutputStream os) throws IOException {
+                  if (pretty) {
+                    Yaml.pretty().writeValue(os, result);
+                  } else {
+                    Yaml.mapper().writeValue(os, result);
+                  }
+                }
+              })
               .type("application/yaml")
               .build();
     } else {
       return Response.status(Response.Status.OK)
-              .entity(pretty ? Json.pretty(oas) : Json.mapper().writeValueAsString(oas))
+              .entity(new StreamingOutput() {
+                @Override
+                public void write(final OutputStream os) throws IOException {
+                  if (pretty) {
+                    Json.pretty().writeValue(os, result);
+                  } else {
+                    Json.mapper().writeValue(os, result);
+                  }
+                }
+              })
               .type(MediaType.APPLICATION_JSON_TYPE)
               .build();
     }
