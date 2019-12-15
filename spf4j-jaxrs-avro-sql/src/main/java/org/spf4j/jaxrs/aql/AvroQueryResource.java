@@ -37,7 +37,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import org.apache.avro.Schema;
-import org.apache.calcite.rel.RelNode;
 
 /**
  * REST avro sql endpoint.
@@ -121,7 +120,8 @@ public interface AvroQueryResource {
                          implementation = Object.class)))
          }
   )
-  RelNode plan(@QueryParam("query") String query, @Context SecurityContext secCtx);
+  // Use Response to hide RelNode from swagger
+  Response plan(@QueryParam("query") String query, @Context SecurityContext secCtx);
 
   /**
    * Retrieve the query plan for the executed query.
@@ -146,7 +146,8 @@ public interface AvroQueryResource {
                          implementation = Object.class)))
          }
   )
-  RelNode plan(Reader query, @Context SecurityContext secCtx);
+  // Use Response to hide RelNode from swagger
+  Response plan(Reader query, @Context SecurityContext secCtx);
 
 
   /**

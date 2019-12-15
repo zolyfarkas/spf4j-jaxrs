@@ -136,12 +136,12 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
   }
 
   @Override
-  public RelNode plan(final Reader query, final SecurityContext secCtx) {
-    return parsePlan(query);
+  public Response plan(final Reader query, final SecurityContext secCtx) {
+    return Response.ok(parsePlan(query)).build();
   }
 
   @Override
-  public RelNode plan(final String query, final SecurityContext secCtx) {
+  public Response plan(final String query, final SecurityContext secCtx) {
     return plan(new StringReader(query), secCtx);
   }
 
