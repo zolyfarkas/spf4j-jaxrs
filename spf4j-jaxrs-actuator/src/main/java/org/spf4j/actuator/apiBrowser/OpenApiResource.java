@@ -20,7 +20,18 @@ import io.swagger.v3.core.filter.SpecFilter;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.jaxrs2.integration.JaxrsOpenApiContextBuilder;
+import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.OPENAPI_CONFIGURATION_CACHE_TTL_KEY;
+import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.OPENAPI_CONFIGURATION_FILTER_KEY;
+import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.OPENAPI_CONFIGURATION_OBJECT_MAPPER_PROCESSOR_KEY;
+import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.OPENAPI_CONFIGURATION_PRETTYPRINT_KEY;
+import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.OPENAPI_CONFIGURATION_READALLRESOURCES_KEY;
+import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.OPENAPI_CONFIGURATION_SCANNER_KEY;
+import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.getBooleanInitParam;
 import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.getContextIdFromServletConfig;
+import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.getInitParam;
+import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.getLongInitParam;
+import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.resolveModelConverterClasses;
+import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.resolveResourceClasses;
 import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.resolveResourcePackages;
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.oas.annotations.Operation;
@@ -99,9 +110,19 @@ public class OpenApiResource extends BaseOpenApiResource {
       resourcePackages = resolveResourcePackages(servletConfig);
     }
     if (openApiConfiguration == null) {
-      SwaggerConfiguration cfg = new SwaggerConfiguration()
-              .resourcePackages(resourcePackages)
-              .readerClass(CustomReader.class.getName());
+        SwaggerConfiguration cfg = new SwaggerConfiguration()
+                    .resourcePackages(resourcePackages)
+                    .filterClass(getInitParam(servletConfig, OPENAPI_CONFIGURATION_FILTER_KEY))
+                    .resourceClasses(resolveResourceClasses(servletConfig))
+                    .readAllResources(getBooleanInitParam(servletConfig, OPENAPI_CONFIGURATION_READALLRESOURCES_KEY))
+                    .prettyPrint(getBooleanInitParam(servletConfig, OPENAPI_CONFIGURATION_PRETTYPRINT_KEY))
+//                    .readerClass(getInitParam(servletConfig, OPENAPI_CONFIGURATION_READER_KEY))
+                    .readerClass(CustomReader.class.getName())
+                    .cacheTTL(getLongInitParam(servletConfig, OPENAPI_CONFIGURATION_CACHE_TTL_KEY))
+                    .scannerClass(getInitParam(servletConfig, OPENAPI_CONFIGURATION_SCANNER_KEY))
+                    .objectMapperProcessorClass(getInitParam(servletConfig,
+                            OPENAPI_CONFIGURATION_OBJECT_MAPPER_PROCESSOR_KEY))
+                    .modelConverterClasses(resolveModelConverterClasses(servletConfig));
       cfg.setId(ctxId);
       openApiConfiguration = cfg;
     }
