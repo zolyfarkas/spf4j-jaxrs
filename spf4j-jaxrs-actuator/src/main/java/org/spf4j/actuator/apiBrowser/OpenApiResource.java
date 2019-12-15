@@ -65,8 +65,7 @@ import org.slf4j.LoggerFactory;
 import org.spf4j.jaxrs.RawSerialization;
 
 @Path("/")
-@SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
-public class OpenApiResource extends BaseOpenApiResource {
+public final class OpenApiResource extends BaseOpenApiResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(OpenApiResource.class);
 
