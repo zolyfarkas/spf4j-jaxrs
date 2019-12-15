@@ -50,7 +50,7 @@ public final class AvroModelConverter implements ModelConverter {
 
   private final ModelResolver jackson;
 
-  private AvroModelConverter() {
+  public AvroModelConverter() {
     jackson = new ModelResolver(Json.mapper());
   }
 

@@ -17,7 +17,6 @@ package org.spf4j.actuator;
 
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.swagger.v3.core.converter.ModelConverters;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
@@ -57,7 +56,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spf4j.actuator.apiBrowser.AvroModelConverter;
 import org.spf4j.actuator.apiBrowser.OpenApiResource;
 import org.spf4j.actuator.cluster.health.DefaultClusterHealthChecksBinder;
 import org.spf4j.actuator.health.checks.DefaultHealthChecksBinder;
@@ -158,7 +156,6 @@ public abstract class ServiceIntegrationBase {
   @BeforeClass
   public static void setUp() throws IOException, URISyntaxException {
     // start the server
-    ModelConverters.getInstance().addConverter(AvroModelConverter.INSTANCE);
     server = startHttpServer("127.0.0.1", "127.0.0.1", 9090);
     client = TestApplication.getInstance().getRestClient();
     localService = "http://127.0.0.1:" + server.getListener("http").getPort();
@@ -168,7 +165,6 @@ public abstract class ServiceIntegrationBase {
   @AfterClass
   public static void tearDown() {
     server.shutdownNow();
-    ModelConverters.getInstance().removeConverter(AvroModelConverter.INSTANCE);
   }
 
   @Singleton

@@ -15,6 +15,7 @@
  */
 package org.spf4j.actuator.apiBrowser;
 
+import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.filter.OpenAPISpecFilter;
 import io.swagger.v3.core.filter.SpecFilter;
 import io.swagger.v3.core.util.Json;
@@ -69,6 +70,10 @@ public class OpenApiResource extends BaseOpenApiResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(OpenApiResource.class);
 
+  static {
+    ModelConverters.getInstance().addConverter(AvroModelConverter.INSTANCE);
+  }
+
   private final ServletConfig config;
 
   private final Application app;
@@ -110,7 +115,7 @@ public class OpenApiResource extends BaseOpenApiResource {
       resourcePackages = resolveResourcePackages(servletConfig);
     }
     if (openApiConfiguration == null) {
-        SwaggerConfiguration cfg = new SwaggerConfiguration()
+      SwaggerConfiguration cfg = new SwaggerConfiguration()
                     .resourcePackages(resourcePackages)
                     .filterClass(getInitParam(servletConfig, OPENAPI_CONFIGURATION_FILTER_KEY))
                     .resourceClasses(resolveResourceClasses(servletConfig))
