@@ -111,6 +111,16 @@ public interface AvroQueryResource {
   @GET
   @Path("plan")
   @Produces({"text/plain", "application/json"})
+  @Operation(
+         description = "Get query execution plan",
+         responses = {
+           @ApiResponse(
+                 description = "Return a resultset (array of objects)",
+                 responseCode = "200",
+                 content = @Content(schema = @io.swagger.v3.oas.annotations.media.Schema(
+                         implementation = Object.class)))
+         }
+  )
   RelNode plan(@QueryParam("query") String query, @Context SecurityContext secCtx);
 
   /**
@@ -123,6 +133,19 @@ public interface AvroQueryResource {
   @Path("plan")
   @Produces({"text/plain", "application/json"})
   @Consumes("text/plain")
+  @Operation(
+         description = "Get query execution plan",
+         requestBody = @RequestBody(content = @Content(
+                 examples = @ExampleObject(value = "select a,b,c from t where ..."),
+                 schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = String.class))),
+         responses = {
+           @ApiResponse(
+                 description = "Return a resultset (array of objects)",
+                 responseCode = "200",
+                 content = @Content(schema = @io.swagger.v3.oas.annotations.media.Schema(
+                         implementation = Object.class)))
+         }
+  )
   RelNode plan(Reader query, @Context SecurityContext secCtx);
 
 
