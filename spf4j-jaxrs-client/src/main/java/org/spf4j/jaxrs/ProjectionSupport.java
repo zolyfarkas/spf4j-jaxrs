@@ -22,7 +22,7 @@ import java.lang.annotation.Target;
 import javax.ws.rs.NameBinding;
 
 /**
- * Ability to mark method/class where endpoints support _select projections.
+ * Ability to mark method/class where endpoints support _project query parameter projections.
  * @author Zoltan Farkas
  */
 @NameBinding
