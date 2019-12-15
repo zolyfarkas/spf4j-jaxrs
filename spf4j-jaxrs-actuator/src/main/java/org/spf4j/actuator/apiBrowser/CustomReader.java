@@ -23,6 +23,7 @@ import io.swagger.v3.oas.integration.api.OpenAPIConfiguration;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.QueryParameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
@@ -87,6 +88,7 @@ public class CustomReader extends Reader {
     if (projections != null) {
       QueryParameter qp = new QueryParameter();
       qp.name("_project");
+      qp.setSchema(new StringSchema());
       qp.setRequired(false);
       qp.setDescription("A comma separated list of field names or field paths");
       List<Parameter> parameters = operation.getParameters();
