@@ -23,6 +23,7 @@ import io.swagger.v3.jaxrs2.integration.JaxrsOpenApiContextBuilder;
 import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.getContextIdFromServletConfig;
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import io.swagger.v3.oas.integration.api.OpenApiContext;
 import io.swagger.v3.oas.models.OpenAPI;
 import java.util.HashMap;
@@ -89,8 +90,13 @@ public class OpenApiResource extends BaseOpenApiResource {
           final Application application,
           final UriInfo uriInfo,
           final String type) throws Exception {
-
     String ctxId = getContextIdFromServletConfig(servletConfig);
+    if (openApiConfiguration == null) {
+      SwaggerConfiguration cfg = new SwaggerConfiguration().resourcePackages(resourcePackages)
+              .readerClass(CustomReader.class.getName());
+      cfg.setId(ctxId);
+      openApiConfiguration = cfg;
+    }
     OpenApiContext ctx = new JaxrsOpenApiContextBuilder()
             .servletConfig(servletConfig)
             .application(application)

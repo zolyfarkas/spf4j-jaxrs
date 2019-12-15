@@ -33,6 +33,16 @@ public class ApiBrowserResourceTest extends ServiceIntegrationBase {
   private static final Logger LOG = LoggerFactory.getLogger(InfoResourceTest.class);
 
   @Test
+  public void testOpenApiJson() {
+    CharSequence json = getTarget().path("openapi.json")
+            .request(MediaType.WILDCARD_TYPE).get(CharSequence.class);
+    LOG.debug("application openapi", json);
+    Assert.assertNotNull(json);
+    Assert.assertThat(json.toString(), Matchers.containsString("html"));
+  }
+
+
+  @Test
   public void testUiIndex() {
     CharSequence html = getTarget().path("apiBrowser")
             .request(MediaType.WILDCARD_TYPE).get(CharSequence.class);
