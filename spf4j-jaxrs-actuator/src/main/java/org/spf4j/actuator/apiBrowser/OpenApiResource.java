@@ -95,8 +95,12 @@ public class OpenApiResource extends BaseOpenApiResource {
           final UriInfo uriInfo,
           final String type) throws Exception {
     String ctxId = getContextIdFromServletConfig(servletConfig);
+    if (resourcePackages == null) {
+      resourcePackages = resolveResourcePackages(servletConfig);
+    }
     if (openApiConfiguration == null) {
-      SwaggerConfiguration cfg = new SwaggerConfiguration().resourcePackages(resolveResourcePackages(servletConfig))
+      SwaggerConfiguration cfg = new SwaggerConfiguration()
+              .resourcePackages(resourcePackages)
               .readerClass(CustomReader.class.getName());
       cfg.setId(ctxId);
       openApiConfiguration = cfg;
