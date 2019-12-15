@@ -136,14 +136,14 @@ public class OpenApiResource extends BaseOpenApiResource {
             .buildContext(true);
     OpenAPI oas = ctx.read();
     final boolean pretty;
-    if (ctx.getOpenApiConfiguration() != null && Boolean.TRUE.equals(ctx.getOpenApiConfiguration().isPrettyPrint())) {
+    if (Boolean.TRUE.equals(ctx.getOpenApiConfiguration().isPrettyPrint())) {
       pretty = true;
     } else {
       pretty = false;
     }
 
     if (oas != null) {
-      if (ctx.getOpenApiConfiguration() != null && ctx.getOpenApiConfiguration().getFilterClass() != null) {
+      if (ctx.getOpenApiConfiguration().getFilterClass() != null) {
         try {
           OpenAPISpecFilter filterImpl = (OpenAPISpecFilter) Class.forName(
                   ctx.getOpenApiConfiguration().getFilterClass()).newInstance();
