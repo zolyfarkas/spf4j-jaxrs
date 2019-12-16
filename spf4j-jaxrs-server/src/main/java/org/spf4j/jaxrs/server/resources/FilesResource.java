@@ -78,14 +78,7 @@ public class FilesResource {
   public Response get(@PathParam("path") final List<PathSegment> path,
           @HeaderParam("Range") @Nullable final HttpRange range,
           @Context final Request request) throws IOException {
-    Path ltarget = base;
-    for (PathSegment part : path) {
-      String p = part.getPath();
-      if ("..".equals(p)) {
-        throw new ClientErrorException("Path " + path + " contains backreferences", 400);
-      }
-      ltarget = ltarget.resolve(p);
-    }
+    Path ltarget = resolveToPath(path);
     final Path target = ltarget;
     if (Files.isDirectory(target)) {
       if (!this.listDirectoryContents) {
@@ -131,6 +124,18 @@ public class FilesResource {
               .header("Content-Disposition", "attachment; filename=\"" + target.getFileName() + "\"")
               .build();
     }
+  }
+
+  private Path resolveToPath(final List<PathSegment> path) {
+    Path ltarget = base;
+    for (PathSegment part : path) {
+      String p = part.getPath();
+      if ("..".equals(p)) {
+        throw new ClientErrorException("Path " + path + " contains backreferences", 400);
+      }
+      ltarget = ltarget.resolve(p);
+    }
+    return ltarget;
   }
 
   private static MediaType getFileMediaType(final Path filePath) {
