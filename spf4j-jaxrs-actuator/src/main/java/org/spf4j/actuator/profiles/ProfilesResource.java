@@ -4,7 +4,11 @@ import com.github.jknack.handlebars.Handlebars;
 import com.github.jknack.handlebars.Template;
 import com.github.jknack.handlebars.io.ClassPathTemplateLoader;
 import gnu.trove.set.hash.THashSet;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.time.Instant;
@@ -21,6 +25,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.StreamingOutput;
 import org.glassfish.jersey.uri.UriComponent;
 import org.spf4j.actuator.logs.LogFilesResource;
 import org.spf4j.actuator.logs.LogsResource;
@@ -60,6 +65,10 @@ public class ProfilesResource {
     visualizePage = hb.compile("/org/spf4j/actuator/profiles/FlameGraph.html");
   }
 
+  public Template getVisualizePage() {
+    return visualizePage;
+  }
+
   @Path("local/traces/{trId}")
   @GET
   @Produces({"application/stack.samples+json", "application/stack.samples.d3+json"})
@@ -82,8 +91,7 @@ public class ProfilesResource {
     return result;
   }
 
-
-  @Path("local/labels/{label}")
+  @Path("local/groups")
   @GET
   @Produces({"application/json", "application/avro"})
   public Set<String> getSampleLabels() throws IOException {
@@ -98,7 +106,7 @@ public class ProfilesResource {
         String fileName = elem.getFileName().toString();
         if (fileName.endsWith(".ssdump3") || fileName.endsWith(".ssdump3.gz")) {
           Converter.loadLabels(elem.toFile(), result::add);
-        } else if (fileName.endsWith(".ssdump2")  || fileName.endsWith(".ssdump2.gz")) {
+        } else if (fileName.endsWith(".ssdump2") || fileName.endsWith(".ssdump2.gz")) {
           result.add(Converter.getLabelFromSsdump2FileName(fileName));
         }
       }
@@ -106,12 +114,12 @@ public class ProfilesResource {
     return result;
   }
 
-  @Path("local/labels/{label}")
+  @Path("local/groups/{label}")
   @GET
   @Produces({"application/stack.samples+json", "application/stack.samples.d3+json"})
   public SampleNode getLabeledSamples(@PathParam("label") final String label,
-          @Nullable @QueryParam("from") Instant from,
-          @Nullable @QueryParam("to") Instant to) throws IOException {
+          @Nullable @QueryParam("from") final Instant from,
+          @Nullable @QueryParam("to") final Instant to) throws IOException {
     if (from == null && to == null) { // return current in memory samples.
       SampleNode samples = sampler.getStackCollections().get(label);
       if (samples == null) {
@@ -134,7 +142,7 @@ public class ProfilesResource {
             if (inRange(elem, from, to)) {
               samples = SampleNode.aggregateNullable(samples, Converter.loadLabeledDump(elem.toFile(), label));
             }
-          } else if (fileName.endsWith(".ssdump2")  || fileName.endsWith(".ssdump2.gz")) {
+          } else if (fileName.endsWith(".ssdump2") || fileName.endsWith(".ssdump2.gz")) {
             String fileLabel = Converter.getLabelFromSsdump2FileName(fileName);
             if (label.equals(fileLabel) && inRange(elem, from, to)) {
               samples = SampleNode.aggregateNullable(samples, Converter.load(elem.toFile()));
@@ -168,10 +176,46 @@ public class ProfilesResource {
   @Path("local/visualize/traces/{trId}")
   @GET
   @Produces(MediaType.TEXT_HTML)
-  public String visualize(@PathParam("trId") final String traceId) throws IOException {
-    return visualizePage.apply(new Handlebars.SafeString(
-            "/profiles/local/" + UriComponent.encode(traceId, UriComponent.Type.PATH_SEGMENT)
-            + "?_Accept=application/stack.samples.d3%2Bjson"));
+  public StreamingOutput visualizeTraces(@PathParam("trId") final String traceId) throws IOException {
+    return new StreamingOutput() {
+      @Override
+      public void write(final OutputStream os) throws IOException {
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
+          visualizePage.apply(new Handlebars.SafeString(
+                  "/profiles/local/traces/" + UriComponent.encode(traceId, UriComponent.Type.PATH_SEGMENT)
+                  + "?_Accept=application/stack.samples.d3%2Bjson"), bw);
+        }
+      }
+    };
+  }
+
+  @Path("local/visualize/groups/{label}")
+  @GET
+  @Produces(MediaType.TEXT_HTML)
+  public StreamingOutput visualizeGroups(@PathParam("label") final String label,
+          @Nullable @QueryParam("from") final Instant from,
+          @Nullable @QueryParam("to") final Instant to) throws IOException {
+    return new StreamingOutput() {
+      @Override
+      public void write(final OutputStream os) throws IOException {
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
+          StringBuilder url = new StringBuilder(64);
+          url.append("/profiles/local/groups/" + UriComponent.encode(label, UriComponent.Type.PATH_SEGMENT)
+                  + "?_Accept=application/stack.samples.d3%2Bjson");
+          if (from != null) {
+            url.append("&from=");
+            url.append(UriComponent.encode(from.toString(), UriComponent.Type.QUERY_PARAM));
+          }
+          if (to != null) {
+            url.append("&to=");
+            url.append(UriComponent.encode(to.toString(), UriComponent.Type.QUERY_PARAM));
+          }
+          visualizePage.apply(new Handlebars.SafeString(
+                  url), bw);
+        }
+      }
+    };
+
   }
 
 }
