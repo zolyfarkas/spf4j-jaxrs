@@ -81,6 +81,7 @@ import org.spf4j.jaxrs.common.providers.GZipEncoderDecoder;
 import org.spf4j.jaxrs.common.providers.avro.AvroFeature;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
 import org.spf4j.servlet.ExecutionContextFilter;
+import org.spf4j.stackmonitor.Sampler;
 
 /**
  *
@@ -102,7 +103,7 @@ public abstract class ServiceIntegrationBase {
     servletRegistration.setInitParameter("javax.ws.rs.Application", TestApplication.class.getName());
     servletRegistration.setInitParameter(ServerProperties.PROCESSING_RESPONSE_ERRORS_ENABLED, "true");
     servletRegistration.setInitParameter(ServerProperties.PROVIDER_PACKAGES,
-            "org.spf4j.jaxrs.server.providers");
+            "org.spf4j.jaxrs.server.providers;org.spf4j.jaxrs.common.providers.gp");
     servletRegistration.setInitParameter("hostName", hostName);
     servletRegistration.setInitParameter("servlet.bindAddr", bindAddr);
     servletRegistration.setInitParameter("servlet.port", Integer.toString(port));
@@ -209,6 +210,14 @@ public abstract class ServiceIntegrationBase {
       register(GZipEncoderDecoder.class);
       register(new DirectStringMessageProvider());
       register(new CharSequenceMessageProvider());
+      Sampler profiler = new Sampler(5);
+      profiler.start();
+      register(new AbstractBinder() {
+        @Override
+        protected void configure() {
+          bind(profiler).to(Sampler.class);
+        }
+      });
       javax.servlet.ServletRegistration servletRegistration = srvContext.getServletRegistration("jersey");
       String initParameter = servletRegistration.getInitParameter("servlet.port");
       String bindAddr = servletRegistration.getInitParameter("servlet.bindAddr");
