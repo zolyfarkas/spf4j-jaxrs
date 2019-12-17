@@ -18,6 +18,7 @@ package org.spf4j.actuator.logs;
 import java.nio.file.Paths;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.jaxrs.server.resources.FilesResource;
@@ -27,6 +28,7 @@ import org.spf4j.jaxrs.server.resources.FilesResource;
  */
 @Path("logFiles")
 @RolesAllowed("operator")
+@Singleton
 public final class LogFilesResource {
 
   private final FilesResource files;

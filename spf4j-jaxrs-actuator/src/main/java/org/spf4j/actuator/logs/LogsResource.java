@@ -7,6 +7,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -32,6 +33,7 @@ import org.spf4j.zel.vm.Program;
 @Path("logs/local")
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 @RolesAllowed("operator")
+@Singleton
 public class LogsResource {
 
   private final String hostName;
