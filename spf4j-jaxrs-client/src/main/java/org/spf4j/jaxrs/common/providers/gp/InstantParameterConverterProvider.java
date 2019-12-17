@@ -19,6 +19,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
 import javax.ws.rs.ext.Provider;
@@ -48,10 +50,14 @@ public final class InstantParameterConverterProvider implements ParamConverterPr
       if ("now".equalsIgnoreCase(str)) {
         return Instant.now();
       }
-      if (str.indexOf('P') >= 0) {
-        return Instant.now().plus(Duration.parse(str));
-      } else {
-        return Instant.parse(str);
+      try {
+        if (str.indexOf('P') >= 0) {
+          return Instant.now().plus(Duration.parse(str));
+        } else {
+          return Instant.parse(str);
+        }
+      } catch (DateTimeParseException ex) {
+        throw new ClientErrorException("Invalid instant format: " + str, 400);
       }
     }
 
