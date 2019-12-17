@@ -70,7 +70,7 @@ public class ProfilesClusterResource {
     });
   }
 
-  @Path("cluster/visualize/{trId}")
+  @Path("cluster/visualize/traces/{trId}")
   @GET
   @Produces(MediaType.TEXT_HTML)
   public String visualize(@PathParam("trId") final String traceId) throws IOException {
@@ -78,7 +78,7 @@ public class ProfilesClusterResource {
     Template t = hb.compile("/org/spf4j/actuator/profiles/FlameGraph.html");
     return t.apply(
             new Handlebars.SafeString(
-            "/profiles/cluster/" + UriComponent.encode(traceId, UriComponent.Type.PATH_SEGMENT)
+            "/profiles/cluster/traces/" + UriComponent.encode(traceId, UriComponent.Type.PATH_SEGMENT)
     + "?_Accept=application/stack.samples.d3%2Bjson"));
   }
 

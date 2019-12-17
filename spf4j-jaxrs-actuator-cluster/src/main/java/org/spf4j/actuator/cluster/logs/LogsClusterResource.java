@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -55,6 +56,7 @@ import org.spf4j.log.LogPrinter;
 @Path("logs/cluster")
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 @RolesAllowed("operator")
+@Singleton
 public class LogsClusterResource {
 
   private static final Comparator<LogRecord> L_COMP = new Comparator<LogRecord>() {

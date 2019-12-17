@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -49,6 +50,7 @@ import org.spf4j.jaxrs.server.StreamedResponseContent;
  */
 @Path("logFiles/cluster")
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
+@Singleton
 public class LogFilesClusterResource {
 
   private final Cluster cluster;
