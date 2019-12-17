@@ -57,7 +57,7 @@ public final class InstantParameterConverterProvider implements ParamConverterPr
           return Instant.parse(str);
         }
       } catch (DateTimeParseException ex) {
-        throw new ClientErrorException("Invalid instant format: " + str, 400);
+        throw new ClientErrorException("Invalid instant format: " + str, 400, ex);
       }
     }
 
