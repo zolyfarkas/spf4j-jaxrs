@@ -1,13 +1,23 @@
 package org.spf4j.actuator.cluster.profiles;
 
 import com.github.jknack.handlebars.Handlebars;
-import com.github.jknack.handlebars.Template;
-import com.github.jknack.handlebars.io.ClassPathTemplateLoader;
+import gnu.trove.set.hash.THashSet;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -15,15 +25,24 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.StreamingOutput;
 import org.glassfish.jersey.uri.UriComponent;
 import org.spf4j.actuator.cluster.logs.LogsClusterResource;
+import org.spf4j.actuator.profiles.ProfilesResource;
 import org.spf4j.base.AppendableUtils;
 import org.spf4j.base.avro.LogRecord;
+import org.spf4j.base.avro.NetworkService;
 import org.spf4j.base.avro.Order;
 import org.spf4j.base.avro.StackSampleElement;
+import org.spf4j.cluster.Cluster;
+import org.spf4j.cluster.ClusterInfo;
+import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
+import org.spf4j.concurrent.DefaultExecutor;
+import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.server.AsyncResponseWrapper;
 import org.spf4j.ssdump2.Converter;
 import org.spf4j.stackmonitor.SampleNode;
+import javax.ws.rs.core.GenericType;
 
 /**
  *
@@ -32,16 +51,28 @@ import org.spf4j.stackmonitor.SampleNode;
 @Path("profiles")
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 @RolesAllowed("operator")
+@Singleton
 public class ProfilesClusterResource {
 
   private final LogsClusterResource logsResource;
 
+  private final ProfilesResource profiles;
+
+  private final Cluster cluster;
+
+  private final Spf4JClient httpClient;
+
   @Inject
-  public ProfilesClusterResource(final LogsClusterResource logsResource) {
+  public ProfilesClusterResource(final LogsClusterResource logsResource, final ProfilesResource profiles,
+           final Cluster cluster, final Spf4JClient httpClient)
+          throws IOException {
     this.logsResource = logsResource;
+    this.profiles = profiles;
+    this.cluster = cluster;
+    this.httpClient = httpClient;
   }
 
-  @Path("cluster/{trId}")
+  @Path("cluster/traces/{trId}")
   @GET
   @Produces(value = {"application/stack.samples+json", "application/stack.samples.d3+json"})
   public void getSamples(@PathParam("trId") final String traceId, @Suspended final AsyncResponse ar)
@@ -70,16 +101,56 @@ public class ProfilesClusterResource {
     });
   }
 
+
+  @Path("cluster/groups")
+  @GET
+  @Produces({"application/json", "application/avro"})
+  public void getSampleLabels(@Suspended final AsyncResponse ar) throws IOException, URISyntaxException {
+    CompletableFuture<Set<String>> cf
+            = ContextPropagatingCompletableFuture.supplyAsync(() -> {
+              try {
+                return new THashSet<>(profiles.getSampleLabels());
+              } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+              }
+            }, DefaultExecutor.INSTANCE);
+    ClusterInfo clusterInfo = cluster.getClusterInfo();
+    Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
+    NetworkService service = clusterInfo.getHttpService();
+    for (InetAddress addr : peerAddresses) {
+      URI uri = new URI(service.getName(), null,
+                  addr.getHostAddress(), service.getPort(), "/profiles/local/groups", null, null);
+      cf = cf.thenCombine(httpClient.target(uri).request("application/avro")
+              .rx().get(new GenericType<List<String>>() { }),
+              (Set<String> result, List<String> resp) -> {
+                result.addAll(resp);
+                return result;
+              });
+    }
+    cf.whenComplete((samples, t) -> {
+      if (t != null) {
+        ar.resume(t);
+      } else {
+        ar.resume(samples);
+      }
+    });
+  }
+
   @Path("cluster/visualize/traces/{trId}")
   @GET
   @Produces(MediaType.TEXT_HTML)
-  public String visualize(@PathParam("trId") final String traceId) throws IOException {
-    Handlebars hb =  new Handlebars(new ClassPathTemplateLoader("", ""));
-    Template t = hb.compile("/org/spf4j/actuator/profiles/FlameGraph.html");
-    return t.apply(
-            new Handlebars.SafeString(
-            "/profiles/cluster/traces/" + UriComponent.encode(traceId, UriComponent.Type.PATH_SEGMENT)
-    + "?_Accept=application/stack.samples.d3%2Bjson"));
+  public StreamingOutput visualize(@PathParam("trId") final String traceId) throws IOException {
+    return new StreamingOutput() {
+      @Override
+      public void write(final OutputStream os) throws IOException {
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
+          profiles.getVisualizePage().apply(new Handlebars.SafeString(
+                  "/profiles/cluster/traces/" + UriComponent.encode(traceId, UriComponent.Type.PATH_SEGMENT)
+                  + "?_Accept=application/stack.samples.d3%2Bjson"), bw);
+        }
+      }
+    };
+
   }
 
 }
