@@ -30,6 +30,7 @@ import org.apache.avro.Schema;
 import org.spf4j.avro.schema.Schemas;
 import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
+import org.spf4j.jaxrs.AvroContainer;
 import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
 
 /**
@@ -45,12 +46,20 @@ public final class DataDeprecationsJaxRsFilter implements ContainerResponseFilte
   public void filter(final ContainerRequestContext requestContext, final ContainerResponseContext responseContext) {
     Schema respSchema = null;
     Object entity = responseContext.getEntity();
-    try {
-       respSchema = MessageBodyRWUtils.getAvroSchemaFromType(responseContext.getEntityClass(),
-            responseContext.getEntityType(), responseContext.getEntityAnnotations());
-    } catch (RuntimeException e) {
-      LOG.log(Level.FINE, "Schema unavailability reason", e);
-      return;
+    if (entity instanceof AvroContainer) {
+      Schema elementSchema = ((AvroContainer) entity).getElementSchema();
+      if (elementSchema != null) {
+        respSchema = Schema.createArray(elementSchema);
+      }
+    }
+    if (respSchema == null) {
+      try {
+         respSchema = MessageBodyRWUtils.getAvroSchemaFromType(responseContext.getEntityClass(),
+              responseContext.getEntityType(), responseContext.getEntityAnnotations());
+      } catch (RuntimeException e) {
+        LOG.log(Level.FINE, "Schema unavailability reason", e);
+        return;
+      }
     }
     if (respSchema == null) {
       LOG.log(Level.FINE, "No schema available for {0}", entity);
