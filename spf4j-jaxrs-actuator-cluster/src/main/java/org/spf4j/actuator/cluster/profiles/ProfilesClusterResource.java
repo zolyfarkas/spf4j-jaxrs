@@ -11,10 +11,11 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -22,6 +23,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
@@ -43,6 +45,7 @@ import org.spf4j.jaxrs.server.AsyncResponseWrapper;
 import org.spf4j.ssdump2.Converter;
 import org.spf4j.stackmonitor.SampleNode;
 import javax.ws.rs.core.GenericType;
+import org.spf4j.jaxrs.client.Spf4jWebTarget;
 
 /**
  *
@@ -136,6 +139,52 @@ public class ProfilesClusterResource {
     });
   }
 
+  @Path("cluster/groups/{label}")
+  @GET
+  @Produces({"application/stack.samples+json", "application/stack.samples.d3+json"})
+  public void getLabeledSamples(@PathParam("label") final String label,
+          @Nullable @QueryParam("from") final Instant from,
+          @Nullable @QueryParam("to") final Instant to,
+          @Suspended final AsyncResponse ar) throws IOException, URISyntaxException {
+
+    CompletableFuture<SampleNode> cf
+            = ContextPropagatingCompletableFuture.supplyAsync(() -> {
+              try {
+                return profiles.getLabeledSamples(label, from, to);
+              } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+              }
+            }, DefaultExecutor.INSTANCE);
+    ClusterInfo clusterInfo = cluster.getClusterInfo();
+    Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
+    NetworkService service = clusterInfo.getHttpService();
+    for (InetAddress addr : peerAddresses) {
+      URI uri = new URI(service.getName(), null,
+                  addr.getHostAddress(), service.getPort(), "/profiles/cluster/groups", null, null);
+      Spf4jWebTarget target = httpClient.target(uri).path(label);
+      if (from != null) {
+        target = target.queryParam("from", from.toString());
+      }
+      if (to != null) {
+        target = target.queryParam("to", to.toString());
+      }
+      cf = cf.thenCombine(target.request("application/stack.samples+json")
+              .rx().get(new GenericType<SampleNode>() { }),
+              (SampleNode result, SampleNode resp) -> {
+                return SampleNode.aggregateNullable(result, resp);
+              });
+    }
+    cf.whenComplete((samples, t) -> {
+      if (t != null) {
+        ar.resume(t);
+      } else {
+        ar.resume(samples);
+      }
+    });
+
+
+  }
+
   @Path("cluster/visualize/traces/{trId}")
   @GET
   @Produces(MediaType.TEXT_HTML)
@@ -147,6 +196,34 @@ public class ProfilesClusterResource {
           profiles.getVisualizePage().apply(new Handlebars.SafeString(
                   "/profiles/cluster/traces/" + UriComponent.encode(traceId, UriComponent.Type.PATH_SEGMENT)
                   + "?_Accept=application/stack.samples.d3%2Bjson"), bw);
+        }
+      }
+    };
+
+  }
+
+  @Path("cluster/visualize/groups/{label}")
+  @GET
+  @Produces(MediaType.TEXT_HTML)
+  public StreamingOutput visualizeGroups(@PathParam("label") final String label,
+          @Nullable @QueryParam("from") final Instant from,
+          @Nullable @QueryParam("to") final Instant to) throws IOException {
+    return new StreamingOutput() {
+      @Override
+      public void write(final OutputStream os) throws IOException {
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
+          StringBuilder url = new StringBuilder(64);
+          url.append("/profiles/cluster/groups/" + UriComponent.encode(label, UriComponent.Type.PATH_SEGMENT)
+                  + "?_Accept=application/stack.samples.d3%2Bjson");
+          if (from != null) {
+            url.append("&from=");
+            url.append(UriComponent.encode(from.toString(), UriComponent.Type.QUERY_PARAM));
+          }
+          if (to != null) {
+            url.append("&to=");
+            url.append(UriComponent.encode(to.toString(), UriComponent.Type.QUERY_PARAM));
+          }
+          profiles.getVisualizePage().apply(new Handlebars.SafeString(url), bw);
         }
       }
     };

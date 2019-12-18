@@ -210,8 +210,7 @@ public class ProfilesResource {
             url.append("&to=");
             url.append(UriComponent.encode(to.toString(), UriComponent.Type.QUERY_PARAM));
           }
-          visualizePage.apply(new Handlebars.SafeString(
-                  url), bw);
+          visualizePage.apply(new Handlebars.SafeString(url), bw);
         }
       }
     };
