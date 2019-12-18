@@ -45,7 +45,7 @@ public final class DataDeprecationsJaxRsFilter implements ContainerResponseFilte
     Object entity = responseContext.getEntity();
     try {
        respSchema = MessageBodyRWUtils.getAvroSchemaFromType(responseContext.getEntityClass(),
-            responseContext.getEntityType(), entity, responseContext.getEntityAnnotations());
+            responseContext.getEntityType(), responseContext.getEntityAnnotations());
     } catch (RuntimeException e) {
       Logger logger = Logger.getLogger(DataDeprecationsJaxRsFilter.class.getName());
       logger.log(Level.FINE, "No schema available for {0}", entity);
