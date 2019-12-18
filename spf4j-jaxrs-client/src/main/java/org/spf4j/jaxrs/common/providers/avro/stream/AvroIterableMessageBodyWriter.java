@@ -83,7 +83,7 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
         elType = genericType.getActualTypeArguments()[0];
         elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
         if (elemSchema == null) {
-           throw new IllegalStateException("Cannot serialize " + t);
+           throw new IllegalStateException("Cannot serialize " + elType + ": " + t);
         }
         schema = Schema.createArray(elemSchema);
       }
