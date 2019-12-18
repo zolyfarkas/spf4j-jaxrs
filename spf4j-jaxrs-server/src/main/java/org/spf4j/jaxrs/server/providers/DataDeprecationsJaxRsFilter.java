@@ -39,17 +39,21 @@ import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
 @Priority(Priorities.ENTITY_CODER + 5)
 public final class DataDeprecationsJaxRsFilter implements ContainerResponseFilter {
 
+  private static final Logger LOG = Logger.getLogger(DataDeprecationsJaxRsFilter.class.getName());
+
   @Override
   public void filter(final ContainerRequestContext requestContext, final ContainerResponseContext responseContext) {
-    Schema respSchema;
+    Schema respSchema = null;
     Object entity = responseContext.getEntity();
     try {
        respSchema = MessageBodyRWUtils.getAvroSchemaFromType(responseContext.getEntityClass(),
             responseContext.getEntityType(), responseContext.getEntityAnnotations());
     } catch (RuntimeException e) {
-      Logger logger = Logger.getLogger(DataDeprecationsJaxRsFilter.class.getName());
-      logger.log(Level.FINE, "No schema available for {0}", entity);
-      logger.log(Level.FINE, "Schema unavailability reason", e);
+      LOG.log(Level.FINE, "Schema unavailability reason", e);
+      return;
+    }
+    if (respSchema == null) {
+      LOG.log(Level.FINE, "No schema available for {0}", entity);
       return;
     }
     Map<String, String> deprecations = new HashMap<>(4);
