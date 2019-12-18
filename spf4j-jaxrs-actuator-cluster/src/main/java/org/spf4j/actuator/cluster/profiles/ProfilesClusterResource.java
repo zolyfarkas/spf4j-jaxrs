@@ -173,7 +173,7 @@ public class ProfilesClusterResource {
       cf = cf.thenCombine(target.request("application/stack.samples+json")
               .rx().get(new GenericType<SampleNode>() { }),
               (SampleNode result, SampleNode resp) -> {
-                return SampleNode.aggregateNullable(result, resp);
+                return SampleNode.aggregateNullableUnsafe(result, resp);
               });
     }
     cf.whenComplete((samples, t) -> {
