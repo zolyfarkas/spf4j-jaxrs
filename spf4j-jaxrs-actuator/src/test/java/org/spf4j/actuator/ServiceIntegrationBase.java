@@ -80,6 +80,8 @@ import org.spf4j.jaxrs.common.providers.gp.DirectStringMessageProvider;
 import org.spf4j.jaxrs.common.providers.GZipEncoderDecoder;
 import org.spf4j.jaxrs.common.providers.avro.AvroFeature;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
+import org.spf4j.jaxrs.common.providers.gp.SampleNodeMessageProviderD3Json;
+import org.spf4j.jaxrs.common.providers.gp.SampleNodeMessageProviderJson;
 import org.spf4j.servlet.ExecutionContextFilter;
 import org.spf4j.stackmonitor.Sampler;
 
@@ -193,6 +195,8 @@ public abstract class ServiceIntegrationBase {
       restClient = new Spf4jClientBuilder()
               .connectTimeout(2, TimeUnit.SECONDS)
               .readTimeout(60, TimeUnit.SECONDS)
+              .register(new SampleNodeMessageProviderJson())
+              .register(new SampleNodeMessageProviderD3Json())
               .register(new ExecutionContextClientFilter(dp, true))
               .register(ClientCustomExecutorServiceProvider.class)
               .register(ClientCustomScheduledExecutionServiceProvider.class)

@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.ServiceIntegrationBase;
+import org.spf4j.stackmonitor.SampleNode;
 /**
  *
  * @author Zoltan Farkas
@@ -37,6 +38,9 @@ public class ProfilesResourceTest extends ServiceIntegrationBase {
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
      LOG.debug("Labels: {}", labels);
      Assert.assertFalse(labels.isEmpty());
+     SampleNode node = getTarget().path("profiles/local/groups/" + labels.get(0))
+            .request("application/stack.samples+json").get(new GenericType<SampleNode>() { });
+     Assert.assertNotNull(node);
   }
 
 }
