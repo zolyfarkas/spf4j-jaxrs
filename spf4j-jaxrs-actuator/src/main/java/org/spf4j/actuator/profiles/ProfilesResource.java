@@ -140,12 +140,12 @@ public class ProfilesResource {
           String fileName = elem.getFileName().toString();
           if (fileName.endsWith(".ssdump3") || fileName.endsWith(".ssdump3.gz")) {
             if (inRange(elem, from, to)) {
-              samples = SampleNode.aggregateNullable(samples, Converter.loadLabeledDump(elem.toFile(), label));
+              samples = SampleNode.aggregateNullableUnsafe(samples, Converter.loadLabeledDump(elem.toFile(), label));
             }
           } else if (fileName.endsWith(".ssdump2") || fileName.endsWith(".ssdump2.gz")) {
             String fileLabel = Converter.getLabelFromSsdump2FileName(fileName);
             if (label.equals(fileLabel) && inRange(elem, from, to)) {
-              samples = SampleNode.aggregateNullable(samples, Converter.load(elem.toFile()));
+              samples = SampleNode.aggregateNullableUnsafe(samples, Converter.load(elem.toFile()));
             }
           }
         }
