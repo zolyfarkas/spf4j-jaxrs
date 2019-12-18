@@ -81,7 +81,10 @@ import org.spf4j.jaxrs.common.providers.gp.DirectStringMessageProvider;
 import org.spf4j.jaxrs.common.providers.GZipEncoderDecoder;
 import org.spf4j.jaxrs.common.providers.avro.AvroFeature;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
+import org.spf4j.jaxrs.common.providers.gp.SampleNodeMessageProviderD3Json;
+import org.spf4j.jaxrs.common.providers.gp.SampleNodeMessageProviderJson;
 import org.spf4j.servlet.ExecutionContextFilter;
+import org.spf4j.stackmonitor.Sampler;
 
 /**
  *
@@ -105,7 +108,7 @@ public abstract class ServiceIntegrationBase {
     servletRegistration.setInitParameter("javax.ws.rs.Application", TestApplication.class.getName());
     servletRegistration.setInitParameter(ServerProperties.PROCESSING_RESPONSE_ERRORS_ENABLED, "true");
     servletRegistration.setInitParameter(ServerProperties.PROVIDER_PACKAGES,
-            "org.spf4j.jaxrs.server.providers");
+            "org.spf4j.jaxrs.server.providers;org.spf4j.jaxrs.common.providers.gp");
     servletRegistration.setInitParameter("hostName", hostName);
     servletRegistration.setInitParameter("servlet.bindAddr", bindAddr);
     servletRegistration.setInitParameter("servlet.port", Integer.toString(port));
@@ -196,6 +199,8 @@ public abstract class ServiceIntegrationBase {
               .register(new ExecutionContextClientFilter(dp, true))
               .register(ClientCustomExecutorServiceProvider.class)
               .register(ClientCustomScheduledExecutionServiceProvider.class)
+              .register(new SampleNodeMessageProviderJson())
+              .register(new SampleNodeMessageProviderD3Json())
               .register(new CsvParameterConverterProvider(Collections.EMPTY_LIST))
               .register(new CharSequenceMessageProvider())
               .register(GZipEncoder.class)
@@ -208,6 +213,14 @@ public abstract class ServiceIntegrationBase {
       register(avroFeature);
       register(CsvParameterConverterProvider.class);
       register(GZipEncoderDecoder.class);
+      Sampler profiler = new Sampler(5);
+      profiler.start();
+      register(new AbstractBinder() {
+        @Override
+        protected void configure() {
+          bind(profiler).to(Sampler.class);
+        }
+      });
       register(new DirectStringMessageProvider());
       register(new CharSequenceMessageProvider());
       javax.servlet.ServletRegistration servletRegistration = srvContext.getServletRegistration("jersey");

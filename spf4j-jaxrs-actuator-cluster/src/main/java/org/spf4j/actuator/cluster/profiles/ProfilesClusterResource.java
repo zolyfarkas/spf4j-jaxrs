@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -26,6 +27,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.StreamingOutput;
 import org.glassfish.jersey.uri.UriComponent;
@@ -130,11 +132,11 @@ public class ProfilesClusterResource {
                 return result;
               });
     }
-    cf.whenComplete((samples, t) -> {
+    cf.whenComplete((labels, t) -> {
       if (t != null) {
         ar.resume(t);
       } else {
-        ar.resume(samples);
+        ar.resume(new GenericEntity<Collection<String>>(labels) { });
       }
     });
   }
