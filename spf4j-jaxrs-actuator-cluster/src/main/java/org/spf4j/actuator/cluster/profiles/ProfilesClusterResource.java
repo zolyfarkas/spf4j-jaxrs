@@ -165,7 +165,7 @@ public class ProfilesClusterResource {
     NetworkService service = clusterInfo.getHttpService();
     for (InetAddress addr : peerAddresses) {
       URI uri = new URI(service.getName(), null,
-                  addr.getHostAddress(), service.getPort(), "/profiles/cluster/groups", null, null);
+                  addr.getHostAddress(), service.getPort(), "/profiles/local/groups", null, null);
       Spf4jWebTarget target = httpClient.target(uri).path(label);
       if (from != null) {
         target = target.queryParam("from", from.toString());
