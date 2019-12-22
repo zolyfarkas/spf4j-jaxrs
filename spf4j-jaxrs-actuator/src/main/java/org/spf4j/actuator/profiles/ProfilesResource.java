@@ -1,7 +1,6 @@
 package org.spf4j.actuator.profiles;
 
 import com.github.jknack.handlebars.Handlebars;
-import com.github.jknack.handlebars.Template;
 import com.github.jknack.handlebars.io.ClassPathTemplateLoader;
 import gnu.trove.set.hash.THashSet;
 import java.io.BufferedWriter;
@@ -26,6 +25,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.StreamingOutput;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.jersey.uri.UriComponent;
 import org.spf4j.actuator.logs.LogFilesResource;
 import org.spf4j.actuator.logs.LogsResource;
@@ -51,21 +51,25 @@ public class ProfilesResource {
 
   private final LogFilesResource logFilesResource;
 
-  private final Template visualizePage;
+  private final FlameGraphTemplate visualizePage;
 
   private final Sampler sampler;
 
+  private final String hostName;
+
   @Inject
   public ProfilesResource(final LogsResource logsResource,
-          final LogFilesResource logFilesResource, final Sampler sampler) throws IOException {
+          final LogFilesResource logFilesResource, final Sampler sampler,
+          @ConfigProperty(name = "hostName", defaultValue = "127.0.0.1") final String hostName) throws IOException {
     this.logsResource = logsResource;
     this.logFilesResource = logFilesResource;
     this.sampler = sampler;
     Handlebars hb = new Handlebars(new ClassPathTemplateLoader("", ""));
-    visualizePage = hb.compile("/org/spf4j/actuator/profiles/FlameGraph.html");
+    visualizePage = hb.compile("/org/spf4j/actuator/profiles/FlameGraph.html").as(FlameGraphTemplate.class);
+    this.hostName = hostName;
   }
 
-  public Template getVisualizePage() {
+  public FlameGraphTemplate getVisualizePage() {
     return visualizePage;
   }
 
@@ -181,7 +185,7 @@ public class ProfilesResource {
       @Override
       public void write(final OutputStream os) throws IOException {
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
-          visualizePage.apply(new Handlebars.SafeString(
+          visualizePage.apply(new FlameGraphParams("Request profile for: " + traceId,
                   "/profiles/local/traces/" + UriComponent.encode(traceId, UriComponent.Type.PATH_SEGMENT)
                   + "?_Accept=application/stack.samples.d3%2Bjson"), bw);
         }
@@ -210,7 +214,7 @@ public class ProfilesResource {
             url.append("&to=");
             url.append(UriComponent.encode(to.toString(), UriComponent.Type.QUERY_PARAM));
           }
-          visualizePage.apply(new Handlebars.SafeString(url), bw);
+          visualizePage.apply(new FlameGraphParams("Node profile for: " + hostName, url), bw);
         }
       }
     };

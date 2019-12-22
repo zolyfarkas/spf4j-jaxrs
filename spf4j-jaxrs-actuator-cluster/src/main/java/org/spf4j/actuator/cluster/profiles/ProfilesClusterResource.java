@@ -1,6 +1,5 @@
 package org.spf4j.actuator.cluster.profiles;
 
-import com.github.jknack.handlebars.Handlebars;
 import gnu.trove.set.hash.THashSet;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -50,6 +49,7 @@ import org.spf4j.jaxrs.server.AsyncResponseWrapper;
 import org.spf4j.ssdump2.Converter;
 import org.spf4j.stackmonitor.SampleNode;
 import javax.ws.rs.core.GenericType;
+import org.spf4j.actuator.profiles.FlameGraphParams;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
 
 /**
@@ -203,7 +203,7 @@ public class ProfilesClusterResource {
       @Override
       public void write(final OutputStream os) throws IOException {
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
-          profiles.getVisualizePage().apply(new Handlebars.SafeString(
+          profiles.getVisualizePage().apply(new FlameGraphParams("Request profile for: " + traceId,
                   "/profiles/cluster/traces/" + UriComponent.encode(traceId, UriComponent.Type.PATH_SEGMENT)
                   + "?_Accept=application/stack.samples.d3%2Bjson"), bw);
         }
@@ -233,7 +233,7 @@ public class ProfilesClusterResource {
             url.append("&to=");
             url.append(UriComponent.encode(to.toString(), UriComponent.Type.QUERY_PARAM));
           }
-          profiles.getVisualizePage().apply(new Handlebars.SafeString(url), bw);
+          profiles.getVisualizePage().apply(new FlameGraphParams("Cluster level profiles for: " +  label, url), bw);
         }
       }
     };

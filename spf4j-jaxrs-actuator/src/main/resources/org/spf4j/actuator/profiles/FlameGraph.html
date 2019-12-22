@@ -37,7 +37,7 @@
     }
     </style>
 
-    <title>d3-flame-graph</title>
+    <title>{{title}}</title>
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -115,7 +115,7 @@
     // Example of how to set fixed chart height
     // flameGraph.height(540);
 
-    d3.json("{{this}}", function(error, data) {
+    d3.json("{{dataUrl}}", function(error, data) {
       if (error) return console.warn(error);
       d3.select("#chart")
           .datum(data)

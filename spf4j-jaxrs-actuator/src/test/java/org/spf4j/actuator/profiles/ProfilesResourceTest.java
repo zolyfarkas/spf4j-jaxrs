@@ -18,6 +18,7 @@ package org.spf4j.actuator.profiles;
 import java.util.List;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -40,7 +41,11 @@ public class ProfilesResourceTest extends ServiceIntegrationBase {
      Assert.assertFalse(labels.isEmpty());
      SampleNode node = getTarget().path("profiles/local/groups/" + labels.get(0))
             .request("application/stack.samples+json").get(new GenericType<SampleNode>() { });
-     Assert.assertNotNull(node);
+    Assert.assertNotNull(node);
+    CharSequence html = getTarget().path("profiles/local/visualize/groups/" + labels.get(0))
+            .request("*/*").get(CharSequence.class);
+     LOG.debug("HTML: {}", html);
+    Assert.assertThat(html.toString(), Matchers.containsString("Node profile for"));
   }
 
 }
