@@ -2,8 +2,11 @@ package org.spf4j.actuator.cluster.profiles;
 
 import com.github.jknack.handlebars.Handlebars;
 import gnu.trove.set.hash.THashSet;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
@@ -171,9 +174,14 @@ public class ProfilesClusterResource {
         target = target.queryParam("to", to.toString());
       }
       cf = cf.thenCombine(target.request("application/stack.samples+json")
-              .rx().get(new GenericType<SampleNode>() { }),
-              (SampleNode result, SampleNode resp) -> {
-                return SampleNode.aggregateNullableUnsafe(result, resp);
+              .rx().get(InputStream.class),
+              (SampleNode resp, InputStream input) -> {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
+                  SampleNode.parseInto(br, resp);
+                } catch (IOException ex) {
+                  throw new UncheckedIOException(ex);
+                }
+                return resp;
               });
     }
     cf.whenComplete((samples, t) -> {
