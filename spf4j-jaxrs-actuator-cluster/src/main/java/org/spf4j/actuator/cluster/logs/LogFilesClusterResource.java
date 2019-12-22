@@ -34,6 +34,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
@@ -114,7 +115,7 @@ public class LogFilesClusterResource {
     URI uri = new URI(service.getName(), null,  path.get(0).getPath(), service.getPort(), tPath, null, null);
     Response resp = httpClient.target(uri).request(MediaType.WILDCARD).get(Response.class);
     return Response.ok(new StreamedResponseContent(() -> resp.readEntity(InputStream.class)),
-            resp.getHeaderString("Content-Type")).build();
+            resp.getHeaderString(HttpHeaders.CONTENT_TYPE)).build();
 
   }
 
