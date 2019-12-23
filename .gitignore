@@ -22,3 +22,4 @@
 /.idea/
 /pom.xml.versionsBackup
 /spf4j-jaxrs.iml
+/spf4j-jaxrs-actuator-cluster/nbproject/
