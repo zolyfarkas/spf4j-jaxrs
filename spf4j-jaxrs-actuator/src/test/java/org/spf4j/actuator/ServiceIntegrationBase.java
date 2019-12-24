@@ -17,7 +17,6 @@ package org.spf4j.actuator;
 
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.swagger.v3.core.converter.ModelConverters;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
@@ -55,7 +54,6 @@ import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.spf4j.actuator.apiBrowser.AvroModelConverter;
 import org.spf4j.actuator.apiBrowser.OpenApiResource;
 import org.spf4j.actuator.health.checks.DefaultHealthChecksBinder;
 import org.spf4j.avro.SchemaClient;

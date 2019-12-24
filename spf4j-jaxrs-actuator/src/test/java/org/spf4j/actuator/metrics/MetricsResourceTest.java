@@ -48,7 +48,7 @@ public class MetricsResourceTest  extends ServiceIntegrationBase {
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
      LOG.debug("Metrics: {}", metrics);
      Assert.assertFalse(metrics.isEmpty());
-     CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/local/test")
+     CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/local/test/data")
             .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() { });
     Assert.assertNotNull(measurements);
     for (GenericRecord data : measurements) {

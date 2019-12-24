@@ -27,6 +27,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import org.apache.avro.Schema;
 import org.spf4j.base.avro.AvroCloseableIterable;
 import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.perf.TimeSeriesRecord;
@@ -39,20 +40,22 @@ import org.spf4j.perf.impl.RecorderFactory;
 @RolesAllowed("operator")
 @Singleton
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
-  @Produces(value = {"application/avro-x+json", "application/json",
-    "application/avro+json", "application/avro", "application/octet-stream", "text/csv"})
 public class MetricsResource {
 
   @GET
   @Path("local")
+  @Produces(value = {"application/avro-x+json", "application/json",
+    "application/avro+json", "application/avro", "application/octet-stream", "text/csv"})
   public Set<String> getMetrics() throws IOException {
     RecorderFactory.MEASUREMENT_STORE.flush();
     return RecorderFactory.MEASUREMENT_STORE.getMeasurements();
   }
 
   @GET
-  @Path("local/{metric}")
+  @Path("local/{metric}/data")
   @ProjectionSupport
+  @Produces(value = {"application/avro-x+json", "application/json",
+    "application/avro+json", "application/avro", "application/octet-stream", "text/csv"})
   public AvroCloseableIterable<TimeSeriesRecord> getMetrics(@PathParam("metric") final String metricName,
           @Nullable @QueryParam("from") final Instant pfrom,
           @Nullable @QueryParam("to") final Instant pto) throws IOException {
@@ -61,5 +64,12 @@ public class MetricsResource {
     return RecorderFactory.MEASUREMENT_STORE.getMeasurementData(metricName, from, to);
   }
 
+
+  @GET
+  @Path("local/{metric}/schema")
+  @Produces("application/json")
+  public Schema getMetricSchema(@PathParam("metric") final String metricName) throws IOException {
+    return RecorderFactory.MEASUREMENT_STORE.getMeasurementSchema(metricName);
+  }
 
 }
