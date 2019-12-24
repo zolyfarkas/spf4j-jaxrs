@@ -156,7 +156,6 @@ public abstract class ServiceIntegrationBase {
   @BeforeClass
   public static void setUp() throws IOException, URISyntaxException {
     // start the server
-    ModelConverters.getInstance().addConverter(AvroModelConverter.INSTANCE);
     server = startHttpServer("127.0.0.1", "127.0.0.1", 9090);
     client = TestApplication.getInstance().getRestClient();
     localService = "http://127.0.0.1:" + server.getListener("http").getPort();
@@ -166,7 +165,6 @@ public abstract class ServiceIntegrationBase {
   @AfterClass
   public static void tearDown() {
     server.shutdownNow();
-    ModelConverters.getInstance().removeConverter(AvroModelConverter.INSTANCE);
   }
 
   @Singleton
@@ -178,6 +176,8 @@ public abstract class ServiceIntegrationBase {
     private final SchemaClient schemaClient;
 
     private final Spf4JClient restClient;
+
+    private final Sampler profiler;
 
     @Inject
     TestApplication(@Context final ServletContext srvContext, final ServiceLocator locator) {
@@ -214,7 +214,7 @@ public abstract class ServiceIntegrationBase {
       register(GZipEncoderDecoder.class);
       register(new DirectStringMessageProvider());
       register(new CharSequenceMessageProvider());
-      Sampler profiler = new Sampler(5);
+      profiler = new Sampler(5);
       profiler.start();
       register(new AbstractBinder() {
         @Override
@@ -236,8 +236,9 @@ public abstract class ServiceIntegrationBase {
     }
 
     @PreDestroy
-    public void cleanup() {
+    public void cleanup() throws InterruptedException {
       instance = null;
+      profiler.stop();
     }
 
     public static TestApplication getInstance() {
