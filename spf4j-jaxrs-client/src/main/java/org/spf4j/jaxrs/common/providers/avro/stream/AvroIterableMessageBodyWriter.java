@@ -18,7 +18,7 @@ import org.apache.avro.io.Encoder;
 import org.apache.avro.reflect.ExtendedReflectDatumWriter;
 import org.apache.avro.AvroArrayWriter;
 import org.spf4j.base.Arrays;
-import org.spf4j.jaxrs.AvroContainer;
+import org.spf4j.base.avro.AvroContainer;
 import org.spf4j.jaxrs.Buffered;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;

@@ -26,7 +26,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.reflect.AvroSchema;
 import org.apache.avro.reflect.ExtendedReflectData;
 import org.spf4j.base.Reflections;
-import org.spf4j.jaxrs.AvroContainer;
+import org.spf4j.base.avro.AvroContainer;
 
 /**
  *

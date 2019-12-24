@@ -21,13 +21,13 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
 import org.apache.avro.Schema;
-import org.spf4j.base.CloseableIterable;
+import org.spf4j.base.avro.AvroCloseableIterable;
 
 
 /**
  * @author Zoltan Farkas
  */
-public interface IterableArrayContent<T> extends CloseableIterable<T>, Buffered, AvroContainer {
+public interface IterableArrayContent<T> extends  Buffered, AvroCloseableIterable<T> {
 
   static <T> IterableArrayContent<T> from(final Iterable<T> it, final Schema elementSchema) {
     Closeable cl;

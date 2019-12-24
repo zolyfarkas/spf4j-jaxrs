@@ -28,10 +28,11 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
 import org.spf4j.avro.schema.Schemas;
+import org.spf4j.base.avro.AvroContainer;
 import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
-import org.spf4j.jaxrs.AvroContainer;
 import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
+
 
 /**
  * @author Zoltan Farkas

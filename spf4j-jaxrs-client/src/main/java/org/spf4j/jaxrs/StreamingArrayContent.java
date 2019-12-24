@@ -18,6 +18,7 @@ package org.spf4j.jaxrs;
 import java.io.Closeable;
 import java.io.IOException;
 import org.spf4j.base.ArrayWriter;
+import org.spf4j.base.avro.AvroContainer;
 
 /**
  * Streaming Output, that will stream back an array.
