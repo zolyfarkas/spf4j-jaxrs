@@ -31,4 +31,12 @@ public interface ClusterInfo extends ServiceInfo {
     return Sets.difference(getAddresses(), getLocalAddresses());
   }
 
+  default InetAddress getLocalAddress() {
+    Sets.SetView<InetAddress> intersection = Sets.intersection(getLocalAddresses(), getAddresses());
+    if (intersection.size() != 1) {
+      throw new IllegalStateException("Invalid cluster: " + getAddresses() + ", local: " + getLocalAddresses());
+    }
+    return intersection.iterator().next();
+  }
+
 }
