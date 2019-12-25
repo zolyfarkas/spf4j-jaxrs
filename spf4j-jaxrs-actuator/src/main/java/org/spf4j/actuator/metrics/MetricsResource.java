@@ -36,14 +36,13 @@ import org.spf4j.perf.impl.RecorderFactory;
 /**
  * @author Zoltan Farkas
  */
-@Path("metrics")
+@Path("metrics/local")
 @RolesAllowed("operator")
 @Singleton
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 public class MetricsResource {
 
   @GET
-  @Path("local")
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream", "text/csv"})
   public Set<String> getMetrics() throws IOException {
@@ -52,7 +51,7 @@ public class MetricsResource {
   }
 
   @GET
-  @Path("local/{metric}/data")
+  @Path("{metric}/data")
   @ProjectionSupport
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream", "text/csv"})
@@ -66,7 +65,7 @@ public class MetricsResource {
 
 
   @GET
-  @Path("local/{metric}/schema")
+  @Path("{metric}/schema")
   @Produces("application/json")
   public Schema getMetricSchema(@PathParam("metric") final String metricName) throws IOException {
     return RecorderFactory.MEASUREMENT_STORE.getMeasurementSchema(metricName);
