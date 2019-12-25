@@ -106,12 +106,14 @@ public abstract class AvroStreamingMessageBodyReader implements MessageBodyReade
     private final Decoder decoder;
     private final DatumReader reader;
     private final InputStream entityStream;
+    private final Schema readerSchema;
 
 
     StreamingArrayOutputImpl(final InputStream entityStream, final Decoder decoder,
             final Schema readerSchema, final Schema writerSchema) {
       this.entityStream = entityStream;
       this.decoder = decoder;
+      this.readerSchema = readerSchema;
       this.reader = new ReflectDatumReader(writerSchema.getElementType(), readerSchema.getElementType());
     }
 
@@ -128,6 +130,11 @@ public abstract class AvroStreamingMessageBodyReader implements MessageBodyReade
     @Override
     public void close() throws IOException {
       entityStream.close();
+    }
+
+    @Override
+    public Schema getElementSchema() {
+      return readerSchema;
     }
 
   }
