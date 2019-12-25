@@ -45,7 +45,7 @@ public abstract class AvroIterableMessageBodyReader implements MessageBodyReader
   @Override
   public boolean isReadable(final Class<?> type, final Type genericType, final Annotation[] annotations,
           final MediaType mediaType) {
-    return CloseableIterable.class == type || Iterable.class == type;
+    return AvroCloseableIterable.class == type || CloseableIterable.class == type || Iterable.class == type;
   }
 
   /** Overwrite for decoders that are capable of decoding schema from stream  */
