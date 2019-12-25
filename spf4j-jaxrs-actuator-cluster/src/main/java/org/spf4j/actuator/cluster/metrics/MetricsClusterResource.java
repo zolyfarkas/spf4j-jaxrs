@@ -229,7 +229,7 @@ public class MetricsClusterResource {
       fields.add(new org.apache.avro.Schema.Field(f, f.schema()));
     }
     return org.apache.avro.Schema.createRecord("Nodes" + schema.getName(),
-            schema.getDoc(), schema.getNamespace(), false, fields);
+            schema.getDoc(), schema.getNamespace(), false, fields, false);
   }
 
   private static GenericRecord addNodeToRecord(final org.apache.avro.Schema nSchema,
