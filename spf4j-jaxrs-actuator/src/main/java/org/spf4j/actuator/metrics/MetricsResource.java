@@ -23,6 +23,7 @@ import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -60,7 +61,12 @@ public class MetricsResource {
           @Nullable @QueryParam("to") final Instant pto) throws IOException {
     Instant from = pfrom == null ? Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime()) : pfrom;
     Instant to = pto == null ? Instant.now() : pto;
-    return RecorderFactory.MEASUREMENT_STORE.getMeasurementData(metricName, from, to);
+    AvroCloseableIterable<TimeSeriesRecord> measurementData
+            = RecorderFactory.MEASUREMENT_STORE.getMeasurementData(metricName, from, to);
+    if (measurementData == null) {
+       throw new NotFoundException("Metric not found " + metricName);
+    }
+    return measurementData;
   }
 
 
@@ -68,7 +74,11 @@ public class MetricsResource {
   @Path("{metric}/schema")
   @Produces("application/json")
   public Schema getMetricSchema(@PathParam("metric") final String metricName) throws IOException {
-    return RecorderFactory.MEASUREMENT_STORE.getMeasurementSchema(metricName);
+    Schema measurementSchema = RecorderFactory.MEASUREMENT_STORE.getMeasurementSchema(metricName);
+    if (measurementSchema == null) {
+      throw new NotFoundException("Metric not found " + metricName);
+    }
+    return measurementSchema;
   }
 
 }
