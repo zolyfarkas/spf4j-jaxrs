@@ -141,7 +141,7 @@ public class MetricsClusterResource {
   public org.apache.avro.Schema getMetricSchema(@PathParam("metric") final String metricName)
           throws IOException, URISyntaxException {
     try {
-      return localResource.getMetricSchema(metricName);
+      return addNodeToSchema(localResource.getMetricSchema(metricName));
     } catch (WebApplicationException ex) {
       if (ex.getResponse().getStatus() != 404) {
         throw ex;
@@ -154,7 +154,8 @@ public class MetricsClusterResource {
       URI uri = new URI(service.getName(), null,
               addr.getHostAddress(), service.getPort(), "/metrics/local/" + metricName + "/schema", null, null);
       try {
-        return httpClient.target(uri).request(MediaType.APPLICATION_JSON).get(org.apache.avro.Schema.class);
+        return addNodeToSchema(httpClient.target(uri)
+                .request(MediaType.APPLICATION_JSON).get(org.apache.avro.Schema.class));
       } catch (WebApplicationException ex) {
         if (ex.getResponse().getStatus() != 404) {
           throw ex;
@@ -171,8 +172,7 @@ public class MetricsClusterResource {
   public StreamingArrayContent<GenericRecord> getClusterMetricsData(@PathParam("metric") final String metricName,
           @Nullable @QueryParam("from") final Instant pfrom,
           @Nullable @QueryParam("to") final Instant pto) throws URISyntaxException, IOException {
-    org.apache.avro.Schema metricSchema = getMetricSchema(metricName);
-    org.apache.avro.Schema nSchema = addNodeToSchema(metricSchema);
+    org.apache.avro.Schema nSchema = getMetricSchema(metricName);
     Instant from = pfrom == null ? Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime()) : pfrom;
     Instant to = pto == null ? Instant.now() : pto;
     ClusterInfo clusterInfo = cluster.getClusterInfo();
