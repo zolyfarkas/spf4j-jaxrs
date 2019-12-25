@@ -1,6 +1,11 @@
 package org.spf4j.actuator.cluster.profiles;
 
 import gnu.trove.set.hash.THashSet;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -109,7 +114,20 @@ public class ProfilesClusterResource {
     });
   }
 
-
+  @Operation(
+          description = "Get cluster prrofile aggregation groups.",
+          responses = {
+            @ApiResponse(description = "a list of the aggregation groups",
+                    responseCode = "200",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(
+                                    schema = @Schema(implementation = String.class)
+                            )
+                    )
+            )
+         }
+  )
   @Path("cluster/groups")
   @GET
   @Produces({"application/json", "application/avro"})
