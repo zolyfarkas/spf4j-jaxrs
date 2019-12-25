@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.ServiceIntegrationBase;
 import org.spf4j.base.CloseableIterable;
-import org.spf4j.base.avro.FileEntry;
 import org.spf4j.perf.impl.MeasurementsInfoImpl;
 import org.spf4j.perf.impl.RecorderFactory;
 
@@ -44,20 +43,17 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
             new MeasurementsInfoImpl("test", "test measurement",
             new String[] {"a", "b"}, new String[] {"ms", "ms"}), 0);
     RecorderFactory.MEASUREMENT_STORE.saveMeasurements(mid, System.currentTimeMillis(), 1, 2);
-    List<FileEntry> nodes = getTarget().path("metrics/cluster")
-            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<FileEntry>>() { });
-     LOG.debug("Nodes: {}", nodes);
+    List<String> nodes = getTarget().path("metrics/cluster")
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
+     LOG.debug("metrics: {}", nodes);
      Assert.assertFalse(nodes.isEmpty());
-     List<String> metrics = getTarget().path("metrics/cluster/" + nodes.get(0).getName())
-            .request("application/json").get(new GenericType<List<String>>() { });
-     Assert.assertFalse(metrics.isEmpty());
-     CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/" + nodes.get(0).getName()
-             + '/' + metrics.get(0) + "/data")
+     CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/" + nodes.get(0)
+             + "/data")
             .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() { });
     for (GenericRecord data : measurements) {
       LOG.debug("data", data);
-      Assert.assertEquals(1L, data.get(1));
-      Assert.assertEquals(2L, data.get(2));
+      Assert.assertEquals(1L, data.get(2));
+      Assert.assertEquals(2L, data.get(3));
     }
   }
 
