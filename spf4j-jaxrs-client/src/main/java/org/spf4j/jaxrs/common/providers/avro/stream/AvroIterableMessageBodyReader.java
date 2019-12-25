@@ -22,6 +22,7 @@ import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.ArrayIterator;
 import org.spf4j.avro.DecodedSchema;
 import org.apache.avro.MapIterator;
+import org.spf4j.base.avro.AvroCloseableIterable;
 import org.spf4j.io.MemorizingBufferedInputStream;
 import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
@@ -100,11 +101,13 @@ public abstract class AvroIterableMessageBodyReader implements MessageBodyReader
     }
     IterableAdaptor result;
     if (readerSchema.getType() == Schema.Type.ARRAY) {
-      DatumReader reader = new ReflectDatumReader(writerSchema.getElementType(), readerSchema.getElementType());
-      result = new IterableAdaptor(pentityStream, new ArrayIterator(decoder, reader));
+      Schema elementType = writerSchema.getElementType();
+      DatumReader reader = new ReflectDatumReader(elementType, readerSchema.getElementType());
+      result = new IterableAdaptor(pentityStream, new ArrayIterator(decoder, reader), elementType);
     } else if (readerSchema.getType() == Schema.Type.MAP) {
-      DatumReader reader = new ReflectDatumReader(writerSchema.getValueType(), readerSchema.getValueType());
-      result = new IterableAdaptor(pentityStream, new MapIterator(decoder, reader));
+      Schema valueType = writerSchema.getValueType();
+      DatumReader reader = new ReflectDatumReader(valueType, readerSchema.getValueType());
+      result = new IterableAdaptor(pentityStream, new MapIterator(decoder, reader), valueType);
     } else {
       throw new IllegalStateException("invalid reader schema " + readerSchema + " for " + genericType);
     }
@@ -120,14 +123,16 @@ public abstract class AvroIterableMessageBodyReader implements MessageBodyReader
   }
 
 
-  private static class IterableAdaptor implements CloseableIterable {
+  private static class IterableAdaptor implements AvroCloseableIterable {
 
     private final InputStream pentityStream;
     private final Iterator iterator;
+    private final Schema elementSchema;
 
-    IterableAdaptor(final InputStream pentityStream, final Iterator iterator) {
+    IterableAdaptor(final InputStream pentityStream, final Iterator iterator, final Schema elementSchema) {
       this.pentityStream = pentityStream;
       this.iterator = iterator;
+      this.elementSchema = elementSchema;
     }
 
     @Override
@@ -144,6 +149,11 @@ public abstract class AvroIterableMessageBodyReader implements MessageBodyReader
     public Iterator iterator() {
       return iterator;
     }
+
+    @Override
+    public Schema getElementSchema() {
+       return elementSchema;
+     }
 
     @Override
     public String toString() {
