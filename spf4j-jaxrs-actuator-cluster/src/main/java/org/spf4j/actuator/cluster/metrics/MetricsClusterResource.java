@@ -51,6 +51,7 @@ import javax.ws.rs.core.MediaType;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.spf4j.actuator.metrics.MetricsResource;
+import org.spf4j.avro.AvroCompatUtils;
 import org.spf4j.base.ArrayWriter;
 import org.spf4j.base.avro.AvroCloseableIterable;
 import org.spf4j.base.avro.NetworkService;
@@ -228,7 +229,7 @@ public class MetricsClusterResource {
     for (org.apache.avro.Schema.Field f : ofields) {
       fields.add(new org.apache.avro.Schema.Field(f, f.schema()));
     }
-    return org.apache.avro.Schema.createRecord("Nodes" + schema.getName(),
+    return AvroCompatUtils.createRecordSchema(schema.getName(),
             schema.getDoc(), schema.getNamespace(), false, fields, false);
   }
 
