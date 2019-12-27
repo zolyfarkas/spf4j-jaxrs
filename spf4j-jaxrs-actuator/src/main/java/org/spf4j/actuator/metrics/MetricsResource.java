@@ -61,6 +61,7 @@ public class MetricsResource {
           @Nullable @QueryParam("to") final Instant pto) throws IOException {
     Instant from = pfrom == null ? Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime()) : pfrom;
     Instant to = pto == null ? Instant.now() : pto;
+    RecorderFactory.MEASUREMENT_STORE.flush();
     AvroCloseableIterable<TimeSeriesRecord> measurementData
             = RecorderFactory.MEASUREMENT_STORE.getMeasurementData(metricName, from, to);
     if (measurementData == null) {
@@ -74,6 +75,7 @@ public class MetricsResource {
   @Path("{metric}/schema")
   @Produces("application/json")
   public Schema getMetricSchema(@PathParam("metric") final String metricName) throws IOException {
+    RecorderFactory.MEASUREMENT_STORE.flush();
     Schema measurementSchema = RecorderFactory.MEASUREMENT_STORE.getMeasurementSchema(metricName);
     if (measurementSchema == null) {
       throw new NotFoundException("Metric not found " + metricName);
