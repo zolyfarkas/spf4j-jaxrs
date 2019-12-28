@@ -77,6 +77,9 @@ public abstract class AvroStreamingMessageBodyReader implements MessageBodyReade
     ParameterizedType genericType = MessageBodyRWUtils.toParameterizedType(StreamingArrayContent.class, pgenericType);
     Type elType = genericType.getActualTypeArguments()[0];
     Schema elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
+    if (elemSchema == null) {
+      throw new RuntimeException("Unable figure out reader schema for " + type + ", " + pgenericType);
+    }
     Schema readerSchema = Schema.createArray(elemSchema);
 
     Decoder decoder = null;
@@ -106,15 +109,15 @@ public abstract class AvroStreamingMessageBodyReader implements MessageBodyReade
     private final Decoder decoder;
     private final DatumReader reader;
     private final InputStream entityStream;
-    private final Schema readerSchema;
+    private final Schema readerElementSchema;
 
 
     StreamingArrayOutputImpl(final InputStream entityStream, final Decoder decoder,
             final Schema readerSchema, final Schema writerSchema) {
       this.entityStream = entityStream;
       this.decoder = decoder;
-      this.readerSchema = readerSchema;
-      this.reader = new ReflectDatumReader(writerSchema.getElementType(), readerSchema.getElementType());
+      this.readerElementSchema = readerSchema.getElementType();
+      this.reader = new ReflectDatumReader(writerSchema.getElementType(), this.readerElementSchema);
     }
 
     @Override
@@ -134,7 +137,7 @@ public abstract class AvroStreamingMessageBodyReader implements MessageBodyReade
 
     @Override
     public Schema getElementSchema() {
-      return readerSchema;
+      return readerElementSchema;
     }
 
   }

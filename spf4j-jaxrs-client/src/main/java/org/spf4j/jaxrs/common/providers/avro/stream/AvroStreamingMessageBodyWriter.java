@@ -16,7 +16,6 @@ import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.reflect.ExtendedReflectDatumWriter;
 import org.apache.avro.AvroArrayWriter;
-import org.apache.avro.generic.IndexedRecord;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 import org.spf4j.jaxrs.StreamingArrayContent;
 import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
@@ -63,7 +62,7 @@ public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWrite
       elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
       schema = Schema.createArray(elemSchema);
     } else {
-      elType = IndexedRecord.class;
+      elType = Object.class;
       schema = Schema.createArray(elemSchema);
     }
     protocol.serialize(httpHeaders::add, schema);
