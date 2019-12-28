@@ -68,6 +68,14 @@
 
   <build>
     <plugins>
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <systemProperties>
+              <avro.generic.default.stringClass>java.lang.String</avro.generic.default.stringClass>
+            </systemProperties>
+          </configuration>
+        </plugin>
       <!--
       <plugin>
         <groupId>com.github.spotbugs</groupId>
