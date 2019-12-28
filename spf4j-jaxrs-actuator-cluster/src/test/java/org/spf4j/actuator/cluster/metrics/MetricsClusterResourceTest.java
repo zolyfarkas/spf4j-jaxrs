@@ -16,11 +16,13 @@
 package org.spf4j.actuator.cluster.metrics;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import org.apache.avro.generic.GenericRecord;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,23 +39,54 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetricsClusterResourceTest.class);
 
-  @Test
-  public void testMetrics() throws IOException {
+  @BeforeClass
+  public static void init() throws IOException {
     long mid = RecorderFactory.MEASUREMENT_STORE.alocateMeasurements(
             new MeasurementsInfoImpl("test", "test measurement",
-            new String[] {"a", "b"}, new String[] {"ms", "ms"}), 0);
+                    new String[]{"a", "b"}, new String[]{"ms", "ms"}), 0);
     RecorderFactory.MEASUREMENT_STORE.saveMeasurements(mid, System.currentTimeMillis(), 1, 2);
+    RecorderFactory.MEASUREMENT_STORE.flush();
+  }
+
+  @Test
+  public void testMetrics() throws IOException {
     List<String> nodes = getTarget().path("metrics/cluster")
-            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
-     LOG.debug("metrics: {}", nodes);
-     Assert.assertFalse(nodes.isEmpty());
-     CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/" + nodes.get(0)
-             + "/data")
-            .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() { });
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() {
+    });
+    LOG.debug("metrics: {}", nodes);
+    Assert.assertFalse(nodes.isEmpty());
+    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/" + nodes.get(0)
+            + "/data")
+            .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
+    });
     for (GenericRecord data : measurements) {
       LOG.debug("data", data);
       Assert.assertEquals(1L, data.get(2));
       Assert.assertEquals(2L, data.get(3));
+    }
+  }
+
+  @Test
+  public void testMetricsJoin() throws IOException {
+    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test/data/b")
+            .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
+    });
+    for (GenericRecord data : measurements) {
+      LOG.debug("data", data);
+      Assert.assertEquals(BigDecimal.valueOf(2L), data.get(1));
+    }
+  }
+
+
+  @Test
+  public void testMetricsProject() throws IOException {
+    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test/data")
+            .queryParam("_project", "node,ts,b")
+            .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
+    });
+    for (GenericRecord data : measurements) {
+      LOG.debug("data", data);
+      Assert.assertEquals(2L, data.get(2));
     }
   }
 

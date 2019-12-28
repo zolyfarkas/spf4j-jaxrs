@@ -17,6 +17,9 @@ package org.spf4j.jaxrs;
 
 import java.io.Closeable;
 import java.io.IOException;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.IndexedRecord;
+import org.spf4j.avro.schema.Schemas;
 import org.spf4j.base.ArrayWriter;
 import org.spf4j.base.avro.AvroContainer;
 
@@ -25,15 +28,53 @@ import org.spf4j.base.avro.AvroContainer;
  */
 public interface StreamingArrayContent<T> extends Closeable, AvroContainer, Buffered {
 
- void write(ArrayWriter<T> output) throws IOException;
+  void write(ArrayWriter<T> output) throws IOException;
 
- /**
-  * Jersey will lose the stream after a MessageBodyReader is finished unless the object implements Closeable.
-  *
-  * @throws IOException
-  */
- default void close() throws IOException {
-   // nothing to close by default.
- }
+  /**
+   * Jersey will lose the stream after a MessageBodyReader is finished unless the object implements Closeable.
+   *
+   * @throws IOException
+   */
+  default void close() throws IOException {
+    // nothing to close by default.
+  }
+
+  default StreamingArrayContent<IndexedRecord> project(final Schema resultSchema,
+          final Schema elementType, final int bufferSize) {
+    return new StreamingArrayContentProjection(this, resultSchema, elementType, bufferSize);
+  }
+
+  class StreamingArrayContentProjection<T> implements StreamingArrayContent {
+
+    private final StreamingArrayContent<IndexedRecord> toWrap;
+    private final Schema resultSchema;
+    private final Schema elementType;
+    private final int bufferSize;
+
+    public StreamingArrayContentProjection(final StreamingArrayContent<IndexedRecord> toWrap,
+            final Schema resultSchema, final Schema elementType, final int bufferSize) {
+      this.toWrap = toWrap;
+      this.resultSchema = resultSchema;
+      this.elementType = elementType;
+      this.bufferSize = bufferSize;
+    }
+
+    @Override
+    public void write(final ArrayWriter output) throws IOException {
+      toWrap.write((final IndexedRecord t) -> {
+        output.write(Schemas.project(resultSchema, elementType, t));
+      });
+    }
+
+    @Override
+    public int getElementBufferSize() {
+      return bufferSize;
+    }
+
+    @Override
+    public Schema getElementSchema() {
+      return resultSchema;
+    }
+  }
 
 }

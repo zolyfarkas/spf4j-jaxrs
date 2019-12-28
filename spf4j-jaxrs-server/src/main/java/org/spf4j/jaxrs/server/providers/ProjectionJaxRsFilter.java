@@ -17,6 +17,7 @@ package org.spf4j.jaxrs.server.providers;
 
 
 import com.google.common.collect.Iterables;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.Closeable;
 import java.util.List;
 import javax.annotation.Priority;
@@ -37,6 +38,7 @@ import org.spf4j.io.csv.CsvParseException;
 import org.spf4j.jaxrs.Buffered;
 import org.spf4j.jaxrs.IterableArrayContent;
 import org.spf4j.jaxrs.ProjectionSupport;
+import org.spf4j.jaxrs.StreamingArrayContent;
 import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
 
 /**
@@ -50,6 +52,7 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
   private static final Logger LOG = LoggerFactory.getLogger(ProjectionJaxRsFilter.class);
 
   @Override
+  @SuppressFBWarnings("ITC_INHERITANCE_TYPE_CHECKING")
   public void filter(final ContainerRequestContext requestContext,
           final ContainerResponseContext responseContext) {
     MultivaluedMap<String, String> qp = requestContext.getUriInfo().getQueryParameters();
@@ -63,10 +66,10 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
     } catch (CsvParseException ex) {
       throw new ClientErrorException("Invalid projection " + select, 400, ex);
     }
-    Iterable<? extends IndexedRecord> entity = (Iterable<? extends IndexedRecord>) responseContext.getEntity();
-    LOG.debug("Projecting: {} entity: {}", select, entity);
+    Object responseObject = responseContext.getEntity();
+    LOG.debug("Projecting: {} entity: {}", select, responseObject);
     Schema sourceSchema = MessageBodyRWUtils.getAvroSchemaFromType(responseContext.getEntityClass(),
-            responseContext.getEntityType(), entity, responseContext.getEntityAnnotations());
+            responseContext.getEntityType(), responseObject, responseContext.getEntityAnnotations());
     if (sourceSchema.getType() != Schema.Type.ARRAY) {
       throw new IllegalStateException("you can only use " + this
               + " with methods that return an array/collection/iterable");
@@ -77,21 +80,31 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
       throw new ClientErrorException("Invalid projection " + projection + " of " + elementType, 400);
     }
     Closeable cl;
-    if (entity instanceof Closeable) {
-      cl = (Closeable) entity;
+    if (responseObject instanceof Closeable) {
+      cl = (Closeable) responseObject;
     } else {
       cl = () -> { };
     }
     int bufferSize;
-    if (entity instanceof Buffered) {
-      bufferSize = ((Buffered) entity).getElementBufferSize();
+    if (responseObject instanceof Buffered) {
+      bufferSize = ((Buffered) responseObject).getElementBufferSize();
     } else {
       bufferSize = 64;
     }
-    IterableArrayContent<IndexedRecord> projected = IterableArrayContent.from(Iterables.transform(entity,
-            (x) -> Schemas.project(resultSchema, elementType, x)), cl, bufferSize,
-            resultSchema);
-    responseContext.setEntity(projected);
+    if (responseObject instanceof Iterable) {
+      Iterable<? extends IndexedRecord> entity = (Iterable<? extends IndexedRecord>) responseObject;
+      IterableArrayContent<IndexedRecord> projected = IterableArrayContent.from(Iterables.transform(entity,
+              (x) -> Schemas.project(resultSchema, elementType, x)), cl, bufferSize,
+              resultSchema);
+      responseContext.setEntity(projected);
+    } else if (responseObject instanceof StreamingArrayContent) {
+      StreamingArrayContent<IndexedRecord> toWrap = (StreamingArrayContent<IndexedRecord>) responseObject;
+      StreamingArrayContent<IndexedRecord> projected = toWrap.project(resultSchema, elementType, bufferSize);
+      responseContext.setEntity(projected);
+    } else {
+      throw new IllegalStateException("Response type cannot be projected " + responseObject);
+    }
   }
+
 
 }

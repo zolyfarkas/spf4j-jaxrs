@@ -16,6 +16,7 @@ import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.reflect.ExtendedReflectDatumWriter;
 import org.apache.avro.AvroArrayWriter;
+import org.apache.avro.generic.IndexedRecord;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 import org.spf4j.jaxrs.StreamingArrayContent;
 import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
@@ -53,14 +54,16 @@ public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWrite
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream)
           throws IOException {
-    ParameterizedType genericType = MessageBodyRWUtils.toParameterizedType(StreamingArrayContent.class, pgenericType);
-    Type elType = genericType.getActualTypeArguments()[0];
+    Type elType;
     Schema schema;
     Schema elemSchema = t.getElementSchema();
     if (elemSchema == null) {
+      ParameterizedType genericType = MessageBodyRWUtils.toParameterizedType(StreamingArrayContent.class, pgenericType);
+      elType = genericType.getActualTypeArguments()[0];
       elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
       schema = Schema.createArray(elemSchema);
     } else {
+      elType = IndexedRecord.class;
       schema = Schema.createArray(elemSchema);
     }
     protocol.serialize(httpHeaders::add, schema);
