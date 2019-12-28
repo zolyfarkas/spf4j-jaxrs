@@ -306,7 +306,7 @@ public class MetricsClusterResource {
     for (String node : nodes) {
           fields.add(AvroCompatUtils.createField(node,
                   new org.apache.avro.Schema.Parser()
-                          .parse("[\"null\",{\"type\":\"bytes\",\"logicalType\":\"decimal\"}]"),
+                          .parse("[\"null\",{\"type\":\"string\",\"logicalType\":\"decimal\"}]"),
                   null, null, true, false,
             org.apache.avro.Schema.Field.Order.IGNORE));
     }

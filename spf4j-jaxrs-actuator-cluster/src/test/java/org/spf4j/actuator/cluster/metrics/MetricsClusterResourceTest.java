@@ -42,7 +42,7 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
   @BeforeClass
   public static void init() throws IOException {
     long mid = RecorderFactory.MEASUREMENT_STORE.alocateMeasurements(
-            new MeasurementsInfoImpl("test", "test measurement",
+            new MeasurementsInfoImpl("test-1", "test measurement",
                     new String[]{"a", "b"}, new String[]{"ms", "ms"}), 0);
     RecorderFactory.MEASUREMENT_STORE.saveMeasurements(mid, System.currentTimeMillis(), 1, 2);
     RecorderFactory.MEASUREMENT_STORE.flush();
@@ -68,7 +68,7 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
 
   @Test
   public void testMetricsJoin() throws IOException {
-    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test/data/b")
+    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test-1/data/b")
             .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
     });
     for (GenericRecord data : measurements) {
@@ -80,13 +80,25 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
 
   @Test
   public void testMetricsProject() throws IOException {
-    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test/data")
+    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test-1/data")
             .queryParam("_project", "node,ts,b")
             .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
     });
     for (GenericRecord data : measurements) {
       LOG.debug("data", data);
       Assert.assertEquals(2L, data.get(2));
+    }
+  }
+
+  @Test
+  public void testMetricsProject2() throws IOException {
+    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test-1/data")
+            .queryParam("_project", "ts,b")
+            .request("*/*").get(new GenericType<CloseableIterable<GenericRecord>>() {
+    });
+    for (GenericRecord data : measurements) {
+      LOG.debug("data", data);
+      Assert.assertEquals(2L, data.get(1));
     }
   }
 
