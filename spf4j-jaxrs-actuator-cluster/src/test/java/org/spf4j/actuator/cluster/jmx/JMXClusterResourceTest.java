@@ -35,10 +35,6 @@ import org.spf4j.jmx.Registry;
  */
 public class JMXClusterResourceTest extends ServiceIntegrationBase {
 
-  static {
-    System.setProperty("avro.generic.default.stringClass", String.class.getName());
-  }
-
   private static final Logger LOG = LoggerFactory.getLogger(JMXClusterResourceTest.class);
 
   @Test
