@@ -1,7 +1,6 @@
 
 package org.spf4j.jaxrs.common.providers.avro.stream;
 
-import com.google.common.reflect.TypeToken;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
@@ -58,21 +57,18 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
           throws IOException {
     Schema schema;
     Schema elemSchema = t instanceof AvroContainer ? ((AvroContainer) t).getElementSchema() : null;
-    Type elType;
     if (elemSchema == null) {
       ParameterizedType genericType = MessageBodyRWUtils.toParameterizedType(Iterable.class, pgenericType);
       if (genericType == null) {
         if (t instanceof Collection) {
           Collection o = (Collection) t;
           if (o.isEmpty()) {
-            elType = Object.class;
             elemSchema = Schema.create(Schema.Type.NULL);
             schema = Schema.createArray(Schema.createArray(elemSchema));
           } else {
             Object elemVal = o.iterator().next();
             Class<? extends Object> aClass = elemVal.getClass();
-            elType = aClass;
-            elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(aClass, elType, elemVal,
+            elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(aClass, aClass, elemVal,
                     Arrays.EMPTY_ANNOT_ARRAY);
             schema = Schema.createArray(elemSchema);
           }
@@ -80,16 +76,15 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
           throw new IllegalStateException("Cannot serialize " + t);
         }
       } else {
-        elType = genericType.getActualTypeArguments()[0];
-        elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
+        Type actualTypeArgument = genericType.getActualTypeArguments()[0];
+        elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(actualTypeArgument, annotations);
         if (elemSchema == null) {
-           throw new IllegalStateException("Cannot serialize " + elType + ": " + t);
+           throw new IllegalStateException("Cannot serialize " + actualTypeArgument + ": " + t);
         }
         schema = Schema.createArray(elemSchema);
       }
     } else {
       schema = Schema.createArray(elemSchema);
-      elType = Object.class;
     }
     protocol.serialize(httpHeaders::add, schema);
     try {
@@ -102,12 +97,11 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
         bufferSize = 64;
       }
 
-      AvroArrayWriter arrWriter = new AvroArrayWriter(encoder, writer,
-              TypeToken.of(elType).getRawType(), bufferSize);
-      for (Object o : t) {
-        arrWriter.write(o);
+      try (AvroArrayWriter arrWriter = new AvroArrayWriter(encoder, writer, bufferSize)) {
+        for (Object o : t) {
+          arrWriter.write(o);
+        }
       }
-      arrWriter.close();
     } catch (IOException | RuntimeException e) {
       throw new RuntimeException("Serialization failed for " + schema.getName(), e);
     } finally {

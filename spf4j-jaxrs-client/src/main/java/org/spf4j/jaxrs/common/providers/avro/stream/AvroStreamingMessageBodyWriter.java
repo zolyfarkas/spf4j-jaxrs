@@ -1,7 +1,6 @@
 
 package org.spf4j.jaxrs.common.providers.avro.stream;
 
-import com.google.common.reflect.TypeToken;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
@@ -53,26 +52,23 @@ public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWrite
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream)
           throws IOException {
-    Type elType;
     Schema schema;
     Schema elemSchema = t.getElementSchema();
     if (elemSchema == null) {
       ParameterizedType genericType = MessageBodyRWUtils.toParameterizedType(StreamingArrayContent.class, pgenericType);
-      elType = genericType.getActualTypeArguments()[0];
-      elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);
+      Type actualTypeArgument = genericType.getActualTypeArguments()[0];
+      elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(actualTypeArgument, annotations);
       schema = Schema.createArray(elemSchema);
     } else {
-      elType = Object.class;
       schema = Schema.createArray(elemSchema);
     }
     protocol.serialize(httpHeaders::add, schema);
     try {
       DatumWriter writer = new ExtendedReflectDatumWriter(elemSchema);
       Encoder encoder = getEncoder(schema, entityStream);
-      AvroArrayWriter arrWriter = new AvroArrayWriter(encoder, writer,
-              TypeToken.of(elType).getRawType(), t.getElementBufferSize());
-      t.write(arrWriter);
-      arrWriter.close();
+      try (AvroArrayWriter arrWriter = new AvroArrayWriter(encoder, writer, t.getElementBufferSize())) {
+        t.write(arrWriter);
+      }
     } catch (IOException | RuntimeException e) {
       throw new RuntimeException("Serialization failed for " + schema.getName(), e);
     }
