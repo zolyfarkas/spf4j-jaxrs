@@ -344,13 +344,13 @@ public final class ExecutionContextFilter implements Filter {
               new LazyOutputStreamWrapper(new HeaderWriteBeforeOutput(headers, resp)));
     } catch (RuntimeException ex) {
       if (exception != null) {
-        ex.addSuppressed(exception);
+        Throwables.suppressLimited(ex, exception);
       }
       log.log(java.util.logging.Level.SEVERE, "Exception while writing detail", ex);
       throw ex;
     } catch (IOException ex) {
       if (exception != null) {
-        ex.addSuppressed(exception);
+        Throwables.suppressLimited(ex, exception);
       }
       log.log(java.util.logging.Level.SEVERE, "Exception while writing detail", ex);
       throw new UncheckedIOException(ex);

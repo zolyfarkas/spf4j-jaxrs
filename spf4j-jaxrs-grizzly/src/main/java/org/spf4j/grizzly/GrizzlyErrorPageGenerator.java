@@ -12,6 +12,7 @@ import org.glassfish.grizzly.http.server.ErrorPageGenerator;
 import org.glassfish.grizzly.http.server.Request;
 import org.spf4j.avro.SchemaClient;
 import org.spf4j.base.Arrays;
+import org.spf4j.base.Throwables;
 import org.spf4j.base.avro.Converters;
 import org.spf4j.base.avro.DebugDetail;
 import org.spf4j.base.avro.ServiceError;
@@ -50,13 +51,13 @@ public final class GrizzlyErrorPageGenerator implements ErrorPageGenerator {
               bab);
     } catch (RuntimeException ex) {
       if (exception != null) {
-        ex.addSuppressed(exception);
+        Throwables.suppressLimited(ex, exception);
       }
       Logger.getLogger(reasonPhrase).log(Level.SEVERE, "RuntimeException while writing detail", ex);
       throw ex;
     } catch (IOException ex) {
       if (exception != null) {
-        ex.addSuppressed(exception);
+        Throwables.suppressLimited(ex, exception);
       }
       Logger.getLogger(reasonPhrase).log(Level.SEVERE, "Exception while writing detail", ex);
       throw new UncheckedIOException(ex);

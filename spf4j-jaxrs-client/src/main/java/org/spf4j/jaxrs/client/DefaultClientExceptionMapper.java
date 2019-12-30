@@ -20,6 +20,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import org.slf4j.LoggerFactory;
 import org.spf4j.base.ExecutionContext;
+import org.spf4j.base.Throwables;
 import org.spf4j.base.avro.Converters;
 import org.spf4j.base.avro.DebugDetail;
 import org.spf4j.base.avro.LogRecord;
@@ -59,7 +60,7 @@ public final class DefaultClientExceptionMapper implements ClientExceptionMapper
       se = response.readEntity(ServiceError.class);
     } catch (RuntimeException x) {
       // not a Propagable service error.
-      ex.addSuppressed(x);
+      Throwables.suppressLimited(ex, x);
       return x;
     }
     LOG.debug("ServiceError: {}", se.getMessage());
