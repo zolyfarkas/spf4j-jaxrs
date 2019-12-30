@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -37,7 +38,7 @@ import org.spf4j.base.avro.LogRecord;
  *
  * @author Zoltan Farkas
  */
-@Path("logback/local")
+@Path("logback/local/status")
 @RolesAllowed("operator")
 @Singleton
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
@@ -54,11 +55,33 @@ public class LogbackStatus {
     return result;
   }
 
+  @DELETE
+  public void clear() {
+    LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+    StatusManager statusManager = lc.getStatusManager();
+    statusManager.clear();
+  }
+
   private static void addStatuses(final Iterable<Status> statuses, final List<LogRecord> result) {
     for (Status status : statuses) {
       Throwable t = status.getThrowable();
+      LogLevel level;
+      switch (status.getLevel()) {
+        case Status.INFO:
+          level = LogLevel.INFO;
+          break;
+        case Status.WARN:
+          level = LogLevel.WARN;
+          break;
+        case Status.ERROR:
+          level = LogLevel.ERROR;
+          break;
+        default:
+          level = LogLevel.UNKNOWN;
+          break;
+      }
       result.add(new LogRecord(Objects.toString(status.getOrigin()),
-              "", LogLevel.DEBUG, Instant.ofEpochMilli(status.getDate()), "status",
+              "", level, Instant.ofEpochMilli(status.getDate()), "status",
               Thread.currentThread().getName(),
               status.getMessage(), Collections.EMPTY_LIST, Collections.EMPTY_MAP,
               t == null ? null : Converters.convert(t),
