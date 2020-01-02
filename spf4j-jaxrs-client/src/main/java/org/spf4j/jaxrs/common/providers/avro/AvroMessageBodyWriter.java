@@ -53,7 +53,7 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
           final OutputStream entityStream)
           throws IOException {
     Schema schema = MessageBodyRWUtils.getAvroSchemaFromType(type, genericType, t, annotations);
-    protocol.serialize(mediaType, httpHeaders::add, schema);
+    protocol.serialize(mediaType, httpHeaders::putSingle, schema);
     try {
       DatumWriter writer = new ExtendedReflectDatumWriter(schema);
       Encoder encoder = getEncoder(schema, entityStream);

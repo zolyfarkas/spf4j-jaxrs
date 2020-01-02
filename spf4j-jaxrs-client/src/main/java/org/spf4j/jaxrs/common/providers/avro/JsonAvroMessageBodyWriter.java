@@ -6,7 +6,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import javax.inject.Inject;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
@@ -36,7 +35,6 @@ public final class JsonAvroMessageBodyWriter extends  AvroMessageBodyWriter {
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream)
           throws IOException {
-    httpHeaders.putSingle(HttpHeaders.CONTENT_TYPE, "application/avro+json;charset=UTF-8");
     super.writeTo(t, type, genericType, annotations, mediaType, httpHeaders, entityStream);
   }
 

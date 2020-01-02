@@ -86,7 +86,7 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
     } else {
       schema = Schema.createArray(elemSchema);
     }
-    protocol.serialize(mediaType, httpHeaders::add, schema);
+    protocol.serialize(mediaType, httpHeaders::putSingle, schema);
     try {
       DatumWriter writer = new ExtendedReflectDatumWriter(elemSchema);
       Encoder encoder = getEncoder(schema, entityStream);
