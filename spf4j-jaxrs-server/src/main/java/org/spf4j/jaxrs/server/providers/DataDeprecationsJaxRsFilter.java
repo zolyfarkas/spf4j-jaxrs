@@ -46,6 +46,9 @@ public final class DataDeprecationsJaxRsFilter implements ContainerResponseFilte
   @Override
   public void filter(final ContainerRequestContext requestContext, final ContainerResponseContext responseContext) {
     Schema respSchema = null;
+    if (!responseContext.hasEntity()) {
+      return;
+    }
     Object entity = responseContext.getEntity();
     if (entity instanceof AvroContainer) {
       Schema elementSchema = ((AvroContainer) entity).getElementSchema();
