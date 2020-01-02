@@ -40,6 +40,8 @@ import org.spf4j.http.Headers;
  */
 public final class DefaultSchemaProtocol implements SchemaProtocol {
 
+  public static final String CONTENT_TYPE_AVRO_SCHEMA_PARAM = "avsc";
+
   private final SchemaResolver client;
 
   public DefaultSchemaProtocol(final SchemaResolver client) {
@@ -50,7 +52,7 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
   @Nullable
   public Schema deserialize(final MediaType mediaType,
           final Function<String, String> headers, final Class<?> type, final Type genericType) {
-    String schemaStr = mediaType.getParameters().get("avsc");
+    String schemaStr = mediaType.getParameters().get(CONTENT_TYPE_AVRO_SCHEMA_PARAM);
     if (schemaStr == null) {
       schemaStr = headers.apply(Headers.CONTENT_SCHEMA);
     }
@@ -74,7 +76,8 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
       schema.toJson(new AvroNamesRefResolver(client), jgen);
       jgen.flush();
       headers.accept(HttpHeaders.CONTENT_TYPE, new MediaType(acceptableMediaType.getType(),
-              acceptableMediaType.getSubtype(), ImmutableMap.of("avsc", sw.toString())).toString());
+              acceptableMediaType.getSubtype(),
+              ImmutableMap.of(CONTENT_TYPE_AVRO_SCHEMA_PARAM, sw.toString())).toString());
     } catch (IOException ex) {
       throw new UncheckedIOException(ex);
     }
@@ -83,6 +86,17 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
   @Override
   public String toString() {
     return "DefaultSchemaProtocol{" + "client=" + client + '}';
+  }
+
+  @Override
+  public Schema getAcceptableSchema(final MediaType acceptedMediaType) {
+    String schemaStr = acceptedMediaType.getParameters().get(CONTENT_TYPE_AVRO_SCHEMA_PARAM);
+    if (schemaStr == null) {
+      return null;
+    }
+    Schema.Parser parser = new Schema.Parser(new AvroNamesRefResolver(client));
+    parser.setValidate(false);
+    return parser.parse(schemaStr);
   }
 
 }

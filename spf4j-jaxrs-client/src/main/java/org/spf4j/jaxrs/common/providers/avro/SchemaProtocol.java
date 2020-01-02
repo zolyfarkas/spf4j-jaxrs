@@ -40,6 +40,11 @@ public interface SchemaProtocol {
             final BiConsumer<String, String> headers, final Schema schema) {
       //NOTHING
     }
+
+    @Override
+    public Schema getAcceptableSchema(final MediaType acceptedMediaType) {
+      return null;
+    }
   };
 
 
@@ -61,6 +66,13 @@ public interface SchemaProtocol {
    */
   void serialize(MediaType acceptedMediaType, BiConsumer<String, String> headers, Schema schema);
 
+  /**
+   * return the Acceptable schema from the acceptedMediaType.
+   * @param acceptedMediaType
+   * @return
+   */
+  @Nullable
+  Schema getAcceptableSchema(MediaType acceptedMediaType);
 
   default SchemaProtocol combine(final SchemaProtocol secondary) {
     return new CombinedSchemaProtocol(this, secondary);
