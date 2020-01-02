@@ -19,6 +19,7 @@ import java.lang.reflect.Type;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import javax.ws.rs.core.MediaType;
 import org.apache.avro.Schema;
 
@@ -26,6 +27,7 @@ import org.apache.avro.Schema;
  * Abstraction of Request Content Schema transmission over HTTP(or other protocol) Headers.
  * @author Zoltan Farkas
  */
+@ParametersAreNonnullByDefault
 public interface SchemaProtocol {
 
   SchemaProtocol NONE = new SchemaProtocol() {
@@ -44,6 +46,11 @@ public interface SchemaProtocol {
     @Override
     public Schema getAcceptableSchema(final MediaType acceptedMediaType) {
       return null;
+    }
+
+    @Override
+    public MediaType acceptable(final MediaType mediaType, final Schema schema) {
+      return mediaType;
     }
   };
 
@@ -73,6 +80,8 @@ public interface SchemaProtocol {
    */
   @Nullable
   Schema getAcceptableSchema(MediaType acceptedMediaType);
+
+  MediaType acceptable(MediaType mediaType, Schema schema);
 
   default SchemaProtocol combine(final SchemaProtocol secondary) {
     return new CombinedSchemaProtocol(this, secondary);

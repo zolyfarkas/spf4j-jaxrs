@@ -15,6 +15,7 @@ import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.reflect.ExtendedReflectDatumWriter;
+import org.spf4j.avro.schema.Schemas;
 
 /**
  * @author Zoltan Farkas
@@ -52,15 +53,25 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream)
           throws IOException {
-    Schema schema = MessageBodyRWUtils.getAvroSchemaFromType(type, genericType, t, annotations);
-    protocol.serialize(mediaType, httpHeaders::putSingle, schema);
+    Schema acceptedSchema = protocol.getAcceptableSchema(mediaType);
+    Schema actualSchema = MessageBodyRWUtils.getAvroSchemaFromType(type, genericType, t, annotations);
+    Schema responseSchema;
+    Object resp;
+    if (acceptedSchema == null) {
+      responseSchema = actualSchema;
+      resp =  t;
+    } else {
+      responseSchema = acceptedSchema;
+      resp = Schemas.project(actualSchema, responseSchema, t);
+    }
+    protocol.serialize(mediaType, httpHeaders::putSingle, responseSchema);
     try {
-      DatumWriter writer = new ExtendedReflectDatumWriter(schema);
-      Encoder encoder = getEncoder(schema, entityStream);
-      writer.write(t, encoder);
+      DatumWriter writer = new ExtendedReflectDatumWriter(responseSchema);
+      Encoder encoder = getEncoder(responseSchema, entityStream);
+      writer.write(resp, encoder);
       encoder.flush();
     } catch (IOException | RuntimeException e) {
-      throw new RuntimeException("Serialization failed for " + schema.getName(), e);
+      throw new RuntimeException("Serialization failed for " + responseSchema.getName(), e);
     }
   }
 

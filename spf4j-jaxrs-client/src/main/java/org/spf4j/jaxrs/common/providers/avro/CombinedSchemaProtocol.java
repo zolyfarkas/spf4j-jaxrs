@@ -65,6 +65,11 @@ final class CombinedSchemaProtocol implements SchemaProtocol {
   }
 
   @Override
+  public MediaType acceptable(final MediaType mediaType, final Schema schema) {
+    return primary.acceptable(mediaType, schema);
+  }
+
+  @Override
   public String toString() {
     return "CombinedSchemaProtocol{" + "primary=" + primary + ", secondary=" + secondary + '}';
   }

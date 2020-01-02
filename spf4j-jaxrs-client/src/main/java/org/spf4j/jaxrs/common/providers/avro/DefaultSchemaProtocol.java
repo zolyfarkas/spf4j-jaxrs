@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Type;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -31,6 +32,7 @@ import javax.ws.rs.core.MediaType;
 import org.apache.avro.AvroNamesRefResolver;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
+import org.glassfish.jersey.internal.guava.Maps;
 import org.spf4j.base.Json;
 import org.spf4j.http.Headers;
 
@@ -69,23 +71,23 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
   @SuppressFBWarnings("EXS_EXCEPTION_SOFTENING_NO_CHECKED")
   public void serialize(final MediaType acceptableMediaType,
           final BiConsumer<String, String> headers, final Schema schema) {
+      String schemaStr = schemaToString(schema);
+      headers.accept(HttpHeaders.CONTENT_TYPE, new MediaType(acceptableMediaType.getType(),
+              acceptableMediaType.getSubtype(),
+              ImmutableMap.of(CONTENT_TYPE_AVRO_SCHEMA_PARAM, schemaStr)).toString());
+  }
+
+  private String schemaToString(final Schema schema) {
     try {
       StringWriter sw = new StringWriter();
       JsonGenerator jgen = Json.FACTORY.createGenerator(sw);
       jgen = new FilteringGeneratorDelegate(jgen, NonSerPropertyFilter.INSTANCE, true, true);
       schema.toJson(new AvroNamesRefResolver(client), jgen);
       jgen.flush();
-      headers.accept(HttpHeaders.CONTENT_TYPE, new MediaType(acceptableMediaType.getType(),
-              acceptableMediaType.getSubtype(),
-              ImmutableMap.of(CONTENT_TYPE_AVRO_SCHEMA_PARAM, sw.toString())).toString());
+      return sw.toString();
     } catch (IOException ex) {
       throw new UncheckedIOException(ex);
     }
-  }
-
-  @Override
-  public String toString() {
-    return "DefaultSchemaProtocol{" + "client=" + client + '}';
   }
 
   @Override
@@ -98,5 +100,23 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
     parser.setValidate(false);
     return parser.parse(schemaStr);
   }
+
+  @Override
+  public MediaType acceptable(final MediaType mediaType, final Schema schema) {
+    Map<String, String> xp = mediaType.getParameters();
+    if (xp.containsKey(CONTENT_TYPE_AVRO_SCHEMA_PARAM)) {
+      return mediaType;
+    }
+    Map<String, String> parameters = Maps.newHashMapWithExpectedSize(xp.size() + 1);
+    parameters.putAll(xp);
+    parameters.put(CONTENT_TYPE_AVRO_SCHEMA_PARAM, schemaToString(schema));
+    return new MediaType(mediaType.getType(), mediaType.getSubtype(), parameters);
+  }
+
+  @Override
+  public String toString() {
+    return "DefaultSchemaProtocol{" + "client=" + client + '}';
+  }
+
 
 }
