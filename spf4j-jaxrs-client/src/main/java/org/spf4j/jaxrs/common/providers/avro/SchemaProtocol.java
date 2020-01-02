@@ -19,6 +19,7 @@ import java.lang.reflect.Type;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import javax.annotation.Nullable;
+import javax.ws.rs.core.MediaType;
 import org.apache.avro.Schema;
 
 /**
@@ -29,13 +30,14 @@ public interface SchemaProtocol {
 
   SchemaProtocol NONE = new SchemaProtocol() {
     @Override
-    public Schema deserialize(final Function<String, String> headers,
+    public Schema deserialize(final MediaType mediaType, final Function<String, String> headers,
             final Class<?> type, final Type genericType) {
       return null;
     }
 
     @Override
-    public void serialize(final BiConsumer<String, String> headers, final Schema schema) {
+    public void serialize(final MediaType mediaType,
+            final BiConsumer<String, String> headers, final Schema schema) {
       //NOTHING
     }
   };
@@ -49,7 +51,7 @@ public interface SchemaProtocol {
    * @return the schema or null if schema not transmitted with this protocol.
    */
   @Nullable
-  Schema deserialize(Function<String, String> headers, Class<?> type, Type genericType);
+  Schema deserialize(MediaType mediaType, Function<String, String> headers, Class<?> type, Type genericType);
 
 
   /**
@@ -57,7 +59,7 @@ public interface SchemaProtocol {
    * @param headers
    * @param schema the schema to encode.
    */
-  void serialize(BiConsumer<String, String> headers, Schema schema);
+  void serialize(MediaType acceptedMediaType, BiConsumer<String, String> headers, Schema schema);
 
 
   default SchemaProtocol combine(final SchemaProtocol secondary) {

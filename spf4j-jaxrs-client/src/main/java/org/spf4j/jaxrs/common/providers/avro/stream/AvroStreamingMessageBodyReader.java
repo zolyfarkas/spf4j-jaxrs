@@ -73,7 +73,7 @@ public abstract class AvroStreamingMessageBodyReader implements MessageBodyReade
           final Type pgenericType, final Annotation[] annotations, final MediaType mediaType,
           final MultivaluedMap<String, String> httpHeaders, final InputStream pentityStream)
           throws IOException {
-    Schema writerSchema = protocol.deserialize(httpHeaders::getFirst, (Class) type, pgenericType);
+    Schema writerSchema = protocol.deserialize(mediaType, httpHeaders::getFirst, (Class) type, pgenericType);
     ParameterizedType genericType = MessageBodyRWUtils.toParameterizedType(StreamingArrayContent.class, pgenericType);
     Type elType = genericType.getActualTypeArguments()[0];
     Schema elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(elType, annotations);

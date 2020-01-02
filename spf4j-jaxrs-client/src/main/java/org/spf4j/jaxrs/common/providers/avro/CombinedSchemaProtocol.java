@@ -18,6 +18,7 @@ package org.spf4j.jaxrs.common.providers.avro;
 import java.lang.reflect.Type;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import javax.ws.rs.core.MediaType;
 import org.apache.avro.Schema;
 
 /**
@@ -37,18 +38,20 @@ final class CombinedSchemaProtocol implements SchemaProtocol {
   }
 
   @Override
-  public Schema deserialize(final Function<String, String> headers, final Class<?> type, final Type genericType) {
-    Schema schema = primary.deserialize(headers, type, genericType);
+  public Schema deserialize(final MediaType mediaType,
+          final Function<String, String> headers, final Class<?> type, final Type genericType) {
+    Schema schema = primary.deserialize(mediaType, headers, type, genericType);
     if (schema != null) {
       return schema;
     }
-    return secondary.deserialize(headers, type, genericType);
+    return secondary.deserialize(mediaType, headers, type, genericType);
   }
 
   @Override
-  public void serialize(final BiConsumer<String, String> headers, final Schema schema) {
-    secondary.serialize(headers, schema);
-    primary.serialize(headers, schema);
+  public void serialize(final MediaType mediaType,
+          final BiConsumer<String, String> headers, final Schema schema) {
+    secondary.serialize(mediaType, headers, schema);
+    primary.serialize(mediaType, headers, schema);
   }
 
   @Override

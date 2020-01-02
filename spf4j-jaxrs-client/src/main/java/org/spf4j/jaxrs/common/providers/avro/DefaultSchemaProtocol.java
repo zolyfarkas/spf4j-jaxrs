@@ -17,6 +17,7 @@ package org.spf4j.jaxrs.common.providers.avro;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.filter.FilteringGeneratorDelegate;
+import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -25,6 +26,8 @@ import java.lang.reflect.Type;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import javax.annotation.Nullable;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import org.apache.avro.AvroNamesRefResolver;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
@@ -45,27 +48,33 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
 
   @Override
   @Nullable
-  public Schema deserialize(final Function<String, String> headers, final Class<?> type, final Type genericType) {
-    String schemaRefStr = headers.apply(Headers.CONTENT_SCHEMA);
-    if (schemaRefStr == null) {
+  public Schema deserialize(final MediaType mediaType,
+          final Function<String, String> headers, final Class<?> type, final Type genericType) {
+    String schemaStr = mediaType.getParameters().get("avsc");
+    if (schemaStr == null) {
+      schemaStr = headers.apply(Headers.CONTENT_SCHEMA);
+    }
+    if (schemaStr == null) {
       return null;
     } else {
       Schema.Parser parser = new Schema.Parser(new AvroNamesRefResolver(client));
       parser.setValidate(false);
-      return parser.parse(schemaRefStr);
+      return parser.parse(schemaStr);
     }
   }
 
   @Override
   @SuppressFBWarnings("EXS_EXCEPTION_SOFTENING_NO_CHECKED")
-  public void serialize(final BiConsumer<String, String> headers, final Schema schema) {
+  public void serialize(final MediaType acceptableMediaType,
+          final BiConsumer<String, String> headers, final Schema schema) {
     try {
       StringWriter sw = new StringWriter();
       JsonGenerator jgen = Json.FACTORY.createGenerator(sw);
       jgen = new FilteringGeneratorDelegate(jgen, NonSerPropertyFilter.INSTANCE, true, true);
       schema.toJson(new AvroNamesRefResolver(client), jgen);
       jgen.flush();
-      headers.accept(Headers.CONTENT_SCHEMA, sw.toString());
+      headers.accept(HttpHeaders.CONTENT_TYPE, new MediaType(acceptableMediaType.getType(),
+              acceptableMediaType.getSubtype(), ImmutableMap.of("avsc", sw.toString())).toString());
     } catch (IOException ex) {
       throw new UncheckedIOException(ex);
     }

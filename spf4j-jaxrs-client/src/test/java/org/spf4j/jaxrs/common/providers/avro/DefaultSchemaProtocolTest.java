@@ -19,6 +19,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import org.apache.avro.Schema;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -38,9 +40,12 @@ public class DefaultSchemaProtocolTest {
     SchemaClient client = new SchemaClient(new URI("https://dl.bintray.com/zolyfarkas/core"));
     DefaultSchemaProtocol sprotocol = new DefaultSchemaProtocol(client);
     Map<String, String> headers = new HashMap<>();
-    sprotocol.serialize(headers::put, Schema.createArray(DemoRecord.getClassSchema()));
-    Assert.assertThat(headers, Matchers.hasEntry("content-schema",
-            "{\"type\":\"array\",\"items\":{\"$ref\":\"org.spf4j.demo:jaxrs-spf4j-demo-schema:0.3:0\"}}"));
+    sprotocol.serialize(MediaType.valueOf("application/avro"),
+            headers::put, Schema.createArray(DemoRecord.getClassSchema()));
+    Assert.assertThat(headers, Matchers.hasEntry(HttpHeaders.CONTENT_TYPE,
+            "application/avro;avsc=\""
+                    + "{\\\"type\\\":\\\"array\\\",\\\"items\\\":"
+                    + "{\\\"$ref\\\":\\\"org.spf4j.demo:jaxrs-spf4j-demo-schema:0.3:0\\\"}}\""));
   }
 
   @Test
@@ -49,10 +54,12 @@ public class DefaultSchemaProtocolTest {
     DefaultSchemaProtocol sprotocol = new DefaultSchemaProtocol(client);
     Map<String, String> headers = new HashMap<>();
     Schema schema = Schema.createArray(DemoRecord.getClassSchema());
-    sprotocol.serialize(headers::put, schema);
-    Assert.assertThat(headers, Matchers.hasEntry("content-schema",
-            "{\"type\":\"array\",\"items\":{\"$ref\":\"org.spf4j.demo:jaxrs-spf4j-demo-schema:0.3:0\"}}"));
-    Schema deserialize = sprotocol.deserialize(headers::get,
+    sprotocol.serialize(MediaType.valueOf("application/avro"), headers::put, schema);
+    Assert.assertThat(headers, Matchers.hasEntry(HttpHeaders.CONTENT_TYPE,
+            "application/avro;avsc=\""
+                    + "{\\\"type\\\":\\\"array\\\",\\\"items\\\":"
+                    + "{\\\"$ref\\\":\\\"org.spf4j.demo:jaxrs-spf4j-demo-schema:0.3:0\\\"}}\""));
+    Schema deserialize = sprotocol.deserialize(MediaType.valueOf(headers.get(HttpHeaders.CONTENT_TYPE)), headers::get,
             new DemoRecord[] {}.getClass(), new DemoRecord[] {}.getClass());
     Assert.assertEquals(schema, deserialize);
   }
@@ -63,9 +70,10 @@ public class DefaultSchemaProtocolTest {
     SchemaClient client = new SchemaClient(new URI("https://dl.bintray.com/zolyfarkas/core"));
     DefaultSchemaProtocol sprotocol = new DefaultSchemaProtocol(client);
     Map<String, String> headers = new HashMap<>();
-    sprotocol.serialize(headers::put, Schema.createArray(Schema.create(Schema.Type.STRING)));
-    Assert.assertThat(headers, Matchers.hasEntry("content-schema",
-            "{\"type\":\"array\",\"items\":\"string\"}"));
+    sprotocol.serialize(MediaType.valueOf("application/avro"),
+            headers::put, Schema.createArray(Schema.create(Schema.Type.STRING)));
+    Assert.assertThat(headers, Matchers.hasEntry(HttpHeaders.CONTENT_TYPE,
+            "application/avro;avsc=\"{\\\"type\\\":\\\"array\\\",\\\"items\\\":\\\"string\\\"}\""));
   }
 
 }

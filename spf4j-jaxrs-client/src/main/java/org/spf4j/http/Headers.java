@@ -33,7 +33,9 @@ public final class Headers {
 
   /**
    * the avro schema of the content.
+   * @deprecated should use Content-Type parameter avsc instead.
    */
+  @Deprecated
   public static final String CONTENT_SCHEMA = "content-schema";
 
   /**

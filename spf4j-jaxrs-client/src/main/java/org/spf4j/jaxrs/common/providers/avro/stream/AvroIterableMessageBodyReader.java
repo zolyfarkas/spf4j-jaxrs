@@ -78,7 +78,7 @@ public abstract class AvroIterableMessageBodyReader implements MessageBodyReader
           final MediaType mediaType, final MultivaluedMap<String, String> httpHeaders,
           final InputStream pentityStream)
           throws IOException {
-    Schema writerSchema = protocol.deserialize(httpHeaders::getFirst, (Class) type, genericType);
+    Schema writerSchema = protocol.deserialize(mediaType, httpHeaders::getFirst, (Class) type, genericType);
     Schema readerSchema = MessageBodyRWUtils.getAvroSchemaFromType(type, genericType, annotations);
     Decoder decoder = null;
     InputStream entityStream = wrapInputStream(pentityStream);
