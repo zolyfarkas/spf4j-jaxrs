@@ -62,6 +62,8 @@ public class SchemaClientTest {
             "https://dl.bintray.com/zolyfarkas/core").toURI());
     Schema resolveSchema = client.resolveSchema(mvnId);
     Assert.assertEquals("ServiceError", resolveSchema.getName());
+    Schema resolveSchema2 = client.resolveSchema("org.spf4j.avro:core-schema:0.23:6");
+    Assert.assertEquals("FileLocation", resolveSchema2.getName());
   }
 
   @Test
