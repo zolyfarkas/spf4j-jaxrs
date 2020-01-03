@@ -34,8 +34,8 @@ public final class NonSerPropertyFilter extends TokenFilter {
   public TokenFilter includeProperty(final String name) {
     switch (name) {
       case "doc":
-        return null;
       case "java-class":
+      case "avro.java.string":
         return null;
       default:
         return TokenFilter.INCLUDE_ALL;
