@@ -38,7 +38,7 @@ public final class NonSerPropertyFilter extends TokenFilter {
       case "avro.java.string":
         return null;
       default:
-        return TokenFilter.INCLUDE_ALL;
+        return this;
     }
   }
 }
