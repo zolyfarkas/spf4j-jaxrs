@@ -16,6 +16,7 @@ import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.reflect.ExtendedReflectDatumWriter;
 import org.apache.avro.AvroArrayWriter;
+import org.spf4j.avro.schema.Schemas;
 import org.spf4j.base.Arrays;
 import org.spf4j.base.avro.AvroContainer;
 import org.spf4j.jaxrs.Buffered;
@@ -55,7 +56,7 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
           final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders,
           final OutputStream entityStream)
           throws IOException {
-    Schema schema;
+    Schema actualSchema;
     Schema elemSchema = t instanceof AvroContainer ? ((AvroContainer) t).getElementSchema() : null;
     if (elemSchema == null) {
       ParameterizedType genericType = MessageBodyRWUtils.toParameterizedType(Iterable.class, pgenericType);
@@ -64,13 +65,13 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
           Collection o = (Collection) t;
           if (o.isEmpty()) {
             elemSchema = Schema.create(Schema.Type.NULL);
-            schema = Schema.createArray(Schema.createArray(elemSchema));
+            actualSchema = Schema.createArray(Schema.createArray(elemSchema));
           } else {
             Object elemVal = o.iterator().next();
             Class<? extends Object> aClass = elemVal.getClass();
             elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(aClass, aClass, elemVal,
                     Arrays.EMPTY_ANNOT_ARRAY);
-            schema = Schema.createArray(elemSchema);
+            actualSchema = Schema.createArray(elemSchema);
           }
         } else {
           throw new IllegalStateException("Cannot serialize " + t);
@@ -81,15 +82,27 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
         if (elemSchema == null) {
            throw new IllegalStateException("Cannot serialize " + actualTypeArgument + ": " + t);
         }
-        schema = Schema.createArray(elemSchema);
+        actualSchema = Schema.createArray(elemSchema);
       }
     } else {
-      schema = Schema.createArray(elemSchema);
+      actualSchema = Schema.createArray(elemSchema);
     }
-    protocol.serialize(mediaType, httpHeaders::putSingle, schema);
+    Schema acceptedSchema = protocol.getAcceptableSchema(mediaType);
+    if (acceptedSchema == null) {
+      writeDirect(actualSchema, mediaType, httpHeaders, elemSchema, entityStream, t);
+    } else {
+      writeProjected(acceptedSchema, mediaType, httpHeaders, entityStream, t, elemSchema);
+    }
+
+  }
+
+  private void writeDirect(final Schema actualSchema, final MediaType mediaType,
+          final MultivaluedMap<String, Object> httpHeaders, final Schema elemSchema,
+          final OutputStream entityStream, final Iterable t)  {
+    protocol.serialize(mediaType, httpHeaders::putSingle, actualSchema);
     try {
       DatumWriter writer = new ExtendedReflectDatumWriter(elemSchema);
-      Encoder encoder = getEncoder(schema, entityStream);
+      Encoder encoder = getEncoder(actualSchema, entityStream);
       int bufferSize;
       if (t instanceof Buffered) {
         bufferSize = ((Buffered) t).getElementBufferSize();
@@ -103,7 +116,40 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
         }
       }
     } catch (IOException | RuntimeException e) {
-      throw new RuntimeException("Serialization failed for " + schema.getName(), e);
+      throw new RuntimeException("Serialization failed for " + actualSchema.getName(), e);
+    } finally {
+      if (t instanceof AutoCloseable) {
+        try {
+          ((AutoCloseable) t).close();
+        } catch (Exception ex) {
+          throw new RuntimeException(ex);
+        }
+      }
+    }
+  }
+
+  private  void writeProjected(final Schema acceptedSchema,
+          final MediaType mediaType,
+          final MultivaluedMap<String, Object> httpHeaders,
+          final OutputStream entityStream, final Iterable t, final Schema elemSchema) {
+    protocol.serialize(mediaType, httpHeaders::putSingle, acceptedSchema);
+    Schema respElemSchema = acceptedSchema.getElementType();
+    try {
+      DatumWriter writer = new ExtendedReflectDatumWriter(respElemSchema);
+      Encoder encoder = getEncoder(acceptedSchema, entityStream);
+      int bufferSize;
+      if (t instanceof Buffered) {
+        bufferSize = ((Buffered) t).getElementBufferSize();
+      } else {
+        bufferSize = 64;
+      }
+      try (AvroArrayWriter arrWriter = new AvroArrayWriter(encoder, writer, bufferSize)) {
+        for (Object o : t) {
+          arrWriter.write(Schemas.project(respElemSchema, elemSchema, o));
+        }
+      }
+    } catch (IOException | RuntimeException e) {
+      throw new RuntimeException("Serialization failed for " + acceptedSchema.getName(), e);
     } finally {
       if (t instanceof AutoCloseable) {
         try {
