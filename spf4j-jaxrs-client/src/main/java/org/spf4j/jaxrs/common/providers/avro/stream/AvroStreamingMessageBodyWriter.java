@@ -15,6 +15,8 @@ import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.reflect.ExtendedReflectDatumWriter;
 import org.apache.avro.AvroArrayWriter;
+import org.spf4j.avro.schema.Schemas;
+import org.spf4j.base.ArrayWriter;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 import org.spf4j.jaxrs.StreamingArrayContent;
 import org.spf4j.jaxrs.common.providers.avro.MessageBodyRWUtils;
@@ -62,16 +64,69 @@ public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWrite
     } else {
       schema = Schema.createArray(elemSchema);
     }
-    protocol.serialize(mediaType, httpHeaders::putSingle, schema);
-    try {
-      DatumWriter writer = new ExtendedReflectDatumWriter(elemSchema);
-      Encoder encoder = getEncoder(schema, entityStream);
-      try (AvroArrayWriter arrWriter = new AvroArrayWriter(encoder, writer, t.getElementBufferSize())) {
-        t.write(arrWriter);
+    Schema acceptedSchema = protocol.getAcceptableSchema(mediaType);
+    if (acceptedSchema == null) {
+      protocol.serialize(mediaType, httpHeaders::putSingle, schema);
+      try {
+        DatumWriter writer = new ExtendedReflectDatumWriter(elemSchema);
+        Encoder encoder = getEncoder(schema, entityStream);
+        try (AvroArrayWriter arrWriter = new AvroArrayWriter(encoder, writer, t.getElementBufferSize())) {
+          t.write(arrWriter);
+        }
+      } catch (IOException | RuntimeException e) {
+        throw new RuntimeException("Serialization failed for " + schema.getName(), e);
       }
-    } catch (IOException | RuntimeException e) {
-      throw new RuntimeException("Serialization failed for " + schema.getName(), e);
+    } else {
+      protocol.serialize(mediaType, httpHeaders::putSingle, acceptedSchema);
+      try {
+        Schema acceptedElemSchema = acceptedSchema.getElementType();
+        DatumWriter writer = new ExtendedReflectDatumWriter(acceptedElemSchema);
+        Encoder encoder = getEncoder(schema, entityStream);
+        try (AvroArrayWriter arrWriter = new AvroArrayWriter(encoder, writer, t.getElementBufferSize())) {
+          try (ProjectingArrayWriter projecter = new ProjectingArrayWriter(elemSchema, acceptedElemSchema, arrWriter)) {
+            t.write(projecter);
+          }
+        }
+      } catch (IOException | RuntimeException e) {
+        throw new RuntimeException("Serialization failed for " + schema.getName(), e);
+      }
     }
+  }
+
+  private static class ProjectingArrayWriter implements ArrayWriter<Object> {
+
+    private final Schema from;
+
+    private final Schema to;
+
+    private final ArrayWriter<Object> wrapped;
+
+    ProjectingArrayWriter(final Schema from, final Schema to, final ArrayWriter<Object> wrapped) {
+      this.from = from;
+      this.to = to;
+      this.wrapped = wrapped;
+    }
+
+    @Override
+    public void write(final Object t) throws IOException {
+      wrapped.write(Schemas.project(to, from, t));
+    }
+
+    @Override
+    public void accept(final Object t) {
+      wrapped.accept(Schemas.project(to, from, t));
+    }
+
+    @Override
+    public void flush() throws IOException {
+      wrapped.flush();
+    }
+
+    @Override
+    public void close() throws IOException {
+      wrapped.close();
+    }
+
   }
 
 }
