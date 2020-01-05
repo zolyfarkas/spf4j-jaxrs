@@ -19,20 +19,26 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.core.status.Status;
 import ch.qos.logback.core.status.StatusManager;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.PriorityQueue;
 import javax.annotation.security.RolesAllowed;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.LoggerFactory;
 import org.spf4j.base.avro.Converters;
 import org.spf4j.base.avro.LogLevel;
 import org.spf4j.base.avro.LogRecord;
+import org.spf4j.os.OperatingSystem;
 
 /**
  *
@@ -42,16 +48,23 @@ import org.spf4j.base.avro.LogRecord;
 @RolesAllowed("operator")
 @Singleton
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
-public class LogbackStatus {
+public class LogbackResource {
+
+  private final String hostName;
+
+  @Inject
+  public LogbackResource(@ConfigProperty(name = "hostName", defaultValue = "") final String hostName) {
+    this.hostName = hostName.isEmpty() ? OperatingSystem.getHostName() : hostName;
+  }
 
   @GET
   @Produces({"application/json", "application/avro"})
-  public List<LogRecord> status() {
+  public Collection<LogRecord> status(@QueryParam("limit") @DefaultValue("1000") final int limit) {
     LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
     StatusManager statusManager = lc.getStatusManager();
     List<Status> statuses = statusManager.getCopyOfStatusList();
-    List<LogRecord> result = new ArrayList<>(statuses.size());
-    addStatuses(statuses, result);
+    PriorityQueue<LogRecord> result = new PriorityQueue<>(statuses.size(), LogUtils.TS_ORDER_ASC);
+    addStatuses(statuses, result, limit);
     return result;
   }
 
@@ -62,8 +75,12 @@ public class LogbackStatus {
     statusManager.clear();
   }
 
-  private static void addStatuses(final Iterable<Status> statuses, final List<LogRecord> result) {
+  private void addStatuses(final Iterable<Status> statuses,
+          final PriorityQueue<LogRecord> result, final int limit) {
     for (Status status : statuses) {
+      if (result.size() >= limit) {
+        result.poll();
+      }
       Throwable t = status.getThrowable();
       LogLevel level;
       switch (status.getLevel()) {
@@ -80,14 +97,14 @@ public class LogbackStatus {
           level = LogLevel.UNKNOWN;
           break;
       }
-      result.add(new LogRecord(Objects.toString(status.getOrigin()),
+      result.add(new LogRecord(Objects.toString(hostName + ':' + status.getOrigin()),
               "", level, Instant.ofEpochMilli(status.getDate()), "status",
               Thread.currentThread().getName(),
               status.getMessage(), Collections.EMPTY_LIST, Collections.EMPTY_MAP,
               t == null ? null : Converters.convert(t),
               Collections.EMPTY_LIST));
       if (status.hasChildren()) {
-        addStatuses(() -> status.iterator(), result);
+        addStatuses(() -> status.iterator(), result, limit);
       }
     }
   }
