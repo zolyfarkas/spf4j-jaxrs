@@ -70,7 +70,7 @@ public class LogbackClusterResource {
 
   @GET
   @Produces(value = {"text/plain"})
-  public void getClusterLogbackStatusText(@QueryParam("limit") @DefaultValue("1000") final int limit,
+  public void getClusterLogbackStatusText(@QueryParam("limit") @DefaultValue("100") final int limit,
           @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
     getClusterLogbackStatus(limit, new AsyncResponseWrapper(ar) {

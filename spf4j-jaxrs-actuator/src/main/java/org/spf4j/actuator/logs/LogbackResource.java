@@ -27,6 +27,7 @@ import java.util.PriorityQueue;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -59,11 +60,17 @@ public class LogbackResource {
 
   @GET
   @Produces({"application/json", "application/avro"})
-  public Collection<LogRecord> status(@QueryParam("limit") @DefaultValue("1000") final int limit) {
+  public Collection<LogRecord> status(@QueryParam("limit") @DefaultValue("100") final int limit) {
+    if (limit == 0) {
+      return Collections.EMPTY_LIST;
+    }
+    if (limit < 0) {
+      throw new ClientErrorException("limit parameter must be positive: " + limit, 400);
+    }
     LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
     StatusManager statusManager = lc.getStatusManager();
     List<Status> statuses = statusManager.getCopyOfStatusList();
-    PriorityQueue<LogRecord> result = new PriorityQueue<>(statuses.size(), LogUtils.TS_ORDER_ASC);
+    PriorityQueue<LogRecord> result = new PriorityQueue<>(limit, LogUtils.TS_ORDER_ASC);
     addStatuses(statuses, result, limit);
     return result;
   }
