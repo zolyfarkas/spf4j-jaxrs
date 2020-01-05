@@ -65,6 +65,12 @@ public class LogsResource {
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
           @PathParam("appenderName") final String appenderName) throws IOException {
+    if (limit == 0) {
+      return Collections.EMPTY_LIST;
+    }
+    if (limit < 0) {
+      throw new ClientErrorException("limit parameter must be positive: " + limit, 400);
+    }
     Map<String, AvroDataFileAppender> appenders = LogbackUtils.getConfiguredFileAppenders();
     AvroDataFileAppender fa = appenders.get(appenderName);
     if (fa == null) {

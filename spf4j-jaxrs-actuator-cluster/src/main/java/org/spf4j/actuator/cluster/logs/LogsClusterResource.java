@@ -24,6 +24,7 @@ import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -136,6 +137,13 @@ public class LogsClusterResource {
            @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
           @PathParam("appenderName") final String appender, @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
+    if (limit == 0) {
+      ar.resume(Collections.EMPTY_LIST);
+      return;
+    }
+    if (limit < 0) {
+      throw new ClientErrorException("limit parameter must be positive: " + limit, 400);
+    }
     CompletableFuture<PriorityQueue<LogRecord>> cf
             = ContextPropagatingCompletableFuture.supplyAsync(() -> {
               PriorityQueue<LogRecord> result = new PriorityQueue(limit, LogUtils.TS_ORDER_ASC);
