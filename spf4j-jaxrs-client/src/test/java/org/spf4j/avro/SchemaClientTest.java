@@ -45,9 +45,9 @@ public class SchemaClientTest {
    @Test
   public void testCPSchema() throws IOException, URISyntaxException {
     SchemaClient client = new SchemaClient(new URI("https://dl.bintray.com/zolyfarkas/core"));
-    Schema resolveSchema = client.getFromClassPath("org.spf4j.avro:core-schema:0.22:6");
+    Schema resolveSchema = client.getFromClassPath("org.spf4j.avro:core-schema:0.24:6");
     Assert.assertNotNull(resolveSchema);
-    Assert.assertEquals("org.spf4j.avro:core-schema:0.22:6", resolveSchema.getProp("mvnId"));
+    Assert.assertEquals("org.spf4j.avro:core-schema:0.24:6", resolveSchema.getProp("mvnId"));
     resolveSchema = client.getFromClassPath("org.spf4j.avro:core-schema:0.14:6");
     Assert.assertNull(resolveSchema);
   }
