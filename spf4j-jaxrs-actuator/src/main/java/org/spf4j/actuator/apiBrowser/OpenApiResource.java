@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import javax.servlet.ServletConfig;
 import javax.ws.rs.GET;
@@ -65,6 +66,7 @@ import org.slf4j.LoggerFactory;
 import org.spf4j.jaxrs.RawSerialization;
 
 @Path("/")
+@Singleton
 public final class OpenApiResource extends BaseOpenApiResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(OpenApiResource.class);
