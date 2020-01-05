@@ -117,7 +117,7 @@ public class LogbackClusterResource {
     NetworkService service = clusterInfo.getHttpService();
     for (InetAddress addr : peerAddresses) {
       URI uri = new URI(service.getName(), null,
-              addr.getHostAddress(), service.getPort(), "logback/cluster/status", null, null);
+              addr.getHostAddress(), service.getPort(), "/logback/local/status", null, null);
       Spf4jWebTarget invTarget = httpClient.target(uri)
               .queryParam("limit", limit);
       cf = cf.thenCombine(
@@ -146,7 +146,7 @@ public class LogbackClusterResource {
     NetworkService service = clusterInfo.getHttpService();
     for (InetAddress addr : peerAddresses) {
       URI uri = new URI(service.getName(), null,
-              addr.getHostAddress(), service.getPort(), "logback/cluster/status", null, null);
+              addr.getHostAddress(), service.getPort(), "/logback/local/status", null, null);
       Spf4jWebTarget invTarget = httpClient.target(uri);
       invTarget.request().delete(Void.class);
     }
