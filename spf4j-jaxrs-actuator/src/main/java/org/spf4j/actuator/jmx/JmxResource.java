@@ -71,7 +71,7 @@ import org.spf4j.log.ExecContextLogger;
 import org.spf4j.jaxrs.StreamingArrayContent;
 
 /**
- *
+ * JAX-RS annotations need to be duplicated...
  * @author Zoltan Farkas
  */
 @Path("jmx/local")
@@ -362,6 +362,7 @@ public class JmxResource implements JmxRestApi {
       return converter.fromOpenValue(retOpenType,
               srv.invoke(mname, invocation.getName(), cParams, sign.toArray(new String[sign.size()])),
               OpenTypeConverterSupplier.INSTANCE);
+
     } catch (InstanceNotFoundException ex) {
       throw new NotFoundException("bean not found " + mbeanName, ex);
     }

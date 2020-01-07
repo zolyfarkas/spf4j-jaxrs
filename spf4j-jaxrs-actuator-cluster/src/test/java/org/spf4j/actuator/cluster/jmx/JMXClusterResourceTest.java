@@ -15,6 +15,7 @@
  */
 package org.spf4j.actuator.cluster.jmx;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import javax.ws.rs.WebApplicationException;
@@ -87,6 +88,19 @@ public class JMXClusterResourceTest extends ServiceIntegrationBase {
      LOG.debug("Jmx {} operation  {} returned", "com.sun.management:type=DiagnosticCommand", "gcClassHistogram", resp);
   }
 
+
+ @Test
+  public void testdumpHeapOperationCluster() {
+    new File("/Users/zoly/dump123.hprof").delete();
+    OperationInvocation invocation = new OperationInvocation("dumpHeap",
+            Arrays.asList(String.class.getName(), boolean.class.getName()),
+            Arrays.asList("/Users/zoly/dump123.hprof", true));
+     Void resp = getTarget().path("jmx/cluster/127.0.0.1/{mbean}/operations")
+              .resolveTemplate("mbean", "com.sun.management:type=HotSpotDiagnostic")
+              .request(MediaType.APPLICATION_JSON).
+             post(Entity.entity(invocation, MediaType.APPLICATION_JSON), new GenericType<Void>() { });
+     LOG.debug("Jmx {} operation  {} returned", "com.sun.management:type=DiagnosticCommand", "gcClassHistogram", resp);
+  }
 
 
 }
