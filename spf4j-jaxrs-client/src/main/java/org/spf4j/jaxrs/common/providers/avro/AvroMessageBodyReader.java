@@ -2,6 +2,7 @@ package org.spf4j.jaxrs.common.providers.avro;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 import java.io.Reader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
@@ -70,8 +71,15 @@ public abstract class AvroMessageBodyReader implements MessageBodyReader<Object>
   @Override
   public Object readFrom(final Class<Object> type, final Type genericType, final Annotation[] annotations,
           final MediaType mediaType, final MultivaluedMap<String, String> httpHeaders,
-          final InputStream pentityStream)
+          final InputStream ientityStream)
           throws IOException {
+    final PushbackInputStream pentityStream = new PushbackInputStream(ientityStream);
+    int read = pentityStream.read();
+    if (read < 0) {
+      // Jersey considers null as 204 No content.
+      return null;
+    }
+    pentityStream.unread(read);
     Schema writerSchema = protocol.deserialize(mediaType, httpHeaders::getFirst, type, genericType);
     Schema readerSchema = MessageBodyRWUtils.getAvroSchemaFromType(type, genericType, annotations);
     InputStream entityStream = wrapInputStream(pentityStream);
