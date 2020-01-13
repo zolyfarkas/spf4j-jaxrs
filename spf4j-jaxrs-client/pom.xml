@@ -67,15 +67,9 @@
       <version>0.3</version>
     </dependency>
     <dependency>
-        <groupId>com.sun.mail</groupId>
-        <artifactId>javax.mail</artifactId>
-        <version>1.6.2</version>
-      <exclusions>
-        <exclusion> <!-- already included by jersey common (jakarta) -->
-          <groupId>javax.activation</groupId>
-          <artifactId>activation</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>com.sun.mail</groupId>
+      <artifactId>jakarta.mail</artifactId>
+      <version>1.6.4</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
