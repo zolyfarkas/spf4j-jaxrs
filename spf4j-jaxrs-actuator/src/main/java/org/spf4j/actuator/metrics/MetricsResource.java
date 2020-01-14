@@ -15,9 +15,18 @@
  */
 package org.spf4j.actuator.metrics;
 
+import io.prometheus.client.Collector;
+import io.prometheus.client.exporter.common.TextFormat;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
@@ -28,11 +37,15 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.StreamingOutput;
 import org.apache.avro.Schema;
 import org.spf4j.base.avro.AvroCloseableIterable;
 import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.perf.TimeSeriesRecord;
 import org.spf4j.perf.impl.RecorderFactory;
+import org.spf4j.tsdb2.TSDBQuery;
+import org.spf4j.tsdb2.avro.MeasurementType;
 
 /**
  * @author Zoltan Farkas
@@ -69,6 +82,39 @@ public class MetricsResource {
     }
     return measurementData;
   }
+
+
+  @GET
+  @Path("{metric}/data")
+  @ProjectionSupport
+  @Produces(value = {TextFormat.CONTENT_TYPE_004})
+  public StreamingOutput getMetricsTextPrometheus(@PathParam("metric") final String metricName,
+          @Nullable @QueryParam("from") final Instant pfrom,
+          @Nullable @QueryParam("to") final Instant pto) throws IOException {
+    return new StreamingOutput() {
+      @Override
+      public void write(final OutputStream out) throws IOException, WebApplicationException {
+        try (AvroCloseableIterable<TimeSeriesRecord> metrics = getMetrics(metricName, pfrom, pto);
+             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8))) {
+
+          Iterator<TimeSeriesRecord> iterator = metrics.iterator();
+          TextFormat.write004(bw, new Enumeration<Collector.MetricFamilySamples>() {
+            @Override
+            public boolean hasMoreElements() {
+              return iterator.hasNext();
+            }
+
+            @Override
+            public Collector.MetricFamilySamples nextElement() {
+              TimeSeriesRecord next = iterator.next();
+              return PrometheusUtils.convert(next.getSchema(), Collections.singletonList(next));
+            }
+          });
+        }
+      }
+    };
+  }
+
 
 
   @GET

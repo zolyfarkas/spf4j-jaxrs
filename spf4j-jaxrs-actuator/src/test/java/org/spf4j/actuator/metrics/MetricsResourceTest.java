@@ -29,6 +29,7 @@ import static org.spf4j.actuator.ServiceIntegrationBase.getTarget;
 import org.spf4j.base.CloseableIterable;
 import org.spf4j.perf.impl.MeasurementsInfoImpl;
 import org.spf4j.perf.impl.RecorderFactory;
+import org.spf4j.tsdb2.avro.MeasurementType;
 
 /**
  *
@@ -42,7 +43,7 @@ public class MetricsResourceTest  extends ServiceIntegrationBase {
   public void testMetrics() throws IOException {
     long mid = RecorderFactory.MEASUREMENT_STORE.alocateMeasurements(
             new MeasurementsInfoImpl("test", "test measurement",
-            new String[] {"a", "b"}, new String[] {"ms", "ms"}), 0);
+            new String[] {"a", "b"}, new String[] {"ms", "ms"}, MeasurementType.GAUGE), 0);
     RecorderFactory.MEASUREMENT_STORE.saveMeasurements(mid, System.currentTimeMillis(), 1, 2);
      List<String> metrics = getTarget().path("metrics/local")
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });

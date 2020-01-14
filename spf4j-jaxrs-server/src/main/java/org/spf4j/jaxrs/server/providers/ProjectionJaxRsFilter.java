@@ -19,13 +19,17 @@ package org.spf4j.jaxrs.server.providers;
 import com.google.common.collect.Iterables;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.Closeable;
+import java.lang.reflect.Method;
 import java.util.List;
+import java.util.logging.Level;
 import javax.annotation.Priority;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
+import javax.ws.rs.container.ResourceInfo;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
@@ -33,6 +37,7 @@ import org.apache.avro.generic.IndexedRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.avro.schema.Schemas;
+import org.spf4j.base.Reflections;
 import org.spf4j.io.Csv;
 import org.spf4j.io.csv.CsvParseException;
 import org.spf4j.jaxrs.Buffered;
@@ -51,20 +56,44 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
 
   private static final Logger LOG = LoggerFactory.getLogger(ProjectionJaxRsFilter.class);
 
+  private final List<String> defaultProjection;
+  public ProjectionJaxRsFilter(@Context final ResourceInfo resourceInfo) {
+    Method method = resourceInfo.getResourceMethod();
+    ProjectionSupport annotation = Reflections.getInheritedAnnotation(ProjectionSupport.class, method);
+    if (annotation == null) {
+      annotation = Reflections.getInheritedAnnotation(ProjectionSupport.class, method.getDeclaringClass());
+    }
+    String defaultProjection = annotation.defaultProjection();
+    if (defaultProjection.isEmpty()) {
+      this.defaultProjection = null;
+    } else {
+      try {
+        this.defaultProjection = Csv.readRow(defaultProjection);
+      } catch (CsvParseException ex) {
+        throw new IllegalStateException("Invalid default projection: " + defaultProjection, ex);
+      }
+    }
+  }
+
   @Override
   @SuppressFBWarnings("ITC_INHERITANCE_TYPE_CHECKING")
   public void filter(final ContainerRequestContext requestContext,
           final ContainerResponseContext responseContext) {
     MultivaluedMap<String, String> qp = requestContext.getUriInfo().getQueryParameters();
     String select = qp.getFirst("_project");
-    if (select == null) {
-      return;
-    }
     List<String> projection;
-    try {
-      projection = Csv.readRow(select);
-    } catch (CsvParseException ex) {
-      throw new ClientErrorException("Invalid projection " + select, 400, ex);
+    if (select == null) {
+      if (defaultProjection == null) {
+        return;
+      } else {
+        projection = defaultProjection;
+      }
+    } else {
+      try {
+        projection = Csv.readRow(select);
+      } catch (CsvParseException ex) {
+        throw new ClientErrorException("Invalid projection " + select, 400, ex);
+      }
     }
     Object responseObject = responseContext.getEntity();
     LOG.debug("Projecting: {} entity: {}", select, responseObject);

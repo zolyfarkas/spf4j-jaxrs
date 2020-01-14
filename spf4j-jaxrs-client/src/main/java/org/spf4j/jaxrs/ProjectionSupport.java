@@ -29,4 +29,8 @@ import javax.ws.rs.NameBinding;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(value = RetentionPolicy.RUNTIME)
 public @interface ProjectionSupport {
+
+  /** default projection. see Schemas.project for format */
+  String defaultProjection() default "";
+
 }
