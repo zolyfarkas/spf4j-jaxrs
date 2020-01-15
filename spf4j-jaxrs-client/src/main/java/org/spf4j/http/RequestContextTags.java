@@ -28,7 +28,7 @@ public final class RequestContextTags {
 
   public static final Tag<Integer> TRY_COUNT = new ExecutionContext.Tag<Integer>() {
     @Override
-    public Integer combine(final Integer existing, final Integer current) {
+    public Integer accumulate(final Integer existing, final Integer current) {
       if (existing == null) {
         return current;
       }
