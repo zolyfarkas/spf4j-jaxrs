@@ -32,7 +32,7 @@ import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
  * @author Zoltan Farkas
  */
 @Provider
-@Produces({"text/csv;fmt=avro"})
+@Produces({"text/csv", "text/avro+csv"})
 public final class CsvAvroIterableMessageBodyWriter  extends AvroIterableMessageBodyWriter {
 
   public CsvAvroIterableMessageBodyWriter(final SchemaProtocol protocol) {

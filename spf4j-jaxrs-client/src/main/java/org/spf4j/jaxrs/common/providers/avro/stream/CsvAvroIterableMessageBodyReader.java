@@ -36,7 +36,7 @@ import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
  * @author Zoltan Farkas
  */
 @Provider
-@Consumes("text/csv")
+@Consumes({"text/csv", "text/avro+csv"})
 public final class CsvAvroIterableMessageBodyReader extends AvroIterableMessageBodyReader {
 
   public CsvAvroIterableMessageBodyReader(final SchemaProtocol protocol) {
