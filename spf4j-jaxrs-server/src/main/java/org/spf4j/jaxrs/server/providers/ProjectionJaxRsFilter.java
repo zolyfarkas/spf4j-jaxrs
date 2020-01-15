@@ -21,7 +21,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.Closeable;
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.logging.Level;
 import javax.annotation.Priority;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Priorities;
@@ -63,14 +62,14 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
     if (annotation == null) {
       annotation = Reflections.getInheritedAnnotation(ProjectionSupport.class, method.getDeclaringClass());
     }
-    String defaultProjection = annotation.defaultProjection();
-    if (defaultProjection.isEmpty()) {
+    String defaultProjectionCsv = annotation.defaultProjection();
+    if (defaultProjectionCsv.isEmpty()) {
       this.defaultProjection = null;
     } else {
       try {
-        this.defaultProjection = Csv.readRow(defaultProjection);
+        this.defaultProjection = Csv.readRow(defaultProjectionCsv);
       } catch (CsvParseException ex) {
-        throw new IllegalStateException("Invalid default projection: " + defaultProjection, ex);
+        throw new IllegalStateException("Invalid default projection: " + defaultProjectionCsv, ex);
       }
     }
   }
@@ -135,5 +134,9 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
     }
   }
 
+  @Override
+  public String toString() {
+    return "ProjectionJaxRsFilter{" + "defaultProjection=" + defaultProjection + '}';
+  }
 
 }

@@ -30,6 +30,7 @@ import org.spf4j.actuator.ServiceIntegrationBase;
 import org.spf4j.base.CloseableIterable;
 import org.spf4j.perf.impl.MeasurementsInfoImpl;
 import org.spf4j.perf.impl.RecorderFactory;
+import org.spf4j.tsdb2.avro.MeasurementType;
 
 /**
  *
@@ -43,7 +44,7 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
   public static void init() throws IOException {
     long mid = RecorderFactory.MEASUREMENT_STORE.alocateMeasurements(
             new MeasurementsInfoImpl("test-1", "test measurement",
-                    new String[]{"a", "b"}, new String[]{"ms", "ms"}), 0);
+                    new String[]{"a", "b"}, new String[]{"ms", "ms"}, MeasurementType.GAUGE), 0);
     RecorderFactory.MEASUREMENT_STORE.saveMeasurements(mid, System.currentTimeMillis(), 1, 2);
     RecorderFactory.MEASUREMENT_STORE.flush();
   }

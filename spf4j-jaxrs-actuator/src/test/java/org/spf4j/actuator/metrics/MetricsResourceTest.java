@@ -15,6 +15,7 @@
  */
 package org.spf4j.actuator.metrics;
 
+import io.prometheus.client.exporter.common.TextFormat;
 import java.io.IOException;
 import java.util.List;
 import javax.ws.rs.core.GenericType;
@@ -57,6 +58,27 @@ public class MetricsResourceTest  extends ServiceIntegrationBase {
       Assert.assertEquals(1L, data.get(1));
       Assert.assertEquals(2L, data.get(2));
     }
+  }
+
+  @Test
+  public void testPrometheusMetrics() throws IOException {
+    long mid = RecorderFactory.MEASUREMENT_STORE.alocateMeasurements(
+            new MeasurementsInfoImpl("test", "test measurement",
+            new String[] {"a", "b"}, new String[] {"ms", "ms"}, MeasurementType.GAUGE), 0);
+    RecorderFactory.MEASUREMENT_STORE.saveMeasurements(mid, System.currentTimeMillis(), 1, 2);
+     List<String> metrics = getTarget().path("metrics/local")
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
+     LOG.debug("Metrics: {}", metrics);
+     Assert.assertFalse(metrics.isEmpty());
+     CharSequence measurements = getTarget().path("metrics/local/test/data")
+            .request(TextFormat.CONTENT_TYPE_004).get(CharSequence.class);
+    Assert.assertNotNull(measurements);
+    LOG.debug("Metrics data: {}", measurements);
+    CharSequence allMeasurements = getTarget().path("metrics/local")
+            .request(TextFormat.CONTENT_TYPE_004).get(CharSequence.class);
+    Assert.assertNotNull(measurements);
+    LOG.debug("All Metrics data: {}", allMeasurements);
+
   }
 
 }
