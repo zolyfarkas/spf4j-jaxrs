@@ -49,7 +49,7 @@ public final class ContextTags {
   /**
    * Http warnings attached to current execution context.
    */
-  public static final TagImpl HTTP_WARNINGS =  new TagImpl();
+  public static final WarningsTag HTTP_WARNINGS =  new WarningsTag();
 
   /**
    * Upgrade the log level of the standard LOG entry for the context.
@@ -90,7 +90,7 @@ public final class ContextTags {
     }
   };
 
-  public static final class TagImpl implements Tag<Set<HttpWarning>> {
+  public static final class WarningsTag implements Tag<Set<HttpWarning>> {
 
     @Override
     public String toString() {
