@@ -21,6 +21,7 @@ import javax.annotation.Priority;
 import javax.annotation.security.DenyAll;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
+import javax.inject.Inject;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -44,6 +45,7 @@ public final class AnnotationAuthorizationFilter implements ContainerRequestFilt
 
   private final Consumer<ContainerRequestContext> validator;
 
+  @Inject
   public AnnotationAuthorizationFilter(@Context final ResourceInfo resourceInfo) {
     Method method = resourceInfo.getResourceMethod();
     if (method.isAnnotationPresent(DenyAll.class)) {

@@ -21,7 +21,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.Closeable;
 import java.lang.reflect.Method;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.annotation.Priority;
+import javax.inject.Inject;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -55,8 +57,15 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
 
   private static final Logger LOG = LoggerFactory.getLogger(ProjectionJaxRsFilter.class);
 
-  private final List<String> defaultProjection;
-  public ProjectionJaxRsFilter(@Context final ResourceInfo resourceInfo) {
+  private final javax.inject.Provider<ResourceInfo> resourceInfoProvider;
+
+  @Inject
+  public ProjectionJaxRsFilter(@Context final javax.inject.Provider<ResourceInfo> resourceInfo) {
+    this.resourceInfoProvider = resourceInfo;
+  }
+
+  @Nullable
+  private List<String> getDefaultProjection(final ResourceInfo resourceInfo) {
     Method method = resourceInfo.getResourceMethod();
     ProjectionSupport annotation = Reflections.getInheritedAnnotation(ProjectionSupport.class, method);
     if (annotation == null) {
@@ -64,10 +73,10 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
     }
     String defaultProjectionCsv = annotation.defaultProjection();
     if (defaultProjectionCsv.isEmpty()) {
-      this.defaultProjection = null;
+      return null;
     } else {
       try {
-        this.defaultProjection = Csv.readRow(defaultProjectionCsv);
+        return Csv.readRow(defaultProjectionCsv);
       } catch (CsvParseException ex) {
         throw new IllegalStateException("Invalid default projection: " + defaultProjectionCsv, ex);
       }
@@ -82,6 +91,7 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
     String select = qp.getFirst("_project");
     List<String> projection;
     if (select == null) {
+      List<String> defaultProjection = getDefaultProjection(resourceInfoProvider.get());
       if (defaultProjection == null) {
         return;
       } else {
@@ -136,7 +146,7 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
 
   @Override
   public String toString() {
-    return "ProjectionJaxRsFilter{" + "defaultProjection=" + defaultProjection + '}';
+    return "ProjectionJaxRsFilter{" + "defaultProjection=" + resourceInfoProvider + '}';
   }
 
 }
