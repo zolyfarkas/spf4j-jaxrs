@@ -44,8 +44,6 @@ import org.spf4j.base.avro.AvroCloseableIterable;
 import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.perf.TimeSeriesRecord;
 import org.spf4j.perf.impl.RecorderFactory;
-import org.spf4j.tsdb2.TSDBQuery;
-import org.spf4j.tsdb2.avro.MeasurementType;
 
 /**
  * @author Zoltan Farkas
@@ -62,6 +60,29 @@ public class MetricsResource {
   public Set<String> getMetrics() throws IOException {
     RecorderFactory.MEASUREMENT_STORE.flush();
     return RecorderFactory.MEASUREMENT_STORE.getMeasurements();
+  }
+
+  @GET
+  @Produces(value = {TextFormat.CONTENT_TYPE_004})
+  public StreamingOutput getMetricsTextPrometheus(
+          @Nullable @QueryParam("from") final Instant pfrom,
+          @Nullable @QueryParam("to") final Instant pto) throws IOException {
+    Instant from = pfrom == null ? Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime()) : pfrom;
+    Instant to = pto == null ? Instant.now() : pto;
+    return new StreamingOutput() {
+      @Override
+      public void write(final OutputStream out) throws IOException, WebApplicationException {
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8))) {
+          Set<String> metrics = getMetrics();
+          for (String metric : metrics) {
+            try (AvroCloseableIterable<TimeSeriesRecord> values = getMetrics(metric, from, to)) {
+              TextFormat.write004(bw,
+                      Collections.enumeration(Collections.singletonList(PrometheusUtils.convert(values))));
+            }
+          }
+        }
+      }
+    };
   }
 
   @GET
@@ -86,7 +107,6 @@ public class MetricsResource {
 
   @GET
   @Path("{metric}/data")
-  @ProjectionSupport
   @Produces(value = {TextFormat.CONTENT_TYPE_004})
   public StreamingOutput getMetricsTextPrometheus(@PathParam("metric") final String metricName,
           @Nullable @QueryParam("from") final Instant pfrom,

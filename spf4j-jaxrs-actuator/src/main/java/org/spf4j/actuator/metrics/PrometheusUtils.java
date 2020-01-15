@@ -15,9 +15,13 @@
  */
 package org.spf4j.actuator.metrics;
 
+import com.google.common.collect.Iterators;
+import com.google.common.collect.PeekingIterator;
 import io.prometheus.client.Collector;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import javax.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.spf4j.base.Pair;
 import org.spf4j.perf.TimeSeriesRecord;
@@ -50,30 +54,31 @@ public final class PrometheusUtils {
 
   }
 
-  private static List<Collector.MetricFamilySamples.Sample> convertSingleValue(
-          final String name,
+  private static List<Collector.MetricFamilySamples.Sample> convertValues(
+          final Schema schema,
           final List<String> labels,
           final List<String> labelValues,
-          final List<TimeSeriesRecord> recs) {
-    List<Collector.MetricFamilySamples.Sample> samples = new ArrayList<>(recs.size());
+          final Iterable<TimeSeriesRecord> recs) {
+    List<Collector.MetricFamilySamples.Sample> samples = new ArrayList<>();
     for (TimeSeriesRecord rec : recs) {
       long ts = rec.getTimeStamp().toEpochMilli();
-      samples.add(new Collector.MetricFamilySamples.Sample(name, labels, labelValues, rec.getLongValue(name), ts));
-    }
-    return samples;
-  }
-
-  private static List<Collector.MetricFamilySamples.Sample> convertSummary(
-          List<String> labels,
-          List<String> labelValues,
-          final List<TimeSeriesRecord> recs) {
-    List<Collector.MetricFamilySamples.Sample> samples = new ArrayList<>(recs.size() * 4);
-    for (TimeSeriesRecord rec : recs) {
-      long ts = rec.getTimeStamp().toEpochMilli();
-      samples.add(new Collector.MetricFamilySamples.Sample("count", labels, labelValues, rec.getLongValue("count"), ts));
-      samples.add(new Collector.MetricFamilySamples.Sample("min", labels, labelValues, rec.getLongValue("min"), ts));
-      samples.add(new Collector.MetricFamilySamples.Sample("max", labels, labelValues, rec.getLongValue("max"), ts));
-      samples.add(new Collector.MetricFamilySamples.Sample("sum", labels, labelValues, rec.getLongValue("sum"), ts));
+      Iterator<Schema.Field> it = schema.getFields().iterator();
+      it.next();
+      while (it.hasNext()) {
+        Schema.Field f = it.next();
+        switch (f.schema().getType()) {
+          case LONG:
+            samples.add(new Collector.MetricFamilySamples.Sample(f.name(), labels, labelValues,
+                    (Long) rec.get(f.pos()), ts));
+            break;
+          case DOUBLE:
+            samples.add(new Collector.MetricFamilySamples.Sample(f.name(), labels, labelValues,
+                    (Double) rec.get(f.pos()), ts));
+            break;
+          default:
+            throw new UnsupportedOperationException("Unsupporrted metric type " + f);
+        }
+      }
     }
     return samples;
   }
@@ -82,9 +87,9 @@ public final class PrometheusUtils {
           final Schema schema,
           final List<String> labels,
           final List<String> labelValues,
-          final List<TimeSeriesRecord> recs) {
+          final Iterable<TimeSeriesRecord> recs) {
     List<Schema.Field> fields = schema.getFields();
-    List<Pair<String, String>> les = new ArrayList<>(fields.size());
+    List<Pair<String, String>> les = new ArrayList<>();
     for (Schema.Field field : fields) {
       String name = field.name();
       if (name.startsWith("Q")) {
@@ -109,7 +114,18 @@ public final class PrometheusUtils {
     return samples;
   }
 
-  public static Collector.MetricFamilySamples convert(final Schema schema, final List<TimeSeriesRecord> recs) {
+  @Nullable
+  public static Collector.MetricFamilySamples convert(final Iterable<TimeSeriesRecord> recs) {
+    Iterator<TimeSeriesRecord> iterator = recs.iterator();
+    if (!iterator.hasNext()) {
+      return null;
+    }
+    PeekingIterator<TimeSeriesRecord> pi = Iterators.peekingIterator(iterator);
+    TimeSeriesRecord peek = pi.peek();
+    return convert(peek.getSchema(), () -> pi);
+  }
+
+  public static Collector.MetricFamilySamples convert(final Schema schema, final Iterable<TimeSeriesRecord> recs) {
     String name = schema.getName();
     Pair<String, String> composite = Pair.from(name);
     List<String> labels;
@@ -128,13 +144,13 @@ public final class PrometheusUtils {
     switch (measurementType) {
       case COUNTER:
         return new Collector.MetricFamilySamples(name, Collector.Type.COUNTER, schema.getDoc(),
-                convertSingleValue("counter", labels, labelValues, recs));
+                convertValues(schema, labels, labelValues, recs));
       case GAUGE:
         return new Collector.MetricFamilySamples(name, Collector.Type.GAUGE, schema.getDoc(),
-                convertSingleValue("value", labels, labelValues, recs));
+                convertValues(schema, labels, labelValues, recs));
       case SUMMARY:
-        return new Collector.MetricFamilySamples(name, Collector.Type.GAUGE, schema.getDoc(),
-                convertSummary(labels, labelValues, recs));
+        return new Collector.MetricFamilySamples(name, Collector.Type.SUMMARY, schema.getDoc(),
+                convertValues(schema, labels, labelValues, recs));
       case HISTOGRAM:
         return new Collector.MetricFamilySamples(name, Collector.Type.HISTOGRAM, schema.getDoc(),
                 convertHistogram(schema, labels, labelValues, recs));
