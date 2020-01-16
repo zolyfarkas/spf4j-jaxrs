@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.actuator.apiBrowser;
+package org.spf4j.actuator.openApi;
 
 import javax.ws.rs.core.MediaType;
 import org.hamcrest.Matchers;
@@ -22,15 +22,13 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.ServiceIntegrationBase;
-import static org.spf4j.actuator.ServiceIntegrationBase.getTarget;
-import org.spf4j.actuator.info.InfoResourceTest;
 /**
  *
  * @author Zoltan Farkas
  */
-public class ApiBrowserResourceTest extends ServiceIntegrationBase {
+public class OpenApiResourceTest extends ServiceIntegrationBase {
 
-  private static final Logger LOG = LoggerFactory.getLogger(InfoResourceTest.class);
+  private static final Logger LOG = LoggerFactory.getLogger(OpenApiResourceTest.class);
 
   @Test
   public void testOpenApiJson() {
@@ -41,14 +39,5 @@ public class ApiBrowserResourceTest extends ServiceIntegrationBase {
     Assert.assertThat(json.toString(), Matchers.containsString("_project"));
   }
 
-
-  @Test
-  public void testUiIndex() {
-    CharSequence html = getTarget().path("apiBrowser")
-            .request(MediaType.WILDCARD_TYPE).get(CharSequence.class);
-    LOG.debug("application info", html);
-    Assert.assertNotNull(html);
-    Assert.assertThat(html.toString(), Matchers.containsString("html"));
-  }
 
 }

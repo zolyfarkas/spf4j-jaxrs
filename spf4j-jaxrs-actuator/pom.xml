@@ -134,51 +134,6 @@
         <artifactId>spotbugs-maven-plugin</artifactId>
       </plugin>
 -->
-
-      <plugin>
-        <groupId>com.googlecode.maven-download-plugin</groupId>
-        <artifactId>download-maven-plugin</artifactId>
-        <version>1.4.1</version>
-        <executions>
-          <execution>
-            <phase>initialize</phase>
-            <id>swagger-ui</id>
-            <goals>
-              <goal>wget</goal>
-            </goals>
-            <configuration>
-              <url>https://github.com/swagger-api/swagger-ui/archive/master.tar.gz</url>
-              <unpack>true</unpack>
-              <outputDirectory>${project.build.directory}</outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>3.1.0</version>
-        <executions>
-          <execution>
-            <id>copy-resources</id>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>target/classes/org/spf4j/actuator/apiBrowser</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${project.build.directory}/swagger-ui-master/dist</directory>
-                  <filtering>true</filtering>
-                  <excludes>
-                    <exclude>index.html</exclude>
-                  </excludes>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>

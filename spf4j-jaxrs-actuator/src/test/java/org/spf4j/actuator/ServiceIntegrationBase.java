@@ -54,7 +54,7 @@ import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.spf4j.actuator.apiBrowser.OpenApiResource;
+import org.spf4j.actuator.openApi.OpenApiResource;
 import org.spf4j.actuator.health.checks.DefaultHealthChecksBinder;
 import org.spf4j.avro.SchemaClient;
 import org.spf4j.base.avro.NetworkProtocol;
