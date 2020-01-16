@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.actuator;
+package org.spf4j.apiBrowser;
 
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -55,7 +55,6 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.spf4j.actuator.openApi.OpenApiResource;
-import org.spf4j.actuator.cluster.health.DefaultClusterHealthChecksBinder;
 import org.spf4j.actuator.health.checks.DefaultHealthChecksBinder;
 import org.spf4j.avro.SchemaClient;
 import org.spf4j.base.avro.NetworkProtocol;
@@ -194,11 +193,11 @@ public abstract class ServiceIntegrationBase {
       restClient = new Spf4jClientBuilder()
               .connectTimeout(2, TimeUnit.SECONDS)
               .readTimeout(60, TimeUnit.SECONDS)
+              .register(new SampleNodeMessageProviderJson())
+              .register(new SampleNodeMessageProviderD3Json())
               .register(new ExecutionContextClientFilter(dp, true))
               .register(ClientCustomExecutorServiceProvider.class)
               .register(ClientCustomScheduledExecutionServiceProvider.class)
-              .register(new SampleNodeMessageProviderJson())
-              .register(new SampleNodeMessageProviderD3Json())
               .register(new CsvParameterConverterProvider(Collections.EMPTY_LIST))
               .register(new CharSequenceMessageProvider())
               .register(GZipEncoder.class)
@@ -211,6 +210,8 @@ public abstract class ServiceIntegrationBase {
       register(avroFeature);
       register(CsvParameterConverterProvider.class);
       register(GZipEncoderDecoder.class);
+      register(new DirectStringMessageProvider());
+      register(new CharSequenceMessageProvider());
       profiler = new Sampler(5);
       profiler.start();
       register(new AbstractBinder() {
@@ -219,19 +220,16 @@ public abstract class ServiceIntegrationBase {
           bind(profiler).to(Sampler.class);
         }
       });
-      register(new DirectStringMessageProvider());
-      register(new CharSequenceMessageProvider());
       javax.servlet.ServletRegistration servletRegistration = srvContext.getServletRegistration("jersey");
       String initParameter = servletRegistration.getInitParameter("servlet.port");
       String bindAddr = servletRegistration.getInitParameter("servlet.bindAddr");
-      register(new ClusterBinder(restClient, bindAddr, Integer.parseInt(initParameter)));
+      register(new ClusterBinder(bindAddr, Integer.parseInt(initParameter)));
       register(new DefaultHealthChecksBinder());
-      register(new DefaultClusterHealthChecksBinder());
+      packages("org.spf4j.apiBrowser");
+      registerClasses(OpenApiResource.class);
       if (instance != null) {
         throw new IllegalStateException("Application already initialized " + instance);
       }
-      packages("org.spf4j.actuator");
-      registerClasses(OpenApiResource.class);
       instance = this;
     }
 
@@ -261,15 +259,12 @@ public abstract class ServiceIntegrationBase {
 
     private final int port;
 
-    private final Spf4JClient client;
-
     @Inject
-    ClusterBinder(final Spf4JClient client,
+    ClusterBinder(
             @ConfigProperty(name = "servlet.bindAddr") final String bindAddr,
             @ConfigProperty(name = "servlet.port") final int port) {
       this.bindAddr = bindAddr;
       this.port = port;
-      this.client = client;
     }
 
     @Override
@@ -281,7 +276,6 @@ public abstract class ServiceIntegrationBase {
                         port, NetworkProtocol.TCP)));
         bind(singleNodeCluster).to(Cluster.class);
         bind(singleNodeCluster).to(Service.class);
-        bind(client).to(Spf4JClient.class);
       } catch (UnknownHostException ex) {
         throw new RuntimeException(ex);
       }

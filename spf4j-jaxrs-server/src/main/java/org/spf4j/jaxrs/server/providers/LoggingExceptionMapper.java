@@ -108,9 +108,9 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
               .build();
     }
     if (status >= 500) {
-      ctx.combine(ContextTags.LOG_LEVEL, Level.ERROR);
+      ctx.accumulate(ContextTags.LOG_LEVEL, Level.ERROR);
     }
-    ctx.add(ContextTags.LOG_ATTRIBUTES, exception);
+    ctx.accumulateComponent(ContextTags.LOG_ATTRIBUTES, exception);
     return Response.status(status)
             .entity(new ServiceError(status, exception.getClass().getName(),
                     message, payload,

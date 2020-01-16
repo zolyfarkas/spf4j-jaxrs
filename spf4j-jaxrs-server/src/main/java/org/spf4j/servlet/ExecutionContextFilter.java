@@ -197,15 +197,15 @@ public final class ExecutionContextFilter implements Filter {
           @Override
           public void onTimeout(final AsyncEvent event) {
             ExecutionContexts.current().closeAllButRoot();
-            ctx.combine(ContextTags.LOG_LEVEL, Level.ERROR);
-            ctx.add(ContextTags.LOG_ATTRIBUTES, LogAttribute.of("warning", "Request timed out"));
+            ctx.accumulate(ContextTags.LOG_LEVEL, Level.ERROR);
+            ctx.accumulateComponent(ContextTags.LOG_ATTRIBUTES, LogAttribute.of("warning", "Request timed out"));
           }
 
           @Override
           public void onError(final AsyncEvent event) {
             ExecutionContexts.current().closeAllButRoot();
-            ctx.combine(ContextTags.LOG_LEVEL, Level.ERROR);
-            ctx.add(ContextTags.LOG_ATTRIBUTES, event.getThrowable());
+            ctx.accumulate(ContextTags.LOG_LEVEL, Level.ERROR);
+            ctx.accumulateComponent(ContextTags.LOG_ATTRIBUTES, event.getThrowable());
           }
 
           @Override
@@ -220,7 +220,7 @@ public final class ExecutionContextFilter implements Filter {
       if (Throwables.isNonRecoverable(t)) {
         org.spf4j.base.Runtime.goDownWithError(t, SysExits.EX_SOFTWARE);
       }
-      ctx.add(ContextTags.LOG_ATTRIBUTES, t);
+      ctx.accumulateComponent(ContextTags.LOG_ATTRIBUTES, t);
       logRequestEnd(org.spf4j.log.Level.ERROR, ctx, httpReq, httpResp);
     }
   }

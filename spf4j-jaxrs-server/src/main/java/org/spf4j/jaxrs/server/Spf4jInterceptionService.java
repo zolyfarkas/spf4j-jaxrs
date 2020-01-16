@@ -31,6 +31,7 @@ import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
 import org.spf4j.jaxrs.Timeout;
 import org.spf4j.log.ExecContextLogger;
+import org.spf4j.log.Level;
 import org.spf4j.servlet.CountingHttpServletResponse;
 
 /**
@@ -203,7 +204,8 @@ public final class Spf4jInterceptionService implements InterceptionService {
       ExecutionContext current = ExecutionContexts.current();
       CountingHttpServletResponse resp = current.get(ContextTags.HTTP_RESP);
       for (HttpWarning warning: warnings) {
-        ContextTags.HTTP_WARNINGS.addToContext(current, warning);
+        current.accumulateComponent(ContextTags.HTTP_WARNINGS, warning);
+        current.accumulate(ContextTags.LOG_LEVEL, Level.WARN);
         resp.addHeader(Headers.WARNING, warning.toString());
       }
       return invocation.proceed();

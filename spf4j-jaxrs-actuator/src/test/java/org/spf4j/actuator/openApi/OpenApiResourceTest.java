@@ -18,10 +18,12 @@ package org.spf4j.actuator.openApi;
 import javax.ws.rs.core.MediaType;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.ServiceIntegrationBase;
+import static org.spf4j.actuator.ServiceIntegrationBase.getTarget;
 /**
  *
  * @author Zoltan Farkas
@@ -37,6 +39,24 @@ public class OpenApiResourceTest extends ServiceIntegrationBase {
     LOG.debug("application openapi", json);
     Assert.assertNotNull(json);
     Assert.assertThat(json.toString(), Matchers.containsString("_project"));
+  }
+
+  @Test
+  public void testOpenApi() {
+    CharSequence json = getTarget().path("openapi.json")
+            .request(MediaType.APPLICATION_JSON)
+            .get(CharSequence.class);
+    LOG.debug("api spec", json);
+  }
+
+  @Test
+  @Ignore
+  public void testOpenApiUI() throws InterruptedException {
+    CharSequence json = getTarget().path("openapi.json")
+            .request(MediaType.APPLICATION_JSON)
+            .get(CharSequence.class);
+    LOG.debug("api spec", json);
+    Thread.sleep(1000000000);
   }
 
 

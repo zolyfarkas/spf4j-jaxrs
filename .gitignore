@@ -23,3 +23,7 @@
 /pom.xml.versionsBackup
 /spf4j-jaxrs.iml
 /spf4j-jaxrs-actuator-cluster/nbproject/
+/spf4j-jaxrs-actuator/spf4j-jaxrs-actuator.iml
+/spf4j-jaxrs-actuator/pom.xml.versionsBackup
+/spf4j-jaxrs-api-browser/nbproject/
+/spf4j-jaxrs-api-browser/target/

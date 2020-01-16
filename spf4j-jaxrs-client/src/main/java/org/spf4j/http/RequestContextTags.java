@@ -16,7 +16,7 @@
 package org.spf4j.http;
 
 import org.spf4j.base.ExecutionContext;
-import org.spf4j.base.ExecutionContext.Tag;
+import org.spf4j.base.ExecutionContext.SimpleTag;
 
 /**
  * @author Zoltan Farkas
@@ -26,7 +26,7 @@ public final class RequestContextTags {
   private RequestContextTags() {
   }
 
-  public static final Tag<Integer> TRY_COUNT = new ExecutionContext.Tag<Integer>() {
+  public static final SimpleTag<Integer> TRY_COUNT = new ExecutionContext.SimpleTag<Integer>() {
     @Override
     public Integer accumulate(final Integer existing, final Integer current) {
       if (existing == null) {
