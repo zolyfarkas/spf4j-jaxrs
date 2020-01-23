@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import org.apache.avro.AvroNamesRefResolver;
@@ -45,6 +46,7 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
 
   private final SchemaResolver client;
 
+  @Inject
   public DefaultSchemaProtocol(final SchemaResolver client) {
     this.client = client;
   }

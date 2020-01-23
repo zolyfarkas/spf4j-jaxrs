@@ -76,7 +76,7 @@ import org.spf4j.jaxrs.common.providers.gp.CharSequenceMessageProvider;
 import org.spf4j.jaxrs.common.providers.gp.CsvParameterConverterProvider;
 import org.spf4j.jaxrs.common.providers.gp.DirectStringMessageProvider;
 import org.spf4j.jaxrs.common.providers.GZipEncoderDecoder;
-import org.spf4j.jaxrs.common.providers.avro.AvroFeature;
+import org.spf4j.jaxrs.features.AvroFeature;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
 import org.spf4j.jaxrs.common.providers.gp.SampleNodeMessageProviderD3Json;
 import org.spf4j.jaxrs.common.providers.gp.SampleNodeMessageProviderJson;

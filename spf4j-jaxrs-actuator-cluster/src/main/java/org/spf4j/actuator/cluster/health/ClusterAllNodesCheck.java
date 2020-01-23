@@ -12,6 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
@@ -30,6 +31,7 @@ import org.spf4j.jaxrs.client.Spf4JClient;
  * @author Zoltan Farkas
  */
 @Service
+@Singleton
 public final class ClusterAllNodesCheck implements HealthCheck {
 
   private final Cluster cluster;

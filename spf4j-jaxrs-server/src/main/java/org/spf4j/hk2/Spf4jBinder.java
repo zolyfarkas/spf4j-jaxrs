@@ -16,6 +16,7 @@
 package org.spf4j.hk2;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.GenericType;
@@ -41,6 +42,7 @@ public final class Spf4jBinder extends AbstractBinder {
 
   private final DebugDetailEntitlement ddEnt;
 
+  @Inject
   public Spf4jBinder(final SchemaResolver schemaClient,
           final Spf4JClient restClient, final DebugDetailEntitlement ddEnt) {
     this.schemaClient = schemaClient;

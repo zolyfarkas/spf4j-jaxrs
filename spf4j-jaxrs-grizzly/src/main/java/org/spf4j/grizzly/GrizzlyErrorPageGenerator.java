@@ -8,9 +8,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
+import org.apache.avro.SchemaResolver;
 import org.glassfish.grizzly.http.server.ErrorPageGenerator;
 import org.glassfish.grizzly.http.server.Request;
-import org.spf4j.avro.SchemaClient;
 import org.spf4j.base.Arrays;
 import org.spf4j.base.Throwables;
 import org.spf4j.base.avro.Converters;
@@ -26,9 +26,9 @@ import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyWriter;
  */
 public final class GrizzlyErrorPageGenerator implements ErrorPageGenerator {
 
-  private final SchemaClient schemaClient;
+  private final SchemaResolver schemaClient;
 
-  public GrizzlyErrorPageGenerator(final SchemaClient schemaClient) {
+  public GrizzlyErrorPageGenerator(final SchemaResolver schemaClient) {
     this.schemaClient = schemaClient;
   }
 
