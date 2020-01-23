@@ -34,7 +34,6 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
 import org.glassfish.jersey.internal.guava.Maps;
 import org.spf4j.base.Json;
-import org.spf4j.http.Headers;
 
 /**
  * Implements avro schema transmission over HTTP headers.
@@ -55,9 +54,6 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
   public Schema deserialize(final MediaType mediaType,
           final Function<String, String> headers, final Class<?> type, final Type genericType) {
     String schemaStr = mediaType.getParameters().get(CONTENT_TYPE_AVRO_SCHEMA_PARAM);
-    if (schemaStr == null) {
-      schemaStr = headers.apply(Headers.CONTENT_SCHEMA);
-    }
     if (schemaStr == null) {
       return null;
     } else {

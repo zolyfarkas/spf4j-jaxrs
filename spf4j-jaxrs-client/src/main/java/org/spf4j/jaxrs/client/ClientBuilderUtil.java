@@ -12,7 +12,7 @@ import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
-import org.spf4j.jaxrs.common.providers.avro.AvroFeature;
+import org.spf4j.jaxrs.features.AvroFeature;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 
 /**

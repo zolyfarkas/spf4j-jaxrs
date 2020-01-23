@@ -1,10 +1,22 @@
 
-package org.spf4j.jaxrs.common.providers.avro;
+package org.spf4j.jaxrs.features;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
 import org.apache.avro.SchemaResolver;
+import org.spf4j.jaxrs.common.providers.avro.AvroParameterConverterProvider;
+import org.spf4j.jaxrs.common.providers.avro.BinaryAvroMessageBodyReader;
+import org.spf4j.jaxrs.common.providers.avro.BinaryAvroMessageBodyWriter;
+import org.spf4j.jaxrs.common.providers.avro.CsvAvroMessageBodyReader;
+import org.spf4j.jaxrs.common.providers.avro.CsvAvroMessageBodyWriter;
+import org.spf4j.jaxrs.common.providers.avro.JsonAvroMessageBodyReader;
+import org.spf4j.jaxrs.common.providers.avro.JsonAvroMessageBodyWriter;
+import org.spf4j.jaxrs.common.providers.avro.SchemaMessageBodyReader;
+import org.spf4j.jaxrs.common.providers.avro.SchemaMessageBodyWriter;
+import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
+import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyReader;
+import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyWriter;
 import org.spf4j.jaxrs.common.providers.avro.stream.BinaryAvroIterableMessageBodyReader;
 import org.spf4j.jaxrs.common.providers.avro.stream.BinaryAvroIterableMessageBodyWriter;
 import org.spf4j.jaxrs.common.providers.avro.stream.BinaryAvroStreamingMessageBodyReader;
