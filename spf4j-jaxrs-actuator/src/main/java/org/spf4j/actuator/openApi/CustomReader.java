@@ -40,7 +40,7 @@ import javax.ws.rs.Produces;
 import org.spf4j.jaxrs.ProjectionSupport;
 
 /**
- *
+ * Reader to manipulate OpenApi model and add Annotation based aspects.
  * @author Zoltan Farkas
  */
 public class CustomReader extends Reader {

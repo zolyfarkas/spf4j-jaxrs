@@ -17,6 +17,7 @@ package org.spf4j.jaxrs.features;
 
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
+import org.glassfish.jersey.message.DeflateEncoder;
 import org.spf4j.jaxrs.common.providers.GZipEncoderDecoder;
 import org.spf4j.jaxrs.common.providers.gp.CharSequenceMessageProvider;
 import org.spf4j.jaxrs.common.providers.gp.CsvParameterConverterProvider;
@@ -29,7 +30,7 @@ import org.spf4j.jaxrs.common.providers.gp.SampleNodeMessageProviderJson;
 /**
  * @author Zoltan Farkas
  */
-public final class GeneralPurposeFeature implements Feature {
+public final class GeneralPurposeFeatures implements Feature {
 
   @Override
   public boolean configure(final FeatureContext fc) {
@@ -41,6 +42,7 @@ public final class GeneralPurposeFeature implements Feature {
     fc.register(new SampleNodeMessageProviderJson());
     fc.register(new SampleNodeMessageProviderD3Json());
     fc.register(new GZipEncoderDecoder());
+    fc.register(DeflateEncoder.class);
     return true;
   }
 

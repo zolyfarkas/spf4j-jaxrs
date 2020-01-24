@@ -15,6 +15,7 @@
  */
 package org.spf4j.grizzly;
 
+import org.spf4j.base.Env;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
@@ -22,6 +23,7 @@ import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.ThreadLocalContextAttacher;
 import org.spf4j.log.SLF4JBridgeHandler;
 import org.spf4j.os.OperatingSystem;
+import org.spf4j.perf.ProcessVitals;
 import org.spf4j.stackmonitor.FastStackCollector;
 import org.spf4j.stackmonitor.ProfiledExecutionContextFactory;
 import org.spf4j.stackmonitor.ProfilingTLAttacher;
@@ -46,9 +48,13 @@ public class JvmServicesBuilder {
 
   private int profilerDumpTimeMillis;
 
-  private boolean startProfiler;
-
   private boolean profilerJmx;
+
+  private int openFilesSampleTimeMillis;
+  private int memoryUseSampleTimeMillis;
+  private int gcUseSampleTimeMillis;
+  private int threadUseSampleTimeMillis;
+  private int cpuUseSampleTimeMillis;
 
   public JvmServicesBuilder withApplicationName(final String applicationName) {
     this.applicationName = applicationName;
@@ -65,10 +71,14 @@ public class JvmServicesBuilder {
     this.logFolder = Env.getValue("LOG_FOLDER", "/var/log");
     this.profilerSampleTimeMillis = Env.getValue("PROFILER_SAMPLE_MILLIS", 10);
     this.profilerDumpTimeMillis = Env.getValue("PROFILER_DUMNP_MILLIS", 3600000);
-    this.startProfiler = Env.getValue("PROFILER_START", true);
     this.profilerJmx = Env.getValue("PROFILER_JMX", true);
     this.applicationName = Env.getValue("KUBE_APP_NAME", "KUBE_APP_NAME");
     this.hostName = Env.getValue("KUBE_POD_NAME", () -> OperatingSystem.getHostName());
+    this.openFilesSampleTimeMillis = Env.getValue("V_OPEN_FILES_S_MILLIS", 60000);
+    this.memoryUseSampleTimeMillis = Env.getValue("V_MEM_USE_S_MILLIS", 10000);
+    this.gcUseSampleTimeMillis = Env.getValue("V_GC_USE_S_MILLIS", 10000);
+    this.threadUseSampleTimeMillis = Env.getValue("V_THREAD_USE_S_MILLIS", 10000);
+    this.cpuUseSampleTimeMillis = Env.getValue("V_CPU_USE_S_MILLIS", 10000);
   }
 
   private void initLogConfig() {
@@ -111,9 +121,6 @@ public class JvmServicesBuilder {
                         }
                       }), logFolder, applicationName);
     }
-    if (startProfiler) {
-      sampler.start();
-    }
     if (profilerJmx) {
       sampler.registerJmx();
     }
@@ -128,33 +135,50 @@ public class JvmServicesBuilder {
     initLogConfig();
     initRequestAttributedProfiler();
     Sampler sampler = createSampler();
-    svc = new JvmServices() {
-      @Override
-      public String getLogFolder() {
-        return logFolder;
-      }
-
-      @Override
-      public Sampler getProfiler() {
-        return sampler;
-      }
-
-      @Override
-      public String getApplicationName() {
-        return applicationName;
-      }
-
-      @Override
-      public String getHostName() {
-        return hostName;
-      }
-
-      @Override
-      public void close() throws Exception {
-        sampler.stop();
-      }
-    };
+    svc = new JvmServicesImpl(sampler, new ProcessVitals(openFilesSampleTimeMillis,
+            memoryUseSampleTimeMillis, gcUseSampleTimeMillis, threadUseSampleTimeMillis, cpuUseSampleTimeMillis), this);
     services = svc;
     return svc;
+  }
+
+  private static class JvmServicesImpl implements JvmServices {
+
+    private final Sampler sampler;
+
+    private final ProcessVitals vitals;
+
+    private final  JvmServicesBuilder builder;
+
+    public JvmServicesImpl(final Sampler sampler, final ProcessVitals vitals, final JvmServicesBuilder builder) {
+      this.sampler = sampler;
+      this.vitals = vitals;
+      this.builder = builder;
+    }
+
+    @Override
+    public String getLogFolder() {
+      return builder.logFolder;
+    }
+
+    @Override
+    public Sampler getProfiler() {
+      return sampler;
+    }
+
+    @Override
+    public String getApplicationName() {
+      return builder.applicationName;
+    }
+
+    @Override
+    public String getHostName() {
+      return builder.hostName;
+    }
+
+    @Override
+    public ProcessVitals getVitals() {
+      return vitals;
+    }
+
   }
 }

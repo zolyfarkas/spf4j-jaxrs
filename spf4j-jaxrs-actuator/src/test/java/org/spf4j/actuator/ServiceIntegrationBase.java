@@ -29,13 +29,15 @@ import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
 
 /**
- *
  * @author Zoltan Farkas
  */
 @SuppressFBWarnings("CE_CLASS_ENVY")
 public abstract class ServiceIntegrationBase {
 
-  private static JvmServices jvm;
+  private static final JvmServices JVM = new JvmServicesBuilder()
+            .withApplicationName("actuatorTest")
+            .withLogFolder("./target")
+            .build().closeOnShutdown();
   private static JerseyService jerseyService;
   private static Spf4jWebTarget target;
   private static Spf4JClient client;
@@ -45,11 +47,7 @@ public abstract class ServiceIntegrationBase {
   @BeforeClass
   public static void setUp() throws IOException, URISyntaxException {
     // start the server
-    jvm = new JvmServicesBuilder()
-            .withApplicationName("actuatorTest")
-            .withLogFolder("./target")
-            .build();
-    jerseyService = new JerseyServiceBuilder(jvm)
+    jerseyService = new JerseyServiceBuilder(JVM)
             .withFeature(ActuatorFeature.class)
             .withFeature(SingleNodeClusterFeature.class)
             .withPort(9090)
@@ -63,7 +61,6 @@ public abstract class ServiceIntegrationBase {
   @AfterClass
   public static void tearDown() throws Exception {
     jerseyService.close();
-    jvm.close();
   }
 
   public static Spf4jWebTarget getTarget() {

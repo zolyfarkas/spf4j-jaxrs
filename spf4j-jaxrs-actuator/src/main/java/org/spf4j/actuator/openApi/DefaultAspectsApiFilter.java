@@ -22,7 +22,6 @@ import io.swagger.v3.core.util.PrimitiveType;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.Paths;
-import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
@@ -85,9 +84,7 @@ public final class DefaultAspectsApiFilter extends AbstractSpecFilter {
             .content(new Content().addMediaType("application/json",
             new MediaType().
                     schema(new Schema().$ref("#/components/schemas/"
-                            + ServiceError.getClassSchema().getFullName()))))
-            .addHeaderObject(Headers.CONTENT_SCHEMA, new Header().schema(PrimitiveType.STRING.createProperty()
-                    .description("Avro schema of the content"))));
+                            + ServiceError.getClassSchema().getFullName())))));
     return Optional.of(operation);
   }
 

@@ -17,9 +17,16 @@ package org.spf4j.actuator.cluster;
 
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
+import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.spf4j.actuator.ActuatorFeature;
 import org.spf4j.actuator.cluster.health.ClusterAllNodesCheck;
 import org.spf4j.actuator.cluster.health.ClusterAllNodesRegistration;
+import org.spf4j.actuator.cluster.info.InfoResourceCluster;
+import org.spf4j.actuator.cluster.jmx.JmxClusterResource;
+import org.spf4j.actuator.cluster.logs.LogFilesClusterResource;
+import org.spf4j.actuator.cluster.logs.LogsClusterResource;
+import org.spf4j.actuator.cluster.metrics.MetricsClusterResource;
+import org.spf4j.actuator.cluster.profiles.ProfilesClusterResource;
 import org.spf4j.actuator.health.HealthCheck;
 
 /**
@@ -31,8 +38,19 @@ public final class ClusterActuatorFeature implements Feature {
   @Override
   public boolean configure(final FeatureContext fc) {
     fc.register(ActuatorFeature.class);
-    fc.register(ClusterAllNodesCheck.class, HealthCheck.class, ClusterAllNodesCheck.class);
-    fc.register(ClusterAllNodesRegistration.class, HealthCheck.Registration.class);
+    fc.register(InfoResourceCluster.class);
+    fc.register(JmxClusterResource.class);
+    fc.register(LogFilesClusterResource.class);
+    fc.register(LogsClusterResource.class);
+    fc.register(MetricsClusterResource.class);
+    fc.register(ProfilesClusterResource.class);
+    fc.register(new AbstractBinder() {
+      @Override
+      protected void configure() {
+        bind(ClusterAllNodesCheck.class).to(HealthCheck.class).to(ClusterAllNodesCheck.class);
+        bind(ClusterAllNodesRegistration.class).to(HealthCheck.Registration.class);
+      }
+    });
     return true;
   }
 

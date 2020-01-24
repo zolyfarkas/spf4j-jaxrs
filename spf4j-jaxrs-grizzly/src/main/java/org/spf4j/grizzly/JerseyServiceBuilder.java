@@ -15,13 +15,14 @@
  */
 package org.spf4j.grizzly;
 
+import org.spf4j.base.Env;
 import gnu.trove.set.hash.THashSet;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.DispatcherType;
@@ -37,10 +38,10 @@ import org.glassfish.grizzly.http.server.ServerConfiguration;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.servlet.FixedWebappContext;
 import org.glassfish.grizzly.servlet.ServletRegistration;
+import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.filter.EncodingFilter;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
-import org.glassfish.jersey.message.DeflateEncoder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.spf4j.avro.NoSnapshotRefsResolver;
@@ -48,7 +49,6 @@ import org.spf4j.avro.SchemaClient;
 import org.spf4j.concurrent.LifoThreadPoolBuilder;
 import org.spf4j.failsafe.HedgePolicy;
 import org.spf4j.hk2.Spf4jBinder;
-import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.http.DefaultDeadlineProtocol;
 import org.spf4j.http.multi.MultiURLs;
 import org.spf4j.http.multi.Spf4jURLStreamHandlerFactory;
@@ -56,14 +56,10 @@ import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
-import org.spf4j.jaxrs.common.providers.GZipEncoderDecoder;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
-import org.spf4j.jaxrs.common.providers.gp.CharSequenceMessageProvider;
-import org.spf4j.jaxrs.common.providers.gp.CsvParameterConverterProvider;
-import org.spf4j.jaxrs.common.providers.gp.SampleNodeMessageProviderD3Json;
-import org.spf4j.jaxrs.common.providers.gp.SampleNodeMessageProviderJson;
 import org.spf4j.jaxrs.features.AvroFeature;
-import org.spf4j.jaxrs.features.GeneralPurposeFeature;
+import org.spf4j.jaxrs.features.GeneralPurposeFeatures;
+import org.spf4j.jaxrs.server.providers.DefaultServerProvidersFeatures;
 import org.spf4j.servlet.ExecutionContextFilter;
 import org.spf4j.stackmonitor.Sampler;
 
@@ -82,9 +78,21 @@ public class JerseyServiceBuilder {
 
   private final Set<Class<? extends Feature>> features;
 
-  private final Set<String> mavenRepos;
+  private LinkedHashSet<String> mavenRepos;
 
   private final JvmServices jvmServices;
+
+  private int kernelThreadsCoreSize;
+
+  private int kernelThreadsMaxSize;
+
+  private int workerThreadsCoreSize;
+
+  private int workerThreadsMaxSize;
+
+  /* see https://github.com/jersey/jersey/blob/master/examples/
+  https-clientserver-grizzly/src/main/java/org/glassfish/jersey/examples/httpsclientservergrizzly/Server.java */
+  private SSLEngineConfigurator sslConfig;
 
   public JerseyServiceBuilder(final JvmServices jvmServices) {
     this.bindAddr = "0.0.0.0";
@@ -92,12 +100,30 @@ public class JerseyServiceBuilder {
     this.providerPackages = new THashSet<>(4);
     this.features =  new THashSet<>(4);
     this.jvmServices = jvmServices;
-    this.mavenRepos = new THashSet<>(4);
+    this.mavenRepos = new LinkedHashSet<>(4);
     mavenRepos.add("https://repo1.maven.org/maven2");
+    features.add(GeneralPurposeFeatures.class);
+    features.add(DefaultServerProvidersFeatures.class);
+    this.kernelThreadsCoreSize = 1;
+    this.kernelThreadsMaxSize = 4;
+    this.workerThreadsCoreSize = 4;
+    this.workerThreadsMaxSize = 256;
+    this.sslConfig = null;
+  }
+
+  public JerseyServiceBuilder removeDefaults() {
+    mavenRepos.clear();
+    features.clear();
+    return this;
   }
 
   public JerseyServiceBuilder withFeature(final Class<? extends Feature> feature) {
     this.features.add(feature);
+    return this;
+  }
+
+  public JerseyServiceBuilder withProviderPackage(final String pkg) {
+    this.providerPackages.add(pkg);
     return this;
   }
 
@@ -106,6 +132,38 @@ public class JerseyServiceBuilder {
     return this;
   }
 
+  public JerseyServiceBuilder withKernelThreadsCoreSize(final int size) {
+    this.kernelThreadsCoreSize = size;
+    return this;
+  }
+
+  public JerseyServiceBuilder withKernelThreadsMaxSize(final int size) {
+    this.kernelThreadsMaxSize = size;
+    return this;
+  }
+
+  public JerseyServiceBuilder withWorkerThreadsMaxSize(final int size) {
+    this.workerThreadsMaxSize = size;
+    return this;
+  }
+
+  public JerseyServiceBuilder withWorkerThreadsCoreSize(final int size) {
+    this.workerThreadsCoreSize = size;
+    return this;
+  }
+
+  public JerseyServiceBuilder withSSLEngineConfigurator(final SSLEngineConfigurator configurator) {
+    this.sslConfig = configurator;
+    return this;
+  }
+
+  public JerseyServiceBuilder withMavenRepoURL(final String mavenRepoUrl) {
+    LinkedHashSet<String> nRepos = new LinkedHashSet<>((int)((mavenRepos.size() + 1) * 1.4));
+    nRepos.addAll(this.mavenRepos);
+    nRepos.add(mavenRepoUrl);
+    this.mavenRepos = nRepos;
+    return this;
+  }
 
   public JerseyService build() throws IOException {
     return new JerseyServiceImpl();
@@ -152,7 +210,6 @@ public class JerseyServiceBuilder {
       resourceConfig.property("servlet.port", listenPort);
       resourceConfig.property("servlet.protocol", "http");
       resourceConfig.property("application.logFilesPath", jvmServices.getLogFolder());
-      resourceConfig.register(new GeneralPurposeFeature());
       resourceConfig.register(new AbstractBinder() {
         @Override
         protected void configure() {
@@ -169,12 +226,7 @@ public class JerseyServiceBuilder {
             .register(new ExecutionContextClientFilter(dp, true))
             .register(ClientCustomExecutorServiceProvider.class)
             .register(ClientCustomScheduledExecutionServiceProvider.class)
-            .register(new SampleNodeMessageProviderJson())
-            .register(new SampleNodeMessageProviderD3Json())
-            .register(new CsvParameterConverterProvider(Collections.EMPTY_LIST))
-            .register(new CharSequenceMessageProvider())
-            .register(GZipEncoderDecoder.class)
-            .register(DeflateEncoder.class)
+            .register(new GeneralPurposeFeatures())
             .register(EncodingFilter.class)
             .register(avroFeature)
             .property(ClientProperties.USE_ENCODING, "gzip")
@@ -183,7 +235,6 @@ public class JerseyServiceBuilder {
       resourceConfig.register(avroFeature);
 
       ServletRegistration servletRegistration = webappContext.addServlet("jersey", new ServletContainer(resourceConfig));
-      //ServletRegistration servletRegistration = webappContext.addServlet("jersey", ServletContainer.class);
       servletRegistration.addMapping("/*");
       servletRegistration.setInitParameter("javax.ws.rs.Application", Spf4jJaxrsApplication.class.getName());
       servletRegistration.setLoadOnStartup(0);
@@ -201,12 +252,19 @@ public class JerseyServiceBuilder {
 
     public  NetworkListener createHttpListener(final String bindAddr,
             final int port) {
-      return createHttpListener("http", bindAddr, port);
+      if (sslConfig == null) {
+        return createHttpListener("http", bindAddr, port);
+      } else {
+        NetworkListener nl = createHttpListener("https", bindAddr, port);
+        nl.setSecure(true);
+        nl.setSSLEngineConfig(sslConfig);
+        return nl;
+      }
     }
 
     public  NetworkListener createHttpListener(final String name, final String bindAddr,
             final int port) {
-      //  final ServerConfiguration config = server.getServerConfiguration();
+      final String poolNameBase = name + ':' + port;
       final NetworkListener listener
               = new NetworkListener("http", bindAddr, port);
       CompressionConfig compressionConfig = listener.getCompressionConfig();
@@ -218,21 +276,21 @@ public class JerseyServiceBuilder {
               "application/avro+json", "application/avro-x+json"); // the mime types to compress
       TCPNIOTransport transport = listener.getTransport();
       transport.setKernelThreadPool(LifoThreadPoolBuilder.newBuilder()
-              .withCoreSize(Integer.getInteger("spf4j.grizzly.kernel.coreSize", 2))
-              .withMaxSize(Integer.getInteger("spf4j.grizzly.kernel.maxSize", 8))
+              .withCoreSize(kernelThreadsCoreSize)
+              .withMaxSize(kernelThreadsMaxSize)
               .withDaemonThreads(true)
               .withMaxIdleTimeMillis(Integer.getInteger("spf4j.grizzly.kernel.idleMillis", 120000))
-              .withPoolName("gz-core")
+              .withPoolName(poolNameBase + "-kernel")
               .withQueueSizeLimit(0)
               .enableJmx()
               .build());
       transport.setSelectorRunnersCount(Integer.getInteger("spf4j.grizzly.selectorCount", 4));
       transport.setWorkerThreadPool(LifoThreadPoolBuilder.newBuilder()
-              .withCoreSize(Integer.getInteger("spf4j.grizzly.worker.coreSize", 4))
-              .withMaxSize(Integer.getInteger("spf4j.grizzly.worker.maxSize", 1024))
+              .withCoreSize(workerThreadsCoreSize)
+              .withMaxSize(workerThreadsMaxSize)
               .withDaemonThreads(false)
               .withMaxIdleTimeMillis(Integer.getInteger("spf4j.grizzly.worker.idleMillis", 120000))
-              .withPoolName("gz-work")
+              .withPoolName(poolNameBase + "-worker")
               .withQueueSizeLimit(0)
               .enableJmx()
               .build());

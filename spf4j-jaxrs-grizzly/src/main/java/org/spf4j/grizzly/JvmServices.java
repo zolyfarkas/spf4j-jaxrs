@@ -15,6 +15,7 @@
  */
 package org.spf4j.grizzly;
 
+import org.spf4j.perf.ProcessVitals;
 import org.spf4j.stackmonitor.Sampler;
 
 /**
@@ -30,6 +31,37 @@ public interface JvmServices extends AutoCloseable {
   String getLogFolder();
 
   Sampler getProfiler();
+
+  ProcessVitals getVitals();
+
+  @Override
+  default void close() {
+    try {
+      getProfiler().stop();
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(ex);
+    } finally {
+      getVitals().close();
+    }
+  }
+
+  default JvmServices start() {
+    getProfiler().start();
+    getVitals().start();
+    return this;
+  }
+
+  default JvmServices closeOnShutdown() {
+    org.spf4j.base.Runtime.queueHookAtEnd(() -> {
+      try {
+        this.close();
+      } catch (Exception ex) {
+        throw new RuntimeException(ex);
+      }
+    });
+    return this;
+  }
 
   static JvmServices current() {
     JvmServices services = JvmServicesBuilder.services;
