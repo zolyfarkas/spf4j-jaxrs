@@ -76,8 +76,11 @@ public class MetricsResource {
           Set<String> metrics = getMetrics();
           for (String metric : metrics) {
             try (AvroCloseableIterable<TimeSeriesRecord> values = getMetrics(metric, from, to)) {
-              TextFormat.write004(bw,
-                      Collections.enumeration(Collections.singletonList(PrometheusUtils.convert(values))));
+              Collector.MetricFamilySamples mfs = PrometheusUtils.convert(values);
+              if (mfs != null) {
+                TextFormat.write004(bw,
+                      Collections.enumeration(Collections.singletonList(mfs)));
+              }
             }
           }
         }
