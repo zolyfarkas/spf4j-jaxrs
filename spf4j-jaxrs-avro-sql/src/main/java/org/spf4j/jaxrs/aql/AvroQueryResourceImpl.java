@@ -1,5 +1,6 @@
 package org.spf4j.jaxrs.aql;
 
+import org.spf4j.security.AbacAuthorizer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.Reader;
 import java.io.StringReader;

@@ -21,8 +21,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.DispatcherType;
@@ -42,6 +44,7 @@ import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.filter.EncodingFilter;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
+import org.glassfish.jersey.internal.inject.Binder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.spf4j.avro.NoSnapshotRefsResolver;
@@ -78,6 +81,8 @@ public class JerseyServiceBuilder {
 
   private final Set<Class<? extends Feature>> features;
 
+  private final List<Binder> binders;
+
   private LinkedHashSet<String> mavenRepos;
 
   private final JvmServices jvmServices;
@@ -99,6 +104,7 @@ public class JerseyServiceBuilder {
     this.listenPort = Env.getValue("APP_SERVICE_PORT", 8080);
     this.providerPackages = new THashSet<>(4);
     this.features =  new THashSet<>(4);
+    this.binders = new ArrayList<>(4);
     this.jvmServices = jvmServices;
     this.mavenRepos = new LinkedHashSet<>(4);
     mavenRepos.add("https://repo1.maven.org/maven2");
@@ -119,6 +125,11 @@ public class JerseyServiceBuilder {
 
   public JerseyServiceBuilder withFeature(final Class<? extends Feature> feature) {
     this.features.add(feature);
+    return this;
+  }
+
+   public JerseyServiceBuilder withBinder(final Binder binder) {
+    this.binders.add(binder);
     return this;
   }
 
@@ -203,8 +214,9 @@ public class JerseyServiceBuilder {
       String hostName = jvmServices.getHostName();
       resourceConfig = ResourceConfig.forApplicationClass(Spf4jJaxrsApplication.class);
       resourceConfig.setApplicationName(jerseyAppName);
-      resourceConfig.registerClasses((Set) features);
       resourceConfig.packages(true, providerPackages.toArray(new String[providerPackages.size()]));
+      resourceConfig.registerInstances(binders.toArray(new Object[binders.size()]));
+      resourceConfig.registerClasses((Set) features);
       resourceConfig.property("hostName", hostName);
       resourceConfig.property("servlet.bindAddr", bindAddr);
       resourceConfig.property("servlet.port", listenPort);
@@ -236,7 +248,6 @@ public class JerseyServiceBuilder {
 
       ServletRegistration servletRegistration = webappContext.addServlet("jersey", new ServletContainer(resourceConfig));
       servletRegistration.addMapping("/*");
-      servletRegistration.setInitParameter("javax.ws.rs.Application", Spf4jJaxrsApplication.class.getName());
       servletRegistration.setLoadOnStartup(0);
       HttpServer server = new HttpServer();
       ServerConfiguration config = server.getServerConfiguration();
