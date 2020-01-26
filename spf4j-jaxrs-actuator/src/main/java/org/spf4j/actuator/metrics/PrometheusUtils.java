@@ -66,13 +66,19 @@ public final class PrometheusUtils {
       it.next();
       while (it.hasNext()) {
         Schema.Field f = it.next();
-        switch (f.schema().getType()) {
+        Schema fSchema = f.schema();
+        String fName = f.name();
+        String unit = fSchema.getProp("unit");
+        if (unit != null) {
+          fName = unit + '_' + fName;  // https://prometheus.io/docs/instrumenting/exposition_formats/
+        }
+        switch (fSchema.getType()) {
           case LONG:
-            samples.add(new Collector.MetricFamilySamples.Sample(f.name(), labels, labelValues,
+            samples.add(new Collector.MetricFamilySamples.Sample(fName, labels, labelValues,
                     (Long) rec.get(f.pos()), ts));
             break;
           case DOUBLE:
-            samples.add(new Collector.MetricFamilySamples.Sample(f.name(), labels, labelValues,
+            samples.add(new Collector.MetricFamilySamples.Sample(fName, labels, labelValues,
                     (Double) rec.get(f.pos()), ts));
             break;
           default:
