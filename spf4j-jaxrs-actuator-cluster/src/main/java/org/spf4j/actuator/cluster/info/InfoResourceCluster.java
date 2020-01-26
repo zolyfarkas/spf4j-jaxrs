@@ -34,8 +34,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.info.InfoResource;
-import org.spf4j.base.avro.NetworkService;
 import org.spf4j.base.avro.ProcessInfo;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
@@ -59,12 +59,20 @@ public class InfoResourceCluster {
 
   private final Cluster cluster;
 
+  private final int port;
+
+  private final String protocol;
+
   @Inject
   public InfoResourceCluster(final Cluster cluster,
-          final Spf4JClient httpClient, final InfoResource resource) {
+          final Spf4JClient httpClient, final InfoResource resource,
+          @ConfigProperty(name = "servlet.port") final int port,
+          @ConfigProperty(name = "servlet.protocol") final String protocol) {
     this.httpClient = httpClient;
     this.resource = resource;
     this.cluster = cluster;
+    this.port = port;
+    this.protocol = protocol;
   }
 
   @Operation(
@@ -83,10 +91,9 @@ public class InfoResourceCluster {
     List<ProcessInfo> result = Collections.synchronizedList(new ArrayList(peerAddresses.size() + 1));
     result.add(resource.getProcessInfo(clusterInfo));
     CompletableFuture<List<ProcessInfo>> cf = ContextPropagatingCompletableFuture.completedFuture(result);
-    NetworkService service = clusterInfo.getHttpService();
     for (InetAddress addr : peerAddresses) {
-      URI uri = new URI(service.getName(), null,
-              addr.getHostAddress(), service.getPort(), "/info/local", null, null);
+      URI uri = new URI(protocol, null,
+              addr.getHostAddress(), port, "/info/local", null, null);
       cf = cf.thenCombine(httpClient.target(uri)
               .request("application/avro").rx().get(ProcessInfo.class),
               (res, info) -> {

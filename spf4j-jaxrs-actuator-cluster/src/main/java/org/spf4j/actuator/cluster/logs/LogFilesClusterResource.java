@@ -38,9 +38,9 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.base.avro.FileEntry;
 import org.spf4j.base.avro.FileType;
-import org.spf4j.base.avro.NetworkService;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.jaxrs.client.Spf4JClient;
@@ -58,11 +58,19 @@ public class LogFilesClusterResource {
 
   private final Spf4JClient httpClient;
 
+  private final int port;
+
+  private final String protocol;
+
   @Inject
   public LogFilesClusterResource(
-          final Cluster cluster, final Spf4JClient httpClient) {
+          final Cluster cluster, final Spf4JClient httpClient,
+          @ConfigProperty(name = "servlet.port") final int port,
+          @ConfigProperty(name = "servlet.protocol") final String protocol) {
     this.cluster = cluster;
     this.httpClient = httpClient;
+    this.port = port;
+    this.protocol = protocol;
   }
 
   @Produces({ "application/json", "application/octet-stream" })
@@ -104,15 +112,13 @@ public class LogFilesClusterResource {
     if (path == null || path.isEmpty()) {
       return Response.ok(getClusterNodes(), MediaType.APPLICATION_JSON).build();
     }
-    ClusterInfo clusterInfo = cluster.getClusterInfo();
-    NetworkService service = clusterInfo.getHttpService();
     String tPath = "/logFiles/local/";
     if (path.size() > 1) {
       String restpath = path.subList(1, path.size()).stream().map(x -> x.getPath())
               .collect(Collectors.joining("/"));
       tPath  = tPath + restpath;
     }
-    URI uri = new URI(service.getName(), null,  path.get(0).getPath(), service.getPort(), tPath, null, null);
+    URI uri = new URI(protocol, null,  path.get(0).getPath(), port, tPath, null, null);
     Response resp = httpClient.target(uri).request(MediaType.WILDCARD).get(Response.class);
     return Response.ok(new StreamedResponseContent(() -> resp.readEntity(InputStream.class)),
             resp.getHeaderString(HttpHeaders.CONTENT_TYPE)).build();

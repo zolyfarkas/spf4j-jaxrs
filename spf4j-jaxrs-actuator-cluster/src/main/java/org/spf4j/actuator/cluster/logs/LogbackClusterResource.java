@@ -31,10 +31,10 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.StreamingOutput;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.logs.LogUtils;
 import org.spf4j.actuator.logs.LogbackResource;
 import org.spf4j.base.avro.LogRecord;
-import org.spf4j.base.avro.NetworkService;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
@@ -60,12 +60,20 @@ public class LogbackClusterResource {
 
   private final LogbackResource localLogback;
 
+  private final int port;
+
+  private final String protocol;
+
   @Inject
   public LogbackClusterResource(final LogbackResource localLogback,
-          final Cluster cluster, final Spf4JClient httpClient) {
+          final Cluster cluster, final Spf4JClient httpClient,
+          @ConfigProperty(name = "servlet.port") final int port,
+          @ConfigProperty(name = "servlet.protocol") final String protocol) {
     this.cluster = cluster;
     this.httpClient = httpClient;
     this.localLogback = localLogback;
+    this.port = port;
+    this.protocol = protocol;
   }
 
   @GET
@@ -114,10 +122,9 @@ public class LogbackClusterResource {
             }, DefaultExecutor.INSTANCE);
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
-    NetworkService service = clusterInfo.getHttpService();
     for (InetAddress addr : peerAddresses) {
-      URI uri = new URI(service.getName(), null,
-              addr.getHostAddress(), service.getPort(), "/logback/local/status", null, null);
+      URI uri = new URI(protocol, null,
+              addr.getHostAddress(), port, "/logback/local/status", null, null);
       Spf4jWebTarget invTarget = httpClient.target(uri)
               .queryParam("limit", limit);
       cf = cf.thenCombine(
@@ -143,10 +150,9 @@ public class LogbackClusterResource {
     localLogback.clear();
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
-    NetworkService service = clusterInfo.getHttpService();
     for (InetAddress addr : peerAddresses) {
-      URI uri = new URI(service.getName(), null,
-              addr.getHostAddress(), service.getPort(), "/logback/local/status", null, null);
+      URI uri = new URI(protocol, null,
+              addr.getHostAddress(), port, "/logback/local/status", null, null);
       Spf4jWebTarget invTarget = httpClient.target(uri);
       invTarget.request().delete(Void.class);
     }

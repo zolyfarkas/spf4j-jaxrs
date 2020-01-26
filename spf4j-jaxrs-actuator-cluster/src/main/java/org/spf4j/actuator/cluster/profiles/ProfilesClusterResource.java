@@ -42,7 +42,6 @@ import org.spf4j.actuator.cluster.logs.LogsClusterResource;
 import org.spf4j.actuator.profiles.ProfilesResource;
 import org.spf4j.base.AppendableUtils;
 import org.spf4j.base.avro.LogRecord;
-import org.spf4j.base.avro.NetworkService;
 import org.spf4j.base.avro.Order;
 import org.spf4j.base.avro.StackSampleElement;
 import org.spf4j.cluster.Cluster;
@@ -54,6 +53,7 @@ import org.spf4j.jaxrs.server.AsyncResponseWrapper;
 import org.spf4j.ssdump2.Converter;
 import org.spf4j.stackmonitor.SampleNode;
 import javax.ws.rs.core.GenericType;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.profiles.FlameGraphParams;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
 
@@ -75,14 +75,22 @@ public class ProfilesClusterResource {
 
   private final Spf4JClient httpClient;
 
+  private final int port;
+
+  private final String protocol;
+
   @Inject
   public ProfilesClusterResource(final LogsClusterResource logsResource, final ProfilesResource profiles,
-           final Cluster cluster, final Spf4JClient httpClient)
+           final Cluster cluster, final Spf4JClient httpClient,
+          @ConfigProperty(name = "servlet.port") final int port,
+          @ConfigProperty(name = "servlet.protocol") final String protocol)
           throws IOException {
     this.logsResource = logsResource;
     this.profiles = profiles;
     this.cluster = cluster;
     this.httpClient = httpClient;
+    this.port = port;
+    this.protocol = protocol;
   }
 
   @Path("cluster/traces/{trId}")
@@ -142,10 +150,9 @@ public class ProfilesClusterResource {
             }, DefaultExecutor.INSTANCE);
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
-    NetworkService service = clusterInfo.getHttpService();
     for (InetAddress addr : peerAddresses) {
-      URI uri = new URI(service.getName(), null,
-                  addr.getHostAddress(), service.getPort(), "/profiles/local/groups", null, null);
+      URI uri = new URI(protocol, null,
+                  addr.getHostAddress(), port, "/profiles/local/groups", null, null);
       cf = cf.thenCombine(httpClient.target(uri).request("application/avro")
               .rx().get(new GenericType<List<String>>() { }),
               (Set<String> result, List<String> resp) -> {
@@ -180,10 +187,9 @@ public class ProfilesClusterResource {
             }, DefaultExecutor.INSTANCE);
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
-    NetworkService service = clusterInfo.getHttpService();
     for (InetAddress addr : peerAddresses) {
-      URI uri = new URI(service.getName(), null,
-                  addr.getHostAddress(), service.getPort(), "/profiles/local/groups", null, null);
+      URI uri = new URI(protocol, null,
+                  addr.getHostAddress(), port, "/profiles/local/groups", null, null);
       Spf4jWebTarget target = httpClient.target(uri).path(label);
       if (from != null) {
         target = target.queryParam("from", from.toString());

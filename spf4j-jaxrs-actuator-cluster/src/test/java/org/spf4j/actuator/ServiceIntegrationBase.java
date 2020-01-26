@@ -38,7 +38,7 @@ public abstract class ServiceIntegrationBase {
   private static final JvmServices JVM = new JvmServicesBuilder()
             .withApplicationName("actuatorTest")
             .withLogFolder("./target")
-            .build().closeOnShutdown();
+            .build().start().closeOnShutdown();
   private static JerseyService jerseyService;
   private static Spf4jWebTarget target;
   private static Spf4JClient client;

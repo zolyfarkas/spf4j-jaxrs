@@ -31,10 +31,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.hk2.api.Immediate;
 import org.glassfish.jersey.client.proxy.WebResourceFactory;
 import org.spf4j.actuator.jmx.JmxRestApi;
-import org.spf4j.base.avro.NetworkService;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.jaxrs.client.Spf4JClient;
@@ -55,10 +55,18 @@ public class JmxClusterResource {
 
   private final Spf4JClient httpClient;
 
+  private final int port;
+
+  private final String protocol;
+
   @Inject
-  public JmxClusterResource(final Cluster cluster, final Spf4JClient httpClient) {
+  public JmxClusterResource(final Cluster cluster, final Spf4JClient httpClient,
+          @ConfigProperty(name = "servlet.port") final int port,
+          @ConfigProperty(name = "servlet.protocol") final String protocol) {
     this.cluster = cluster;
     this.httpClient = httpClient;
+    this.port = port;
+    this.protocol = protocol;
   }
 
   @GET
@@ -76,9 +84,8 @@ public class JmxClusterResource {
   @Path("{node}")
   public JmxRestApi handleGet(@PathParam("node") final String node,
           @HeaderParam("Accept") @DefaultValue(MediaType.WILDCARD) final String accept) throws URISyntaxException {
-    NetworkService httpService = cluster.getClusterInfo().getHttpService();
       return WebResourceFactory.newResource(JmxRestApi.class, httpClient.target(
-            new URI(httpService.getName(), null, node, httpService.getPort(), "/jmx/local", null, null)));
+            new URI(protocol, null, node, port, "/jmx/local", null, null)));
 
   }
 

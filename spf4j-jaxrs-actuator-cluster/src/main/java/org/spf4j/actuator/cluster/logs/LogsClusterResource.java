@@ -36,10 +36,10 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.StreamingOutput;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.logs.LogUtils;
 import org.spf4j.actuator.logs.LogsResource;
 import org.spf4j.base.avro.LogRecord;
-import org.spf4j.base.avro.NetworkService;
 import org.spf4j.base.avro.Order;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
@@ -66,12 +66,20 @@ public class LogsClusterResource {
 
   private final LogsResource localLogs;
 
+  private final int port;
+
+  private final String protocol;
+
   @Inject
   public LogsClusterResource(final LogsResource localLogs,
-          final Cluster cluster, final Spf4JClient httpClient) {
+          final Cluster cluster, final Spf4JClient httpClient,
+          @ConfigProperty(name = "servlet.port") final int port,
+          @ConfigProperty(name = "servlet.protocol") final String protocol) {
     this.cluster = cluster;
     this.httpClient = httpClient;
     this.localLogs = localLogs;
+    this.port = port;
+    this.protocol = protocol;
   }
 
   @GET
@@ -158,10 +166,8 @@ public class LogsClusterResource {
             }, DefaultExecutor.INSTANCE);
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
-    NetworkService service = clusterInfo.getHttpService();
     for (InetAddress addr : peerAddresses) {
-      URI uri = new URI(service.getName(), null,
-                  addr.getHostAddress(), service.getPort(), "/logs/local", null, null);
+      URI uri = new URI(protocol, null, addr.getHostAddress(), port, "/logs/local", null, null);
       Spf4jWebTarget invTarget = httpClient.target(uri)
               .path(appender)
               .queryParam("limit", limit);

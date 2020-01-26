@@ -55,11 +55,11 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.metrics.MetricsResource;
 import org.spf4j.avro.AvroCompatUtils;
 import org.spf4j.base.ArrayWriter;
 import org.spf4j.base.avro.AvroCloseableIterable;
-import org.spf4j.base.avro.NetworkService;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
@@ -83,12 +83,20 @@ public class MetricsClusterResource {
 
   private final MetricsResource localResource;
 
+  private final int port;
+
+  private final String protocol;
+
   @Inject
   public MetricsClusterResource(
-          final Cluster cluster, final Spf4JClient httpClient, final MetricsResource localResource) {
+          final Cluster cluster, final Spf4JClient httpClient, final MetricsResource localResource,
+          @ConfigProperty(name = "servlet.port") final int port,
+          @ConfigProperty(name = "servlet.protocol") final String protocol) {
     this.cluster = cluster;
     this.httpClient = httpClient;
     this.localResource = localResource;
+    this.port = port;
+    this.protocol = protocol;
   }
 
   @Operation(
@@ -119,10 +127,9 @@ public class MetricsClusterResource {
             }, DefaultExecutor.INSTANCE);
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
-    NetworkService service = clusterInfo.getHttpService();
     for (InetAddress addr : peerAddresses) {
-      URI uri = new URI(service.getName(), null,
-              addr.getHostAddress(), service.getPort(), "/metrics/local", null, null);
+      URI uri = new URI(protocol, null,
+              addr.getHostAddress(), port, "/metrics/local", null, null);
       cf = cf.thenCombine(httpClient.target(uri).request("application/avro")
               .rx().get(new GenericType<List<String>>() {
               }),
@@ -155,10 +162,9 @@ public class MetricsClusterResource {
     }
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
-    NetworkService service = clusterInfo.getHttpService();
     for (InetAddress addr : peerAddresses) {
-      URI uri = new URI(service.getName(), null,
-              addr.getHostAddress(), service.getPort(), "/metrics/local/" + metricName + "/schema", null, null);
+      URI uri = new URI(protocol, null,
+              addr.getHostAddress(), port, "/metrics/local/" + metricName + "/schema", null, null);
       try {
         return addNodeToSchema(httpClient.target(uri)
                 .request(MediaType.APPLICATION_JSON).get(org.apache.avro.Schema.class));
@@ -184,7 +190,6 @@ public class MetricsClusterResource {
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     InetAddress localAddress = clusterInfo.getLocalAddress();
     Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
-    NetworkService service = clusterInfo.getHttpService();
     return new StreamingArrayContent<GenericRecord>() {
       @Override
       public void write(final ArrayWriter<GenericRecord> output) throws IOException {
@@ -196,8 +201,8 @@ public class MetricsClusterResource {
         for (InetAddress addr : peerAddresses) {
           URI uri;
           try {
-            uri = new URI(service.getName(), null,
-                    addr.getHostAddress(), service.getPort(), "/metrics/local/" + metricName + "/data", null, null);
+            uri = new URI(protocol, null,
+                    addr.getHostAddress(), port, "/metrics/local/" + metricName + "/data", null, null);
           } catch (URISyntaxException ex) {
             throw new RuntimeException(ex);
           }

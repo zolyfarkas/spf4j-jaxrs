@@ -21,7 +21,6 @@ import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.avro.HealthRecord;
 import org.spf4j.base.avro.HealthStatus;
-import org.spf4j.base.avro.NetworkService;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
@@ -40,14 +39,23 @@ public final class ClusterAllNodesCheck implements HealthCheck {
 
   private final long timeoutNanos;
 
+  private final int port;
+
+  private final String protocol;
+
+
   @Inject
   public ClusterAllNodesCheck(final Cluster cluster,
           final Spf4JClient httpClient,
+          @ConfigProperty(name = "servlet.port") final int port,
+          @ConfigProperty(name = "servlet.protocol") final String protocol,
           @ConfigProperty(name = "spf4j.health.cluster.timeoutMillis", defaultValue = "10000")
           final long timeouMillis) {
     this.cluster = cluster;
     this.httpClient = httpClient;
     this.timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeouMillis);
+    this.port = port;
+    this.protocol = protocol;
   }
 
   @Override
@@ -64,8 +72,6 @@ public final class ClusterAllNodesCheck implements HealthCheck {
             timeout(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS)) {
       ClusterInfo clusterInfo = cluster.getClusterInfo();
       Set<InetAddress> addresses = clusterInfo.getAddresses();
-
-      NetworkService service = clusterInfo.getHttpService();
       CompletableFuture<List<HealthRecord>> cf
               = ContextPropagatingCompletableFuture.completedFuture(Collections.synchronizedList(
                       new ArrayList<>(addresses.size())));
@@ -73,8 +79,8 @@ public final class ClusterAllNodesCheck implements HealthCheck {
       for (InetAddress addr : addresses) {
         URI uri;
         try {
-          uri = new URI(service.getName(), null,
-                  addr.getHostAddress(), service.getPort(), "/health/check/local", null, null);
+          uri = new URI(protocol, null,
+                  addr.getHostAddress(), port, "/health/check/local", null, null);
         } catch (URISyntaxException ex) {
            throw new RuntimeException(ex);
         }
