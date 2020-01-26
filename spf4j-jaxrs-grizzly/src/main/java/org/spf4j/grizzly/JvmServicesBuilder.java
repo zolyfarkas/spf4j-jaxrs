@@ -56,6 +56,26 @@ public class JvmServicesBuilder {
   private int threadUseSampleTimeMillis;
   private int cpuUseSampleTimeMillis;
 
+
+  public JvmServicesBuilder() {
+    this.profilerSampleTimeMillis = Env.getValue("PROFILER_SAMPLE_MILLIS", 10);
+    this.profilerDumpTimeMillis = Env.getValue("PROFILER_DUMNP_MILLIS", 3600000);
+    this.profilerJmx = Env.getValue("PROFILER_JMX", true);
+    this.applicationName = null;
+    this.hostName = null;
+    this.logFolder = null;
+    this.openFilesSampleTimeMillis = Env.getValue("V_OPEN_FILES_S_MILLIS", 60000);
+    this.memoryUseSampleTimeMillis = Env.getValue("V_MEM_USE_S_MILLIS", 10000);
+    this.gcUseSampleTimeMillis = Env.getValue("V_GC_USE_S_MILLIS", 10000);
+    this.threadUseSampleTimeMillis = Env.getValue("V_THREAD_USE_S_MILLIS", 10000);
+    this.cpuUseSampleTimeMillis = Env.getValue("V_CPU_USE_S_MILLIS", 10000);
+  }
+
+  public JvmServicesBuilder withHostName(final String hostName) {
+    this.hostName = hostName;
+    return this;
+  }
+
   public JvmServicesBuilder withApplicationName(final String applicationName) {
     this.applicationName = applicationName;
     return this;
@@ -67,18 +87,16 @@ public class JvmServicesBuilder {
   }
 
 
-  public JvmServicesBuilder() {
-    this.logFolder = Env.getValue("LOG_FOLDER", "/var/log");
-    this.profilerSampleTimeMillis = Env.getValue("PROFILER_SAMPLE_MILLIS", 10);
-    this.profilerDumpTimeMillis = Env.getValue("PROFILER_DUMNP_MILLIS", 3600000);
-    this.profilerJmx = Env.getValue("PROFILER_JMX", true);
-    this.applicationName = Env.getValue("KUBE_APP_NAME", "KUBE_APP_NAME");
-    this.hostName = Env.getValue("KUBE_POD_NAME", () -> OperatingSystem.getHostName());
-    this.openFilesSampleTimeMillis = Env.getValue("V_OPEN_FILES_S_MILLIS", 60000);
-    this.memoryUseSampleTimeMillis = Env.getValue("V_MEM_USE_S_MILLIS", 10000);
-    this.gcUseSampleTimeMillis = Env.getValue("V_GC_USE_S_MILLIS", 10000);
-    this.threadUseSampleTimeMillis = Env.getValue("V_THREAD_USE_S_MILLIS", 10000);
-    this.cpuUseSampleTimeMillis = Env.getValue("V_CPU_USE_S_MILLIS", 10000);
+  private void initDefaults() {
+    if (this.hostName == null) {
+      this.hostName = Env.getValue("KUBE_POD_NAME", () -> OperatingSystem.getHostName());
+    }
+    if (this.logFolder == null) {
+      this.logFolder = Env.getValue("LOG_FOLDER", "/var/log");
+    }
+    if (this.applicationName == null) {
+      this.applicationName = Env.getValue("KUBE_APP_NAME", "KUBE_APP_NAME");
+    }
   }
 
   private void initLogConfig() {
@@ -132,6 +150,7 @@ public class JvmServicesBuilder {
     if (svc != null) {
       throw new IllegalStateException();
     }
+    initDefaults();
     initLogConfig();
     initRequestAttributedProfiler();
     Sampler sampler = createSampler();
