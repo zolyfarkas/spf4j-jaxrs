@@ -20,7 +20,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import org.spf4j.base.ExecutionContexts;
+import org.spf4j.base.SysExits;
 import org.spf4j.base.ThreadLocalContextAttacher;
+import org.spf4j.base.Throwables;
 import org.spf4j.log.SLF4JBridgeHandler;
 import org.spf4j.os.OperatingSystem;
 import org.spf4j.perf.ProcessVitals;
@@ -84,6 +86,22 @@ public class JvmServicesBuilder {
   public JvmServicesBuilder withLogFolder(final String logFolder) {
     this.logFolder = logFolder;
     return this;
+  }
+
+
+  private void initUncaughtExceptionHandler() {
+    Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+      @Override
+      public void uncaughtException(final Thread t, final Throwable e) {
+        if (Throwables.containsNonRecoverable(e)) {
+          org.spf4j.base.Runtime.goDownWithError(e, SysExits.EX_SOFTWARE);
+        } else {
+          Logger logger = Logger.getLogger("UNCAUGHT");
+          logger.log(Level.SEVERE, "Error in thread {0}", t);
+          logger.log(Level.SEVERE, "Exception detail", e);
+        }
+      }
+    });
   }
 
 
@@ -152,6 +170,7 @@ public class JvmServicesBuilder {
     }
     initDefaults();
     initLogConfig();
+    initUncaughtExceptionHandler();
     initRequestAttributedProfiler();
     Sampler sampler = createSampler();
     svc = new JvmServicesImpl(sampler, new ProcessVitals(openFilesSampleTimeMillis,

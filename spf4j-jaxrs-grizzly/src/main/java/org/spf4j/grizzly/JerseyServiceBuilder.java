@@ -205,7 +205,14 @@ public class JerseyServiceBuilder {
         if (mavenRepos.size() == 1) {
           schemaClient = new NoSnapshotRefsResolver(new SchemaClient(new URI(mavenRepos.iterator().next())));
         } else {
-          URL.setURLStreamHandlerFactory(new Spf4jURLStreamHandlerFactory());
+          try {
+            URL.setURLStreamHandlerFactory(new Spf4jURLStreamHandlerFactory());
+          } catch (Error e) {
+            String msg = e.getMessage();
+            if (msg == null || !msg.contains("factory already defined")) {
+              throw e;
+            }
+          }
           schemaClient = new NoSnapshotRefsResolver(new SchemaClient(MultiURLs.newURL(MultiURLs.Protocol.mhttps,
                 mavenRepos.toArray(new String[mavenRepos.size()])).toURI()));
         }
