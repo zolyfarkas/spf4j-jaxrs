@@ -15,6 +15,7 @@
  */
 package org.spf4j.grizzly;
 
+import com.google.common.base.Joiner;
 import org.spf4j.base.Env;
 import gnu.trove.set.hash.THashSet;
 import java.io.IOException;
@@ -46,6 +47,7 @@ import org.glassfish.jersey.client.filter.EncodingFilter;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.glassfish.jersey.internal.inject.Binder;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.spf4j.avro.NoSnapshotRefsResolver;
 import org.spf4j.avro.SchemaClient;
@@ -214,7 +216,7 @@ public class JerseyServiceBuilder {
       String hostName = jvmServices.getHostName();
       resourceConfig = ResourceConfig.forApplicationClass(Spf4jJaxrsApplication.class);
       resourceConfig.setApplicationName(jerseyAppName);
-      resourceConfig.packages(true, providerPackages.toArray(new String[providerPackages.size()]));
+      //resourceConfig.packages(true, providerPackages.toArray(new String[providerPackages.size()]));
       resourceConfig.registerInstances(binders.toArray(new Object[binders.size()]));
       resourceConfig.registerClasses((Set) features);
       resourceConfig.property("hostName", hostName);
@@ -222,6 +224,7 @@ public class JerseyServiceBuilder {
       resourceConfig.property("servlet.port", listenPort);
       resourceConfig.property("servlet.protocol", "http");
       resourceConfig.property("application.logFilesPath", jvmServices.getLogFolder());
+      resourceConfig.property(ServerProperties.PROVIDER_PACKAGES, Joiner.on(';').join(providerPackages));
       resourceConfig.register(new AbstractBinder() {
         @Override
         protected void configure() {
