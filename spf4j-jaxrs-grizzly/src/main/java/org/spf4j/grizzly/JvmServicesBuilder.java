@@ -120,6 +120,7 @@ public class JvmServicesBuilder {
   private void initLogConfig() {
     System.setProperty("appName", applicationName); // for logback config xml.
     System.setProperty("logFolder", logFolder); // for logback config xml.
+    System.setProperty("logFileBase", hostName); // for logback config xml.
     System.setProperty("spf4j.perf.ms.defaultTsdbFolderPath", logFolder); // for spf4j tsdb
     System.setProperty("spf4j.perf.ms.defaultSsdumpFolder", logFolder); // for spf4j ssdump
     // install java.util.logging -> org.slf4j.logging bridge
