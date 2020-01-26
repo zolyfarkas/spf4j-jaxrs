@@ -229,7 +229,7 @@ public class JerseyServiceBuilder {
       resourceConfig.property("hostName", hostName);
       resourceConfig.property("servlet.bindAddr", bindAddr);
       resourceConfig.property("servlet.port", listenPort);
-      resourceConfig.property("servlet.protocol", "http");
+      resourceConfig.property("servlet.protocol", sslConfig == null ? "http" : "https");
       resourceConfig.property("application.logFilesPath", jvmServices.getLogFolder());
       resourceConfig.property(ServerProperties.PROVIDER_PACKAGES, Joiner.on(';').join(providerPackages));
       resourceConfig.register(new AbstractBinder() {

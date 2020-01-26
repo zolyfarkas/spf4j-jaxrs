@@ -27,7 +27,7 @@ import org.spf4j.base.avro.NetworkService;
 public interface ServiceInfo {
 
   Set<InetAddress> getLocalAddresses();
-  
+
   Set<NetworkService> getServices();
 
   @Nullable
@@ -38,15 +38,6 @@ public interface ServiceInfo {
       }
     }
     return null;
-  }
-
-  @Nullable
-  default NetworkService getHttpService() {
-    NetworkService service = getService("http");
-    if (service == null) {
-      service = getService("https");
-    }
-    return service;
   }
 
 }
