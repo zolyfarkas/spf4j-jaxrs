@@ -302,7 +302,7 @@ public class JerseyServiceBuilder {
               .withDaemonThreads(true)
               .withMaxIdleTimeMillis(Integer.getInteger("spf4j.grizzly.kernel.idleMillis", 120000))
               .withPoolName(poolNameBase + "-kernel")
-              .withQueueSizeLimit(0)
+              .withQueueSizeLimit(64)
               .enableJmx()
               .build());
       transport.setSelectorRunnersCount(Integer.getInteger("spf4j.grizzly.selectorCount", 4));
