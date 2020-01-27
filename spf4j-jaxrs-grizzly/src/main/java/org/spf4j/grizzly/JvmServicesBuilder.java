@@ -15,14 +15,24 @@
  */
 package org.spf4j.grizzly;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
+import ch.qos.logback.core.joran.spi.JoranException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import org.spf4j.base.Env;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
+import org.slf4j.ILoggerFactory;
+import org.slf4j.LoggerFactory;
 import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.SysExits;
 import org.spf4j.base.ThreadLocalContextAttacher;
 import org.spf4j.base.Throwables;
+import org.spf4j.log.LogbackService;
+import org.spf4j.log.LogbackUtils;
 import org.spf4j.log.SLF4JBridgeHandler;
 import org.spf4j.os.OperatingSystem;
 import org.spf4j.perf.ProcessVitals;
@@ -117,16 +127,10 @@ public class JvmServicesBuilder {
     }
   }
 
-  private void initLogConfig() {
-    System.setProperty("appName", applicationName); // for logback config xml.
-    System.setProperty("logFolder", logFolder); // for logback config xml.
-    System.setProperty("logFileBase", hostName); // for logback config xml.
+  private void initMetricsStorage() {
     System.setProperty("spf4j.perf.ms.defaultTsdbFolderPath", logFolder); // for spf4j tsdb
-    System.setProperty("spf4j.perf.ms.defaultSsdumpFolder", logFolder); // for spf4j ssdump
-    // install java.util.logging -> org.slf4j.logging bridge
-    SLF4JBridgeHandler.removeHandlersForRootLogger();
-    SLF4JBridgeHandler.install();
   }
+
 
   private void initRequestAttributedProfiler() {
     // Enable Continuous profiling.
@@ -170,12 +174,14 @@ public class JvmServicesBuilder {
       throw new IllegalStateException();
     }
     initDefaults();
-    initLogConfig();
+    initMetricsStorage();
     initUncaughtExceptionHandler();
     initRequestAttributedProfiler();
     Sampler sampler = createSampler();
     svc = new JvmServicesImpl(sampler, new ProcessVitals(openFilesSampleTimeMillis,
-            memoryUseSampleTimeMillis, gcUseSampleTimeMillis, threadUseSampleTimeMillis, cpuUseSampleTimeMillis), this);
+            memoryUseSampleTimeMillis, gcUseSampleTimeMillis, threadUseSampleTimeMillis, cpuUseSampleTimeMillis),
+            new LogbackService(applicationName, logFolder, hostName),
+            this);
     services = svc;
     return svc;
   }
@@ -188,10 +194,15 @@ public class JvmServicesBuilder {
 
     private final  JvmServicesBuilder builder;
 
-    public JvmServicesImpl(final Sampler sampler, final ProcessVitals vitals, final JvmServicesBuilder builder) {
+    private final LogbackService logService;
+
+    public JvmServicesImpl(final Sampler sampler, final ProcessVitals vitals,
+            final LogbackService logService,
+            final JvmServicesBuilder builder) {
       this.sampler = sampler;
       this.vitals = vitals;
       this.builder = builder;
+      this.logService = logService;
     }
 
     @Override
@@ -217,6 +228,11 @@ public class JvmServicesBuilder {
     @Override
     public ProcessVitals getVitals() {
       return vitals;
+    }
+
+    @Override
+    public LogbackService getLoggingService() {
+     return logService;
     }
 
   }
