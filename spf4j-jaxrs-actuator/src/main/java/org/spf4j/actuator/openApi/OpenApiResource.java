@@ -15,6 +15,7 @@
  */
 package org.spf4j.actuator.openApi;
 
+import gnu.trove.set.hash.THashSet;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.filter.OpenAPISpecFilter;
 import io.swagger.v3.core.filter.SpecFilter;
@@ -44,6 +45,7 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -63,6 +65,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spf4j.jaxrs.JaxRsConfiguration;
 import org.spf4j.jaxrs.RawSerialization;
 
 @Path("/")
@@ -115,6 +118,19 @@ public final class OpenApiResource extends BaseOpenApiResource {
     if (resourcePackages == null) {
       resourcePackages = resolveResourcePackages(servletConfig);
     }
+    JaxRsConfiguration jaxRsConfig = (JaxRsConfiguration) application.getProperties()
+            .get(JaxRsConfiguration.class.getName());
+    if (jaxRsConfig != null) {
+      if (resourcePackages == null) {
+        resourcePackages = jaxRsConfig.getProviderPackages();
+      } else {
+        Set<String> packages = jaxRsConfig.getProviderPackages();
+        Set<String> nrp = new THashSet<>(packages.size() + resourcePackages.size());
+        nrp.addAll(resourcePackages);
+        nrp.addAll(packages);
+        resourcePackages = nrp;
+      }
+    }
     if (openApiConfiguration == null) {
       SwaggerConfiguration cfg = new SwaggerConfiguration()
                     .resourcePackages(resourcePackages)
@@ -136,7 +152,6 @@ public final class OpenApiResource extends BaseOpenApiResource {
             .servletConfig(servletConfig)
             .application(application)
             .resourcePackages(resourcePackages)
-            .configLocation(configLocation)
             .openApiConfiguration(openApiConfiguration)
             .ctxId(ctxId)
             .buildContext(true);

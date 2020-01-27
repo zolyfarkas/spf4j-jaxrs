@@ -15,6 +15,7 @@
  */
 package org.spf4j.grizzly;
 
+import org.spf4j.jaxrs.JaxRsConfiguration;
 import com.google.common.base.Joiner;
 import org.spf4j.base.Env;
 import gnu.trove.set.hash.THashSet;
@@ -72,7 +73,7 @@ import org.spf4j.stackmonitor.Sampler;
  *
  * @author Zoltan Farkas
  */
-public class JerseyServiceBuilder {
+public class JerseyServiceBuilder implements JaxRsConfiguration {
 
 
   private String bindAddr;
@@ -178,8 +179,21 @@ public class JerseyServiceBuilder {
     return this;
   }
 
+  public Set<String> getProviderPackages() {
+    return providerPackages;
+  }
+
+  public Set<Class<? extends Feature>> getFeatures() {
+    return features;
+  }
+
+  public List<Binder> getBinders() {
+    return binders;
+  }
+
+
   public JerseyService build() throws IOException {
-    return new JerseyServiceImpl();
+    return new JerseyServiceImpl(this);
   }
 
   private  class JerseyServiceImpl implements JerseyService {
@@ -188,11 +202,12 @@ public class JerseyServiceBuilder {
 
     private ResourceConfig resourceConfig;
 
-    JerseyServiceImpl() throws IOException {
-      server = startHttpServer();
+
+    JerseyServiceImpl(final JaxRsConfiguration config) throws IOException {
+      server = startHttpServer(config);
     }
 
-    public HttpServer startHttpServer()
+    public HttpServer startHttpServer(final JaxRsConfiguration config)
             throws IOException {
       String jerseyAppName = bindAddr + ':' + listenPort;
       FixedWebappContext webappContext = new FixedWebappContext(jerseyAppName, "");
@@ -226,6 +241,7 @@ public class JerseyServiceBuilder {
       //resourceConfig.packages(true, providerPackages.toArray(new String[providerPackages.size()]));
       resourceConfig.registerInstances(binders.toArray(new Object[binders.size()]));
       resourceConfig.registerClasses((Set) features);
+      resourceConfig.property(JaxRsConfiguration.class.getName(), config);
       resourceConfig.property("hostName", hostName);
       resourceConfig.property("servlet.bindAddr", bindAddr);
       resourceConfig.property("servlet.port", listenPort);
@@ -260,8 +276,8 @@ public class JerseyServiceBuilder {
       servletRegistration.addMapping("/*");
       servletRegistration.setLoadOnStartup(0);
       HttpServer server = new HttpServer();
-      ServerConfiguration config = server.getServerConfiguration();
-      config.setDefaultErrorPageGenerator(new GrizzlyErrorPageGenerator(schemaClient));
+      ServerConfiguration serverConfig = server.getServerConfiguration();
+      serverConfig.setDefaultErrorPageGenerator(new GrizzlyErrorPageGenerator(schemaClient));
 //    config.addHttpHandler(new CLStaticHttpHandler(Thread.currentThread().getContextClassLoader(), "/static/"),
 //            "/*.ico", "/*.png");
       NetworkListener listener
