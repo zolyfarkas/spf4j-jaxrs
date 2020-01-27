@@ -24,6 +24,7 @@ import org.spf4j.actuator.cluster.health.ClusterAllNodesRegistration;
 import org.spf4j.actuator.cluster.info.InfoResourceCluster;
 import org.spf4j.actuator.cluster.jmx.JmxClusterResource;
 import org.spf4j.actuator.cluster.logs.LogFilesClusterResource;
+import org.spf4j.actuator.cluster.logs.LogbackClusterResource;
 import org.spf4j.actuator.cluster.logs.LogsClusterResource;
 import org.spf4j.actuator.cluster.metrics.MetricsClusterResource;
 import org.spf4j.actuator.cluster.profiles.ProfilesClusterResource;
@@ -42,6 +43,7 @@ public final class ClusterActuatorFeature implements Feature {
     fc.register(JmxClusterResource.class);
     fc.register(LogFilesClusterResource.class);
     fc.register(LogsClusterResource.class);
+    fc.register(LogbackClusterResource.class);
     fc.register(MetricsClusterResource.class);
     fc.register(ProfilesClusterResource.class);
     fc.register(new AbstractBinder() {
