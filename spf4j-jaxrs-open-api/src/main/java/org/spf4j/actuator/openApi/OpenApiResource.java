@@ -63,11 +63,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
-import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.model.Resource;
+import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spf4j.jaxrs.JaxRsConfiguration;
 import org.spf4j.jaxrs.RawSerialization;
 
 @Path("/")
@@ -82,12 +80,9 @@ public final class OpenApiResource extends BaseOpenApiResource {
 
   private final ServletConfig config;
 
-  private final Application app;
-
   @Inject
-  public OpenApiResource(@Context final ServletConfig config, @Context final Application app) {
+  public OpenApiResource(@Context final ServletConfig config) {
     this.config = config;
-    this.app = app;
   }
 
   @GET
@@ -96,7 +91,7 @@ public final class OpenApiResource extends BaseOpenApiResource {
   @RawSerialization
   @Path("openapi.json")
   public Response getOpenApi(@Context final HttpHeaders headers,
-          @Context final UriInfo uriInfo) throws Exception {
+          @Context final UriInfo uriInfo, @Context final Application app) throws Exception {
     return getOpenApi(headers, config, app, uriInfo, "json");
   }
 
@@ -106,7 +101,7 @@ public final class OpenApiResource extends BaseOpenApiResource {
   @RawSerialization
   @Path("openapi.yaml")
   public Response getOpenApiYaml(@Context final HttpHeaders headers,
-          @Context final UriInfo uriInfo) throws Exception {
+          @Context final UriInfo uriInfo, @Context final Application app) throws Exception {
     return getOpenApi(headers, config, app, uriInfo, "yaml");
   }
 
@@ -120,24 +115,17 @@ public final class OpenApiResource extends BaseOpenApiResource {
     if (resourcePackages == null) {
       resourcePackages = resolveResourcePackages(servletConfig);
     }
-    ResourceConfig rc = (ResourceConfig) application;
-    Set<Resource> resources = rc.getResources();
-    JaxRsConfiguration jaxRsConfig = (JaxRsConfiguration) application.getProperties()
-            .get(JaxRsConfiguration.class.getName());
-    Set<Class<?>> classes = application.getClasses();
-    Set<String> strClasses = classes.stream().map(Class::getName)
-            .collect(Collectors.toCollection(() -> new THashSet<>(classes.size())));
-    if (jaxRsConfig != null) {
-      if (resourcePackages == null) {
-        resourcePackages = jaxRsConfig.getProviderPackages();
-      } else {
-        Set<String> packages = jaxRsConfig.getProviderPackages();
-        Set<String> nrp = new THashSet<>(packages.size() + resourcePackages.size());
-        nrp.addAll(resourcePackages);
-        nrp.addAll(packages);
-        resourcePackages = nrp;
-      }
+
+    Set<Class<?>> resources;
+    ServletContainer cont = (ServletContainer) application.getProperties().get(ServletContainer.class.getName());
+    if (cont == null) {
+      resources = application.getClasses();
+    } else {
+      // I don't get why the injected Application is not the actuall processed config...
+      resources = cont.getConfiguration().getClasses();
     }
+    Set<String> strClasses = resources.stream().map(Class::getName)
+            .collect(Collectors.toCollection(() -> new THashSet<>(resources.size())));
     if (openApiConfiguration == null) {
       SwaggerConfiguration cfg = new SwaggerConfiguration()
               .resourcePackages(resourcePackages)
@@ -175,7 +163,7 @@ public final class OpenApiResource extends BaseOpenApiResource {
       if (ctx.getOpenApiConfiguration().getFilterClass() != null) {
         try {
           OpenAPISpecFilter filterImpl = (OpenAPISpecFilter) Class.forName(
-                  ctx.getOpenApiConfiguration().getFilterClass()).newInstance();
+                  ctx.getOpenApiConfiguration().getFilterClass()).getConstructor().newInstance();
           SpecFilter f = new SpecFilter();
           oas = f.filter(oas, filterImpl, getQueryParams(uriInfo.getQueryParameters()), getCookies(headers),
                   getHeaders(headers));

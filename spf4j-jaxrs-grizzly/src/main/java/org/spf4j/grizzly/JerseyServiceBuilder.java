@@ -271,8 +271,9 @@ public class JerseyServiceBuilder implements JaxRsConfiguration {
             .build()).withHedgePolicy(HedgePolicy.NONE);
       resourceConfig.register(new Spf4jBinder(schemaClient, restClient, (x) -> true));
       resourceConfig.register(avroFeature);
-
-      ServletRegistration servletRegistration = webappContext.addServlet("jersey", new ServletContainer(resourceConfig));
+      ServletContainer servletContainer = new ServletContainer(resourceConfig);
+      resourceConfig.property(ServletContainer.class.getName(), servletContainer);
+      ServletRegistration servletRegistration = webappContext.addServlet("jersey", servletContainer);
       servletRegistration.addMapping("/*");
       servletRegistration.setLoadOnStartup(0);
       HttpServer server = new HttpServer();

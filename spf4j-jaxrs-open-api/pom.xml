@@ -69,6 +69,11 @@
       <artifactId>classgraph</artifactId>
       <version>4.8.60</version>
     </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.containers</groupId>
+      <artifactId>jersey-container-servlet-core</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
 
   </dependencies>
 
