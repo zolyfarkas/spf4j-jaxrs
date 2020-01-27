@@ -47,27 +47,8 @@
 
     <dependency>
       <groupId>org.spf4j</groupId>
-      <artifactId>spf4j-jaxrs-actuator</artifactId>
+      <artifactId>spf4j-jaxrs-open-api</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.glassfish.jersey.media</groupId>
-          <artifactId>jersey-media-jaxb</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-
-    <dependency>
-      <groupId>org.glassfish.jersey.containers</groupId>
-      <artifactId>jersey-container-grizzly2-servlet</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>org.glassfish.jersey.media</groupId>
-          <artifactId>jersey-media-jaxb</artifactId>
-        </exclusion>
-      </exclusions>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 

@@ -35,6 +35,7 @@
     <checkstyle.configLocation>${basedir}/../checkstyle_checks.xml</checkstyle.configLocation>
     <jersey.version>2.30</jersey.version>
     <spf4j.version>8.7.3-SNAPSHOT</spf4j.version>
+    <swagger.version>2.1.0</swagger.version>
   </properties>
 
   <scm>
@@ -54,6 +55,7 @@
     <module>spf4j-jaxrs-grizzly</module>
     <module>spf4j-jaxrs-avro-sql</module>
     <module>spf4j-jaxrs-api-browser</module>
+    <module>spf4j-jaxrs-open-api</module>
   </modules>
 
   <dependencyManagement>

@@ -33,7 +33,6 @@ import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.getCont
 import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.getInitParam;
 import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.getLongInitParam;
 import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.resolveModelConverterClasses;
-import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.resolveResourceClasses;
 import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.resolveResourcePackages;
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -63,6 +63,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.jaxrs.JaxRsConfiguration;
@@ -118,8 +120,13 @@ public final class OpenApiResource extends BaseOpenApiResource {
     if (resourcePackages == null) {
       resourcePackages = resolveResourcePackages(servletConfig);
     }
+    ResourceConfig rc = (ResourceConfig) application;
+    Set<Resource> resources = rc.getResources();
     JaxRsConfiguration jaxRsConfig = (JaxRsConfiguration) application.getProperties()
             .get(JaxRsConfiguration.class.getName());
+    Set<Class<?>> classes = application.getClasses();
+    Set<String> strClasses = classes.stream().map(Class::getName)
+            .collect(Collectors.toCollection(() -> new THashSet<>(classes.size())));
     if (jaxRsConfig != null) {
       if (resourcePackages == null) {
         resourcePackages = jaxRsConfig.getProviderPackages();
@@ -133,18 +140,19 @@ public final class OpenApiResource extends BaseOpenApiResource {
     }
     if (openApiConfiguration == null) {
       SwaggerConfiguration cfg = new SwaggerConfiguration()
-                    .resourcePackages(resourcePackages)
-                    .filterClass(getInitParam(servletConfig, OPENAPI_CONFIGURATION_FILTER_KEY))
-                    .resourceClasses(resolveResourceClasses(servletConfig))
-                    .readAllResources(getBooleanInitParam(servletConfig, OPENAPI_CONFIGURATION_READALLRESOURCES_KEY))
-                    .prettyPrint(getBooleanInitParam(servletConfig, OPENAPI_CONFIGURATION_PRETTYPRINT_KEY))
-//                    .readerClass(getInitParam(servletConfig, OPENAPI_CONFIGURATION_READER_KEY))
-                    .readerClass(CustomReader.class.getName())
-                    .cacheTTL(getLongInitParam(servletConfig, OPENAPI_CONFIGURATION_CACHE_TTL_KEY))
-                    .scannerClass(getInitParam(servletConfig, OPENAPI_CONFIGURATION_SCANNER_KEY))
-                    .objectMapperProcessorClass(getInitParam(servletConfig,
-                            OPENAPI_CONFIGURATION_OBJECT_MAPPER_PROCESSOR_KEY))
-                    .modelConverterClasses(resolveModelConverterClasses(servletConfig));
+              .resourcePackages(resourcePackages)
+              .filterClass(getInitParam(servletConfig, OPENAPI_CONFIGURATION_FILTER_KEY))
+              // .resourceClasses(resolveResourceClasses(servletConfig))
+              .resourceClasses(strClasses)
+              .readAllResources(getBooleanInitParam(servletConfig, OPENAPI_CONFIGURATION_READALLRESOURCES_KEY))
+              .prettyPrint(getBooleanInitParam(servletConfig, OPENAPI_CONFIGURATION_PRETTYPRINT_KEY))
+              //                    .readerClass(getInitParam(servletConfig, OPENAPI_CONFIGURATION_READER_KEY))
+              .readerClass(CustomReader.class.getName())
+              .cacheTTL(getLongInitParam(servletConfig, OPENAPI_CONFIGURATION_CACHE_TTL_KEY))
+              .scannerClass(getInitParam(servletConfig, OPENAPI_CONFIGURATION_SCANNER_KEY))
+              .objectMapperProcessorClass(getInitParam(servletConfig,
+                      OPENAPI_CONFIGURATION_OBJECT_MAPPER_PROCESSOR_KEY))
+              .modelConverterClasses(resolveModelConverterClasses(servletConfig));
       cfg.setId(ctxId);
       openApiConfiguration = cfg;
     }
@@ -179,7 +187,7 @@ public final class OpenApiResource extends BaseOpenApiResource {
     SpecFilter f = new SpecFilter();
     oas = f.filter(oas, new DefaultAspectsApiFilter(),
             getQueryParams(uriInfo.getQueryParameters()), getCookies(headers),
-                  getHeaders(headers));
+            getHeaders(headers));
     if (oas == null) {
       return Response.status(404).build();
     }

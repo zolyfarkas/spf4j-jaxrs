@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.apiBrowser;
+package org.spf4j.actuator.openApi;
 
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
-import org.spf4j.actuator.openApi.OpenApiFeature;
 
 /**
- *
  * @author Zoltan Farkas
  */
-public final class ApiBrowserFeature implements Feature {
+public final class OpenApiFeature implements Feature {
 
   @Override
   public boolean configure(final FeatureContext fc) {
-    fc.register(OpenApiFeature.class);
-    fc.register(ApiBrowserResource.class);
+    fc.register(OpenApiResource.class);
     return true;
   }
 

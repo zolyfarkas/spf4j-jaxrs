@@ -25,7 +25,6 @@ import org.spf4j.actuator.logs.LogFilesResource;
 import org.spf4j.actuator.logs.LogbackResource;
 import org.spf4j.actuator.logs.LogsResource;
 import org.spf4j.actuator.metrics.MetricsResource;
-import org.spf4j.actuator.openApi.OpenApiResource;
 import org.spf4j.actuator.profiles.ProfilesResource;
 
 /**
@@ -43,7 +42,6 @@ public final  class ActuatorFeature implements Feature {
     fc.register(LogFilesResource.class);
     fc.register(LogbackResource.class);
     fc.register(MetricsResource.class);
-    fc.register(OpenApiResource.class);
     fc.register(ProfilesResource.class);
     fc.register(new DefaultHealthChecksBinder());
     return true;
