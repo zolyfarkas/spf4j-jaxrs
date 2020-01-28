@@ -15,7 +15,6 @@
  */
 package org.spf4j.actuator.logs;
 
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 import org.spf4j.base.avro.LogRecord;
@@ -44,12 +43,13 @@ public final class LogUtils {
 
   public static void addAll(final int limit,
           final PriorityQueue<LogRecord> result,
-          final Collection<LogRecord> records) {
+          final Iterable<LogRecord> records) {
     synchronized (result) {
-      result.addAll(records);
-      int removeCnt = result.size() - limit;
-      for (int i = 0; i < removeCnt; i++) {
-        result.remove();
+      for (LogRecord log : records) {
+        result.add(log);
+        while (result.size() > limit) {
+           result.remove();
+        }
       }
     }
   }

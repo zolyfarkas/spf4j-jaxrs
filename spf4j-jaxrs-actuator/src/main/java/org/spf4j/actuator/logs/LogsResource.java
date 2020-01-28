@@ -1,6 +1,7 @@
 package org.spf4j.actuator.logs;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -60,13 +61,14 @@ public class LogsResource {
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream"})
   @ProjectionSupport
-  public List<LogRecord> getLocalLogs(@QueryParam("tailOffset") @DefaultValue("0") final long tailOffset,
-          @QueryParam("limit") @DefaultValue("1000") final int limit,
+  public  List<LogRecord> getLocalLogs(
+          @QueryParam("tailOffset") @DefaultValue("0") final long tailOffset,
+          @QueryParam("limit") @DefaultValue("100") final int limit,
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
           @PathParam("appenderName") final String appenderName) throws IOException {
     if (limit == 0) {
-      return Collections.EMPTY_LIST;
+      return Collections.emptyList();
     }
     if (limit < 0) {
       throw new ClientErrorException("limit parameter must be positive: " + limit, 400);
@@ -76,15 +78,15 @@ public class LogsResource {
     if (fa == null) {
       throw new NotFoundException("Resource not available: " + appenderName);
     }
-    List<LogRecord> result;
+    List<LogRecord> result = new ArrayList<>(limit);
     if (filter != null) {
       try {
-        result = fa.getFilteredLogs(hostName, tailOffset, limit, Program.compilePredicate(filter, "log"));
+        fa.getFilteredLogs(hostName, tailOffset, limit, Program.compilePredicate(filter, "log"), result::add);
       } catch (CompileException ex) {
         throw new ClientErrorException("Invalid filter " + filter + ", " + ex.getMessage(), 400, ex);
       }
     } else {
-      result = fa.getLogs(hostName, tailOffset, limit);
+       fa.getLogs(hostName, tailOffset, limit, result::add);
     }
     if (resOrder == Order.DESC) {
       Collections.reverse(result);

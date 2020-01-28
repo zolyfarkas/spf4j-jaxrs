@@ -13,7 +13,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -34,6 +33,7 @@ import javax.ws.rs.core.StreamingOutput;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.logs.LogUtils;
 import org.spf4j.actuator.logs.LogbackResource;
+import org.spf4j.base.CloseableIterable;
 import org.spf4j.base.avro.LogRecord;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
@@ -110,7 +110,7 @@ public class LogbackClusterResource {
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream"})
   @ProjectionSupport
-  public void getClusterLogbackStatus(@QueryParam("limit") @DefaultValue("1000") final int limit,
+  public void getClusterLogbackStatus(@QueryParam("limit") @DefaultValue("100") final int limit,
           @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
     CompletableFuture<PriorityQueue<LogRecord>> cf
@@ -128,10 +128,12 @@ public class LogbackClusterResource {
       Spf4jWebTarget invTarget = httpClient.target(uri)
               .queryParam("limit", limit);
       cf = cf.thenCombine(
-              invTarget.request("application/avro").rx().get(new GenericType<List<LogRecord>>() {
+              invTarget.request("application/avro").rx().get(new GenericType<CloseableIterable<LogRecord>>() {
               }),
-              (PriorityQueue<LogRecord> result, List<LogRecord> rl) -> {
-                LogUtils.addAll(limit, result, rl);
+              (PriorityQueue<LogRecord> result, CloseableIterable<LogRecord> rl) -> {
+                try (CloseableIterable<LogRecord> r = rl) {
+                  LogUtils.addAll(limit, result, r);
+                }
                 return result;
               }
       );
