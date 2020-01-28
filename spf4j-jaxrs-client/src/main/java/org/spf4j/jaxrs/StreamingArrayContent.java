@@ -28,6 +28,16 @@ import org.spf4j.base.avro.AvroContainer;
  */
 public interface StreamingArrayContent<T> extends Closeable, AvroContainer, Buffered {
 
+  StreamingArrayContent EMPTY = new StreamingArrayContent() {
+    @Override
+    public void write(final ArrayWriter output) {
+    }
+  };
+
+  static <T> StreamingArrayContent<T> empty() {
+    return EMPTY;
+  }
+
   void write(ArrayWriter<T> output) throws IOException;
 
   /**
