@@ -17,6 +17,7 @@ package org.spf4j.grizzly;
 
 import org.spf4j.jaxrs.JaxRsConfiguration;
 import com.google.common.base.Joiner;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.spf4j.base.Env;
 import gnu.trove.set.hash.THashSet;
 import java.io.IOException;
@@ -70,10 +71,9 @@ import org.spf4j.servlet.ExecutionContextFilter;
 import org.spf4j.stackmonitor.Sampler;
 
 /**
- *
  * @author Zoltan Farkas
  */
-public class JerseyServiceBuilder implements JaxRsConfiguration {
+public final class JerseyServiceBuilder implements JaxRsConfiguration {
 
 
   private String bindAddr;
@@ -172,7 +172,7 @@ public class JerseyServiceBuilder implements JaxRsConfiguration {
   }
 
   public JerseyServiceBuilder withMavenRepoURL(final String mavenRepoUrl) {
-    LinkedHashSet<String> nRepos = new LinkedHashSet<>((int)((mavenRepos.size() + 1) * 1.4));
+    LinkedHashSet<String> nRepos = new LinkedHashSet<>((int) ((mavenRepos.size() + 1) * 1.4));
     nRepos.addAll(this.mavenRepos);
     nRepos.add(mavenRepoUrl);
     this.mavenRepos = nRepos;
@@ -196,6 +196,17 @@ public class JerseyServiceBuilder implements JaxRsConfiguration {
     return new JerseyServiceImpl(this);
   }
 
+  @Override
+  public String toString() {
+    return "JerseyServiceBuilder{" + "bindAddr=" + bindAddr + ", listenPort="
+            + listenPort + ", providerPackages=" + providerPackages + ", features="
+            + features + ", binders=" + binders + ", mavenRepos=" + mavenRepos
+            + ", jvmServices=" + jvmServices + ", kernelThreadsCoreSize=" + kernelThreadsCoreSize
+            + ", kernelThreadsMaxSize=" + kernelThreadsMaxSize + ", workerThreadsCoreSize="
+            + workerThreadsCoreSize + ", workerThreadsMaxSize=" + workerThreadsMaxSize
+            + ", sslConfig=" + sslConfig + '}';
+  }
+
   private  class JerseyServiceImpl implements JerseyService {
 
     private final HttpServer server;
@@ -204,10 +215,10 @@ public class JerseyServiceBuilder implements JaxRsConfiguration {
 
 
     JerseyServiceImpl(final JaxRsConfiguration config) throws IOException {
-      server = startHttpServer(config);
+      server = createHttpServer(config);
     }
 
-    public HttpServer startHttpServer(final JaxRsConfiguration config)
+    private HttpServer createHttpServer(final JaxRsConfiguration config)
             throws IOException {
       String jerseyAppName = bindAddr + ':' + listenPort;
       FixedWebappContext webappContext = new FixedWebappContext(jerseyAppName, "");
@@ -276,35 +287,33 @@ public class JerseyServiceBuilder implements JaxRsConfiguration {
       ServletRegistration servletRegistration = webappContext.addServlet("jersey", servletContainer);
       servletRegistration.addMapping("/*");
       servletRegistration.setLoadOnStartup(0);
-      HttpServer server = new HttpServer();
-      ServerConfiguration serverConfig = server.getServerConfiguration();
+      HttpServer result = new HttpServer();
+      ServerConfiguration serverConfig = result.getServerConfiguration();
       serverConfig.setDefaultErrorPageGenerator(new GrizzlyErrorPageGenerator(schemaClient));
 //    config.addHttpHandler(new CLStaticHttpHandler(Thread.currentThread().getContextClassLoader(), "/static/"),
 //            "/*.ico", "/*.png");
-      NetworkListener listener
-              = createHttpListener(bindAddr, listenPort);
-      server.addListener(listener);
-      webappContext.deploy(server);
-      return server;
+      result.addListener(createHttpListener(bindAddr, listenPort));
+      webappContext.deploy(result);
+      return result;
     }
 
-    public  NetworkListener createHttpListener(final String bindAddr,
+    private NetworkListener createHttpListener(final String pbindAddr,
             final int port) {
       if (sslConfig == null) {
-        return createHttpListener("http", bindAddr, port);
+        return createHttpListener("http", pbindAddr, port);
       } else {
-        NetworkListener nl = createHttpListener("https", bindAddr, port);
+        NetworkListener nl = createHttpListener("https", pbindAddr, port);
         nl.setSecure(true);
         nl.setSSLEngineConfig(sslConfig);
         return nl;
       }
     }
 
-    public  NetworkListener createHttpListener(final String name, final String bindAddr,
+    private NetworkListener createHttpListener(final String name, final String pbindAddr,
             final int port) {
       final String poolNameBase = name + ':' + port;
       final NetworkListener listener
-              = new NetworkListener("http", bindAddr, port);
+              = new NetworkListener("http", pbindAddr, port);
       CompressionConfig compressionConfig = listener.getCompressionConfig();
       compressionConfig.setCompressionMode(CompressionConfig.CompressionMode.ON); // the mode
       compressionConfig.setCompressionMinSize(4096); // the min amount of bytes to compress
@@ -342,10 +351,11 @@ public class JerseyServiceBuilder implements JaxRsConfiguration {
 
     @Override
     public void start() throws IOException {
-        server.start();
+      server.start();
     }
 
     @Override
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE") // should blow up.
     public Spf4jJaxrsApplication getApplication() {
       return (Spf4jJaxrsApplication) resourceConfig.getApplication();
     }

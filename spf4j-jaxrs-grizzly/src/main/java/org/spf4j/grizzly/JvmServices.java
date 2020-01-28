@@ -71,11 +71,4 @@ public interface JvmServices extends AutoCloseable {
     return this;
   }
 
-  static JvmServices current() {
-    JvmServices services = JvmServicesBuilder.services;
-    if (services == null) {
-      throw new IllegalStateException("No application services initialized");
-    }
-    return services;
-  }
 }

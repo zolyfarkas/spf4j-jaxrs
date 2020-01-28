@@ -15,7 +15,6 @@
  */
 package org.spf4j.grizzly;
 
-import java.net.MalformedURLException;
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Context;
@@ -25,7 +24,6 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.spf4j.jaxrs.client.Spf4JClient;
 
 /**
- *
  * @author Zoltan Farkas
  */
 public class Spf4jJaxrsApplication extends ResourceConfig {
@@ -35,14 +33,21 @@ public class Spf4jJaxrsApplication extends ResourceConfig {
 
   @Inject
   public Spf4jJaxrsApplication(@Context final ServletContext srvContext,
-          final ServiceLocator locator)
-          throws MalformedURLException {
+          final ServiceLocator locator) {
     ServiceLocatorUtilities.enableImmediateScope(locator);
     this.locator = locator;
   }
 
-  public Spf4JClient getRestClient() {
+  public final Spf4JClient getRestClient() {
     return locator.getService(Spf4JClient.class);
+  }
+
+  /**
+   * overwrite as needed.
+   */
+  @Override
+  public String toString() {
+    return "Spf4jJaxrsApplication{" + "locator=" + locator + '}';
   }
 
 }

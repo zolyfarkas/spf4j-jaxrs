@@ -30,13 +30,12 @@ import org.spf4j.cluster.Service;
 import org.spf4j.cluster.SingleNodeCluster;
 
 /**
- *
  * @author Zoltan Farkas
  */
-public class SingleNodeClusterFeature implements Feature {
+public final class SingleNodeClusterFeature implements Feature {
 
   @Override
-  public boolean configure(FeatureContext fc) {
+  public boolean configure(final FeatureContext fc) {
     Configuration cfg = fc.getConfiguration();
     String bindAddr = (String) cfg.getProperty("servlet.bindAddr");
     int port = (int) cfg.getProperty("servlet.port");
@@ -45,17 +44,26 @@ public class SingleNodeClusterFeature implements Feature {
               = new SingleNodeCluster(ImmutableSet.copyOf(InetAddress.getAllByName(bindAddr)),
                       Collections.singleton(new NetworkService("http",
                               port, NetworkProtocol.TCP)));
-      fc.register(new AbstractBinder() {
-        @Override
-        protected void configure() {
-          bind(singleNodeCluster).to(Cluster.class);
-          bind(singleNodeCluster).to(Service.class);
-        }
-      });
+      fc.register(new BindCluster(singleNodeCluster));
     } catch (UnknownHostException ex) {
       throw new RuntimeException(ex);
     }
     return true;
+  }
+
+  private static class BindCluster extends AbstractBinder {
+
+    private final Cluster singleNodeCluster;
+
+    BindCluster(final Cluster singleNodeCluster) {
+      this.singleNodeCluster = singleNodeCluster;
+    }
+
+    @Override
+    protected void configure() {
+      bind(singleNodeCluster).to(Cluster.class);
+      bind(singleNodeCluster).to(Service.class);
+    }
   }
 
 }

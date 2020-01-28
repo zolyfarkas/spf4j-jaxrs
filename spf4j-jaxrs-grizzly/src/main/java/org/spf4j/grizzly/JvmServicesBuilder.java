@@ -15,25 +15,15 @@
  */
 package org.spf4j.grizzly;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.joran.JoranConfigurator;
-import ch.qos.logback.core.joran.spi.JoranException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import org.spf4j.base.Env;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
-import org.slf4j.ILoggerFactory;
-import org.slf4j.LoggerFactory;
 import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.SysExits;
 import org.spf4j.base.ThreadLocalContextAttacher;
 import org.spf4j.base.Throwables;
 import org.spf4j.log.LogbackService;
-import org.spf4j.log.LogbackUtils;
-import org.spf4j.log.SLF4JBridgeHandler;
 import org.spf4j.os.OperatingSystem;
 import org.spf4j.perf.ProcessVitals;
 import org.spf4j.stackmonitor.FastStackCollector;
@@ -46,11 +36,11 @@ import org.spf4j.stackmonitor.TracingExecutionContexSampler;
  *
  * @author Zoltan Farkas
  */
-public class JvmServicesBuilder {
+public final class JvmServicesBuilder {
+
+  private static volatile JvmServices services;
 
   private String hostName;
-
-  static volatile JvmServices services;
 
   private String applicationName;
 
@@ -83,35 +73,24 @@ public class JvmServicesBuilder {
     this.cpuUseSampleTimeMillis = Env.getValue("V_CPU_USE_S_MILLIS", 10000);
   }
 
-  public JvmServicesBuilder withHostName(final String hostName) {
-    this.hostName = hostName;
+  public JvmServicesBuilder withHostName(final String phostName) {
+    this.hostName = phostName;
     return this;
   }
 
-  public JvmServicesBuilder withApplicationName(final String applicationName) {
-    this.applicationName = applicationName;
+  public JvmServicesBuilder withApplicationName(final String papplicationName) {
+    this.applicationName = papplicationName;
     return this;
   }
 
-  public JvmServicesBuilder withLogFolder(final String logFolder) {
-    this.logFolder = logFolder;
+  public JvmServicesBuilder withLogFolder(final String plogFolder) {
+    this.logFolder = plogFolder;
     return this;
   }
 
 
   private void initUncaughtExceptionHandler() {
-    Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-      @Override
-      public void uncaughtException(final Thread t, final Throwable e) {
-        if (Throwables.containsNonRecoverable(e)) {
-          org.spf4j.base.Runtime.goDownWithError(e, SysExits.EX_SOFTWARE);
-        } else {
-          Logger logger = Logger.getLogger("UNCAUGHT");
-          logger.log(Level.SEVERE, "Error in thread {0}", t);
-          logger.log(Level.SEVERE, "Exception detail", e);
-        }
-      }
-    });
+    Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandlerImpl());
   }
 
 
@@ -186,6 +165,20 @@ public class JvmServicesBuilder {
     return svc;
   }
 
+  @Override
+  public String toString() {
+    return "JvmServicesBuilder{" + "hostName=" + hostName + ", applicationName=" + applicationName
+            + ", logFolder=" + logFolder + ", profilerSampleTimeMillis=" + profilerSampleTimeMillis
+            + ", profilerDumpTimeMillis=" + profilerDumpTimeMillis + ", profilerJmx=" + profilerJmx
+            + ", openFilesSampleTimeMillis=" + openFilesSampleTimeMillis + ", memoryUseSampleTimeMillis="
+            + memoryUseSampleTimeMillis + ", gcUseSampleTimeMillis=" + gcUseSampleTimeMillis
+            + ", threadUseSampleTimeMillis=" + threadUseSampleTimeMillis + ", cpuUseSampleTimeMillis="
+            + cpuUseSampleTimeMillis + '}';
+  }
+
+
+
+
   private static class JvmServicesImpl implements JvmServices {
 
     private final Sampler sampler;
@@ -196,7 +189,7 @@ public class JvmServicesBuilder {
 
     private final LogbackService logService;
 
-    public JvmServicesImpl(final Sampler sampler, final ProcessVitals vitals,
+    JvmServicesImpl(final Sampler sampler, final ProcessVitals vitals,
             final LogbackService logService,
             final JvmServicesBuilder builder) {
       this.sampler = sampler;
@@ -235,5 +228,19 @@ public class JvmServicesBuilder {
      return logService;
     }
 
+  }
+
+  private static class UncaughtExceptionHandlerImpl implements Thread.UncaughtExceptionHandler {
+
+    @Override
+    public void uncaughtException(final Thread t, final Throwable e) {
+      if (Throwables.containsNonRecoverable(e)) {
+        org.spf4j.base.Runtime.goDownWithError(e, SysExits.EX_SOFTWARE);
+      } else {
+        Logger logger = Logger.getLogger("UNCAUGHT");
+        logger.log(Level.SEVERE, "Error in thread {0}", t);
+        logger.log(Level.SEVERE, "Exception detail", e);
+      }
+    }
   }
 }

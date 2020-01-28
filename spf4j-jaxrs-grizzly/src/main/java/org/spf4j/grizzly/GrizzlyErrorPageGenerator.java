@@ -64,4 +64,10 @@ public final class GrizzlyErrorPageGenerator implements ErrorPageGenerator {
     }
     return bab.toString(StandardCharsets.UTF_8);
   }
+
+  @Override
+  public String toString() {
+    return "GrizzlyErrorPageGenerator{" + "schemaClient=" + schemaClient + '}';
+  }
+  
 }
