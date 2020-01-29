@@ -5,6 +5,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Priority;
@@ -14,6 +15,7 @@ import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import org.glassfish.jersey.client.ClientProperties;
@@ -36,6 +38,7 @@ import org.spf4j.log.LogAttribute;
  *
  * @author Zoltan farkas
  */
+
 @Priority(Priorities.HEADER_DECORATOR)
 @Provider
 public final class ExecutionContextClientFilter implements ClientRequestFilter,
@@ -65,14 +68,17 @@ public final class ExecutionContextClientFilter implements ClientRequestFilter,
     int readTimeoutMs = (int) (timeoutNanos / 1000000);
     requestContext.setProperty(ClientProperties.READ_TIMEOUT, readTimeoutMs);
     LOG.debug("Invoking {}", new Object[]{requestContext.getUri(),
-      LogAttribute.of("headers", hideAuthorizationWhenLogging
-              ? Maps.transformEntries(headers, (final String k, final Object v) -> {
-        if ("Authorization".equalsIgnoreCase(k)) {
-          return "HIDDEN";
-        } else {
-          return v;
-        }
-    }) : headers)});
+      LogAttribute.of("headers", hideAuthorizationWhenLogging ? authorizationFilter(headers) : headers)});
+  }
+
+  private static Map<String, Object> authorizationFilter(final MultivaluedMap<String, Object> headers) {
+    return Maps.transformEntries(headers, (final String k, final Object v) -> {
+      if (HttpHeaders.AUTHORIZATION.equalsIgnoreCase(k)) {
+        return "HIDDEN";
+      } else {
+        return v;
+      }
+    });
   }
 
   @Override
