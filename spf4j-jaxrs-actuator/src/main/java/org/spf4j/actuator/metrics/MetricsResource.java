@@ -64,6 +64,14 @@ public class MetricsResource {
 
   @GET
   @Produces(value = {TextFormat.CONTENT_TYPE_004})
+  @Path("prometheus/{from}")
+  public StreamingOutput getMetricsTextPrometheusKubeSDFriendly(
+          @Nullable @QueryParam("from") final Instant pfrom) throws IOException {
+    return getMetricsTextPrometheus(pfrom, null);
+  }
+
+  @GET
+  @Produces(value = {TextFormat.CONTENT_TYPE_004})
   public StreamingOutput getMetricsTextPrometheus(
           @Nullable @QueryParam("from") final Instant pfrom,
           @Nullable @QueryParam("to") final Instant pto) throws IOException {
