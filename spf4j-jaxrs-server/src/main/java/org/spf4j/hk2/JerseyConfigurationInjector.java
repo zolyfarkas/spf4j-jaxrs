@@ -22,8 +22,6 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
@@ -34,208 +32,22 @@ import javax.ws.rs.core.Context;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.jersey.internal.inject.Injectee;
 import org.glassfish.jersey.internal.inject.InjectionResolver;
-import org.spf4j.reflect.CachingTypeMapWrapper;
-import org.spf4j.reflect.GraphTypeMap;
 import org.spf4j.jaxrs.SystemConfiguration;
 
 /**
  * A configuration injector for Jersey.
  * @author Zoltan Farkas
  */
-@SuppressFBWarnings({"URV_UNRELATED_RETURN_VALUES", "UP_UNUSED_PARAMETER"})
 public final class JerseyConfigurationInjector implements InjectionResolver<ConfigProperty> {
 
-  private final Configuration configuration;
-
-  private final CachingTypeMapWrapper<Function<ConfigurationParam, Object>> typeResolvers;
+  private final ConfigurationResolver resolver;
 
   @Inject
   public JerseyConfigurationInjector(@Context final Configuration configuration) {
-    this.configuration = new SystemConfiguration(configuration);
-    this.typeResolvers = new CachingTypeMapWrapper<>(new GraphTypeMap());
-    this.typeResolvers.safePut(CharSequence.class, this::resolveString)
-            .safePut(Integer.class, this::resolveInt)
-            .safePut(int.class, this::resolveInt)
-            .safePut(Long.class, this::resolveLong)
-            .safePut(long.class, this::resolveLong)
-            .safePut(Double.class, this::resolveDouble)
-            .safePut(double.class, this::resolveDouble)
-            .safePut(Float.class, this::resolveFloat)
-            .safePut(float.class, this::resolveFloat)
-            .safePut(Boolean.class, this::resolveBoolean)
-            .safePut(boolean.class, this::resolveBoolean)
-            .safePut(BigInteger.class, this::resolveBigInteger)
-            .safePut(BigDecimal.class, this::resolveBigDecimal);
+    this.resolver = new ConfigurationResolver(new SystemConfiguration(configuration));
   }
 
-  String getConfig(final String param, @Nullable final String defaultValue) {
-    Object result = configuration.getProperty(param);
-    if (result == null) {
-      return defaultValue;
-    } else {
-      return result.toString();
-    }
-  }
 
-  @Nullable
-  private Object resolveString(final ConfigurationParam param) {
-    if (param != null) {
-      return getConfig(param.getPropertyName(), param.getDefaultValue());
-    }
-    return null;
-  }
-
-  @Nullable
-  private Object resolveInt(final ConfigurationParam param) {
-    if (param != null) {
-      String prop = param.getPropertyName();
-      Object val = configuration.getProperty(prop);
-      if (val == null) {
-        val = param.getDefaultValue();
-      }
-      if (val instanceof Integer) {
-        return val;
-      } else if (val instanceof Number) {
-        return ((Number) val).intValue();
-      } else if (val instanceof String) {
-        return Integer.valueOf((String) val);
-      } else if (val == null) {
-        return null;
-      } else {
-        throw new IllegalArgumentException("Invalid configuration " + prop + ", cannot be converted to int: " + val);
-      }
-    }
-    return null;
-  }
-
-  @Nullable
-  private Object resolveLong(final ConfigurationParam param) {
-    if (param != null) {
-      String prop = param.getPropertyName();
-      Object val = configuration.getProperty(prop);
-      if (val == null) {
-        val = param.getDefaultValue();
-      }
-      if (val instanceof Long) {
-        return val;
-      } else if (val instanceof Number) {
-        return ((Number) val).longValue();
-      } else if (val instanceof String) {
-        return Long.valueOf((String) val);
-      } else if (val == null) {
-        return null;
-      } else {
-        throw new IllegalArgumentException("Invalid configuration " + prop + ", cannot be converted to long: " + val);
-      }
-    }
-    return null;
-  }
-
-  @Nullable
-  private Object resolveDouble(final ConfigurationParam param) {
-    if (param != null) {
-      String prop = param.getPropertyName();
-      Object val = configuration.getProperty(prop);
-      if (val == null) {
-        val = param.getDefaultValue();
-      }
-      if (val instanceof Double) {
-        return val;
-      } else if (val instanceof Number) {
-        return (((Number) val).doubleValue());
-      } else if (val instanceof String) {
-        return Double.valueOf((String) val);
-      } else if (val == null) {
-        return null;
-      } else {
-        throw new IllegalArgumentException("Invalid configuration " + prop + ", cannot be converted to double: " + val);
-      }
-    }
-    return null;
-  }
-
-  @Nullable
-  private Object resolveFloat(final ConfigurationParam param) {
-    if (param != null) {
-      String prop = param.getPropertyName();
-      Object val = configuration.getProperty(prop);
-      if (val == null) {
-        val = param.getDefaultValue();
-      }
-      if (val instanceof Float) {
-        return val;
-      } else if (val instanceof Number) {
-        return (((Number) val).floatValue());
-      } else if (val instanceof String) {
-        return Float.valueOf((String) val);
-      } else if (val == null) {
-        return null;
-      } else {
-        throw new IllegalArgumentException("Invalid configuration " + prop + ", cannot be converted to float: " + val);
-      }
-    }
-    return null;
-  }
-
-  @Nullable
-  private Object resolveBigDecimal(final ConfigurationParam param) {
-    if (param != null) {
-      String prop = param.getPropertyName();
-      Object val = configuration.getProperty(prop);
-      if (val == null) {
-        val = param.getDefaultValue();
-      }
-      if (val instanceof BigDecimal) {
-        return val;
-      }
-      if (val == null) {
-        return null;
-      } else {
-        return new BigDecimal(val.toString());
-      }
-    }
-    return null;
-  }
-
-  @Nullable
-  private Object resolveBigInteger(final ConfigurationParam param) {
-    if (param != null) {
-      String prop = param.getPropertyName();
-      Object val = configuration.getProperty(prop);
-      if (val == null) {
-        val = param.getDefaultValue();
-      }
-      if (val instanceof BigInteger) {
-        return val;
-      }
-      if (val == null) {
-        return null;
-      } else {
-        return new BigInteger(val.toString());
-      }
-    }
-    return null;
-  }
-
-  @Nullable
-  private Object resolveBoolean(final ConfigurationParam param) {
-    if (param != null) {
-      String prop = param.getPropertyName();
-      Object val = configuration.getProperty(prop);
-      if (val == null) {
-        val = param.getDefaultValue();
-      }
-      if (val instanceof Boolean) {
-        return val;
-      }
-      if (val == null) {
-        return null;
-      } else {
-        return Boolean.valueOf(val.toString());
-      }
-    }
-    return null;
-  }
 
   @Override
   @Nullable
@@ -250,21 +62,13 @@ public final class JerseyConfigurationInjector implements InjectionResolver<Conf
       ParameterizedType ptype = (ParameterizedType) requiredType;
       TypeToken<?> tt = TypeToken.of(ptype);
       if (tt.isSubtypeOf(Provider.class) || tt.isSubtypeOf(Supplier.class)) {
-        Function<ConfigurationParam, Object> typeConv
-                = typeResolvers.get(ptype.getActualTypeArguments()[0]);
+        Function<ConfigurationParam, Object> typeConv = resolver.get(ptype.getActualTypeArguments()[0]);
         return new ConfigSupplier(typeConv, cfgParam);
       } else {
         throw new IllegalArgumentException("Unable to inject " + injectee);
       }
     }
-    Function<ConfigurationParam, Object> exact = typeResolvers.get(requiredType);
-    if (exact == null) {
-      Object res = configuration.getProperty(cfgParam.getPropertyName());
-      if (res == null) {
-        return cfgParam.getDefaultValue();
-      }
-      return res;
-    }
+    Function<ConfigurationParam, Object> exact = resolver.get(requiredType);
     return exact.apply(cfgParam);
   }
 
@@ -310,7 +114,7 @@ public final class JerseyConfigurationInjector implements InjectionResolver<Conf
 
   @Override
   public String toString() {
-    return "ConfigurationInjector{" + "configuration=" + configuration + '}';
+    return "JerseyConfigurationInjector{" + "resolver=" + resolver + '}';
   }
 
   @Override

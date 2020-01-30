@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,6 +26,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -298,7 +300,7 @@ public final class ExecutionContextFilter implements Filter {
     }
     try {
       if (!clientWarning && level.getIntValue() >= Level.WARN.getIntValue()) {
-        logContextLogs(log, ctx);
+        logContextLogs(log, ctx, req);
       }
     } catch (Exception ex) {
       log.log(Level.ERROR.getJulLevel(), "Exception while dumping context detail", ex);
@@ -357,21 +359,23 @@ public final class ExecutionContextFilter implements Filter {
 
   @SuppressFBWarnings("SERVLET_HEADER") // no sec decisions are made with this. (only logged)
   private String getRemoteHost(final HttpServletRequest req) {
-    try {
-      String addr = req.getRemoteAddr();
+      String addr;
+      try {
+        addr = req.getRemoteAddr();
+      } catch (RuntimeException ex2) {
+        log.log(java.util.logging.Level.FINE, "Unable to obtain remote address", ex2);
+        return "Unknown.direct";
+      }
       String fwdFor = req.getHeader("x-forwarded-for");
       if (fwdFor == null) {
         return addr;
       } else {
         return fwdFor + ',' + addr;
       }
-    } catch (RuntimeException ex2) {
-      log.log(java.util.logging.Level.FINE, "Unable to obtain remote address", ex2);
-      return "Unknown";
-    }
   }
 
-  private static void logContextLogs(final Logger logger, final ExecutionContext ctx) {
+  private static void logContextLogs(final Logger logger, final ExecutionContext ctx,
+          final HttpServletRequest req) {
     List<Slf4jLogRecord> ctxLogs = new ArrayList<>();
     ctx.streamLogs((log) -> {
       if (!log.isLogged()) {
@@ -383,6 +387,19 @@ public final class ExecutionContextFilter implements Filter {
     for (Slf4jLogRecord log : ctxLogs) {
       LogUtils.logUpgrade(logger, org.spf4j.log.Level.INFO, "Detail on Error",
               traceId, log.toLogRecord("", ""));
+    }
+    logRequestHeaders(req, logger);
+  }
+
+  private  static void logRequestHeaders(final HttpServletRequest req, final Logger logger) {
+    Enumeration<String> names = req.getHeaderNames();
+    while (names.hasMoreElements()) {
+      String headerName = names.nextElement();
+      if (HttpHeaders.AUTHORIZATION.equalsIgnoreCase(headerName)) {
+        continue;
+      }
+      LogUtils.logUpgrade(logger, org.spf4j.log.Level.INFO, "request.header.{0}", headerName,
+              Collections.list(req.getHeaders(headerName)));
     }
   }
 
