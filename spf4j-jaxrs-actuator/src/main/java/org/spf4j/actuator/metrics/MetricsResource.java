@@ -21,8 +21,8 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -40,6 +40,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.avro.Schema;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.base.avro.AvroCloseableIterable;
 import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.perf.TimeSeriesRecord;
@@ -48,15 +49,24 @@ import org.spf4j.perf.impl.RecorderFactory;
 /**
  * @author Zoltan Farkas
  */
-@Path("metrics/local")
+@Path("metrics")
 @RolesAllowed("operator")
 @Singleton
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 public class MetricsResource {
 
+  private final Duration defaultFromDuration;
+
+  public MetricsResource(@ConfigProperty(name = "metrics.frorm",
+          defaultValue = "-PT2M") final Duration defaultFromDuration) {
+    this.defaultFromDuration = defaultFromDuration;
+  }
+
+
   @GET
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream", "text/csv"})
+  @Path("local")
   public Set<String> getMetrics() throws IOException {
     RecorderFactory.MEASUREMENT_STORE.flush();
     return RecorderFactory.MEASUREMENT_STORE.getMeasurements();
@@ -64,18 +74,10 @@ public class MetricsResource {
 
   @GET
   @Produces(value = {TextFormat.CONTENT_TYPE_004})
-  @Path("prometheus/{from}")
-  public StreamingOutput getMetricsTextPrometheusKubeSDFriendly(
-          @Nullable @QueryParam("from") final Instant pfrom) throws IOException {
-    return getMetricsTextPrometheus(pfrom, null);
-  }
-
-  @GET
-  @Produces(value = {TextFormat.CONTENT_TYPE_004})
   public StreamingOutput getMetricsTextPrometheus(
           @Nullable @QueryParam("from") final Instant pfrom,
           @Nullable @QueryParam("to") final Instant pto) throws IOException {
-    Instant from = pfrom == null ? Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime()) : pfrom;
+    Instant from = pfrom == null ? Instant.now().plus(defaultFromDuration) : pfrom;
     Instant to = pto == null ? Instant.now() : pto;
     return new StreamingOutput() {
       @Override
@@ -97,14 +99,14 @@ public class MetricsResource {
   }
 
   @GET
-  @Path("{metric}/data")
+  @Path("local/{metric}/data")
   @ProjectionSupport
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream", "text/csv"})
   public AvroCloseableIterable<TimeSeriesRecord> getMetrics(@PathParam("metric") final String metricName,
           @Nullable @QueryParam("from") final Instant pfrom,
           @Nullable @QueryParam("to") final Instant pto) throws IOException {
-    Instant from = pfrom == null ? Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime()) : pfrom;
+    Instant from = pfrom == null ? Instant.now().plus(defaultFromDuration) : pfrom;
     Instant to = pto == null ? Instant.now() : pto;
     RecorderFactory.MEASUREMENT_STORE.flush();
     AvroCloseableIterable<TimeSeriesRecord> measurementData
@@ -117,7 +119,7 @@ public class MetricsResource {
 
 
   @GET
-  @Path("{metric}/data")
+  @Path("local/{metric}/data")
   @Produces(value = {TextFormat.CONTENT_TYPE_004})
   public StreamingOutput getMetricsTextPrometheus(@PathParam("metric") final String metricName,
           @Nullable @QueryParam("from") final Instant pfrom,
@@ -149,7 +151,7 @@ public class MetricsResource {
 
 
   @GET
-  @Path("{metric}/schema")
+  @Path("local/{metric}/schema")
   @Produces("application/json")
   public Schema getMetricSchema(@PathParam("metric") final String metricName) throws IOException {
     RecorderFactory.MEASUREMENT_STORE.flush();

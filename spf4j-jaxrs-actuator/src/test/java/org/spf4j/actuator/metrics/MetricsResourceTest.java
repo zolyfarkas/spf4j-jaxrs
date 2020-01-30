@@ -74,7 +74,7 @@ public class MetricsResourceTest  extends ServiceIntegrationBase {
             .request(TextFormat.CONTENT_TYPE_004).get(CharSequence.class);
     Assert.assertNotNull(measurements);
     LOG.debug("Metrics data: {}", measurements);
-    CharSequence allMeasurements = getTarget().path("metrics/local")
+    CharSequence allMeasurements = getTarget().path("metrics")
             .request(TextFormat.CONTENT_TYPE_004).get(CharSequence.class);
     Assert.assertNotNull(measurements);
     LOG.debug("All Metrics data: {}", allMeasurements);
