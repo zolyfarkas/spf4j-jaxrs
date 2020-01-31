@@ -297,12 +297,12 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
       servletRegistration.setLoadOnStartup(0);
       HttpServer result = new HttpServer();
       ServerConfiguration serverConfig = result.getServerConfiguration();
-      serverConfig.setName(jerseyAppName);
       serverConfig.setDefaultErrorPageGenerator(new GrizzlyErrorPageGenerator(schemaClient));
 //    config.addHttpHandler(new CLStaticHttpHandler(Thread.currentThread().getContextClassLoader(), "/static/"),
 //            "/*.ico", "/*.png");
       result.addListener(createHttpListener(bindAddr, listenPort));
       webappContext.deploy(result);
+      webappContext.setServerInfo(null);
       return result;
     }
 
