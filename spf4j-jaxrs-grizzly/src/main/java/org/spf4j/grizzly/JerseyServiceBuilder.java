@@ -267,6 +267,7 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
       resourceConfig.property("servlet.protocol", sslConfig == null ? "http" : "https");
       resourceConfig.property("application.logFilesPath", jvmServices.getLogFolder());
       resourceConfig.property(ServerProperties.PROVIDER_PACKAGES, Joiner.on(';').join(providerPackages));
+      resourceConfig.property(ServerProperties.WADL_FEATURE_DISABLE, "true");
       resourceConfig.register(new AbstractBinder() {
         @Override
         protected void configure() {
