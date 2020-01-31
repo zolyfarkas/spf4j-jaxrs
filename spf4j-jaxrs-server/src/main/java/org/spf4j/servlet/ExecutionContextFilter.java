@@ -364,7 +364,7 @@ public final class ExecutionContextFilter implements Filter {
         addr = req.getRemoteAddr();
       } catch (RuntimeException ex2) {
         log.log(java.util.logging.Level.FINE, "Unable to obtain remote address", ex2);
-        return "Unknown.direct";
+        addr = "Unknown.direct";
       }
       String fwdFor = req.getHeader("x-forwarded-for");
       if (fwdFor == null) {
