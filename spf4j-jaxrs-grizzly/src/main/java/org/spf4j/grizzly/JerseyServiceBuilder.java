@@ -98,6 +98,8 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
 
   private int workerThreadsMaxSize;
 
+  private int maxHeaderSizeBytes;
+
   /* see https://github.com/jersey/jersey/blob/master/examples/
   https-clientserver-grizzly/src/main/java/org/glassfish/jersey/examples/httpsclientservergrizzly/Server.java */
   private SSLEngineConfigurator sslConfig;
@@ -118,11 +120,17 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
     this.workerThreadsCoreSize = 4;
     this.workerThreadsMaxSize = 256;
     this.sslConfig = null;
+    this.maxHeaderSizeBytes = 256 * 1024;
   }
 
   public JerseyServiceBuilder removeDefaults() {
     mavenRepos.clear();
     features.clear();
+    return this;
+  }
+
+  public JerseyServiceBuilder withFeature(final int pmaxHeaderSizeBytes) {
+    this.maxHeaderSizeBytes = pmaxHeaderSizeBytes;
     return this;
   }
 
@@ -289,6 +297,7 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
       servletRegistration.setLoadOnStartup(0);
       HttpServer result = new HttpServer();
       ServerConfiguration serverConfig = result.getServerConfiguration();
+      serverConfig.setName(jerseyAppName);
       serverConfig.setDefaultErrorPageGenerator(new GrizzlyErrorPageGenerator(schemaClient));
 //    config.addHttpHandler(new CLStaticHttpHandler(Thread.currentThread().getContextClassLoader(), "/static/"),
 //            "/*.ico", "/*.png");
@@ -314,6 +323,7 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
       final String poolNameBase = name + ':' + port;
       final NetworkListener listener
               = new NetworkListener("http", pbindAddr, port);
+      listener.setMaxHttpHeaderSize(maxHeaderSizeBytes);
       CompressionConfig compressionConfig = listener.getCompressionConfig();
       compressionConfig.setCompressionMode(CompressionConfig.CompressionMode.ON); // the mode
       compressionConfig.setCompressionMinSize(4096); // the min amount of bytes to compress
