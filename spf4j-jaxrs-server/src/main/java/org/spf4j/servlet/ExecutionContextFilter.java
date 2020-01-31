@@ -388,10 +388,10 @@ public final class ExecutionContextFilter implements Filter {
       LogUtils.logUpgrade(logger, org.spf4j.log.Level.INFO, "Detail on Error",
               traceId, log.toLogRecord("", ""));
     }
-    logRequestHeaders(req, logger);
+    logRequestHeaders(req, logger, traceId);
   }
 
-  private  static void logRequestHeaders(final HttpServletRequest req, final Logger logger) {
+  private  static void logRequestHeaders(final HttpServletRequest req, final Logger logger, final LogAttribute trId) {
     Enumeration<String> names = req.getHeaderNames();
     while (names.hasMoreElements()) {
       String headerName = names.nextElement();
@@ -399,7 +399,7 @@ public final class ExecutionContextFilter implements Filter {
         continue;
       }
       LogUtils.logUpgrade(logger, org.spf4j.log.Level.INFO, "request.header.{0}", headerName,
-              Collections.list(req.getHeaders(headerName)));
+              Collections.list(req.getHeaders(headerName)), trId);
     }
   }
 
