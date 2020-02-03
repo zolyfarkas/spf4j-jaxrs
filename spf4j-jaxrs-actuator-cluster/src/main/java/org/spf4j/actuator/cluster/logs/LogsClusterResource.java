@@ -35,6 +35,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.logs.LogUtils;
@@ -51,7 +52,6 @@ import org.spf4j.jaxrs.client.Spf4jWebTarget;
 import org.spf4j.log.LogPrinter;
 
 /**
- *
  * @author Zoltan Farkas
  */
 @Path("logs/cluster")
@@ -70,16 +70,21 @@ public class LogsClusterResource {
 
   private final String protocol;
 
+  private final int maxLogRetrieveLimit;
+
   @Inject
   public LogsClusterResource(final LogsResource localLogs,
           final Cluster cluster, final Spf4JClient httpClient,
           @ConfigProperty(name = "servlet.port") final int port,
-          @ConfigProperty(name = "servlet.protocol") final String protocol) {
+          @ConfigProperty(name = "servlet.protocol") final String protocol,
+          @ConfigProperty(name = "resources.logs.maxLogRetrieveLimit",
+                  defaultValue = "200") final int maxLogRetrieveLimit) {
     this.cluster = cluster;
     this.httpClient = httpClient;
     this.localLogs = localLogs;
     this.port = port;
     this.protocol = protocol;
+    this.maxLogRetrieveLimit = maxLogRetrieveLimit;
   }
 
   @GET
@@ -150,7 +155,12 @@ public class LogsClusterResource {
       return;
     }
     if (limit < 0) {
-      throw new ClientErrorException("limit parameter must be positive: " + limit, 400);
+      throw new ClientErrorException("limit parameter must be positive: " + limit,
+              Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE);
+    }
+    if (limit > maxLogRetrieveLimit) {
+      throw new ClientErrorException("Limit too large " + limit + " maximum allowed is " + maxLogRetrieveLimit,
+              Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE);
     }
     CompletableFuture<PriorityQueue<LogRecord>> cf
             = ContextPropagatingCompletableFuture.supplyAsync(() -> {

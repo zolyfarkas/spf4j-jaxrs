@@ -19,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -29,6 +30,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.logs.LogUtils;
@@ -64,16 +66,21 @@ public class LogbackClusterResource {
 
   private final String protocol;
 
+  private final int maxLogRetrieveLimit;
+
   @Inject
   public LogbackClusterResource(final LogbackResource localLogback,
           final Cluster cluster, final Spf4JClient httpClient,
           @ConfigProperty(name = "servlet.port") final int port,
-          @ConfigProperty(name = "servlet.protocol") final String protocol) {
+          @ConfigProperty(name = "servlet.protocol") final String protocol,
+          @ConfigProperty(name = "resources.logback.maxLogRetrieveLimit",
+                  defaultValue = "200") final int maxLogRetrieveLimit) {
     this.cluster = cluster;
     this.httpClient = httpClient;
     this.localLogback = localLogback;
     this.port = port;
     this.protocol = protocol;
+    this.maxLogRetrieveLimit = maxLogRetrieveLimit;
   }
 
   @GET
@@ -81,6 +88,9 @@ public class LogbackClusterResource {
   public void getClusterLogbackStatusText(@QueryParam("limit") @DefaultValue("100") final int limit,
           @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
+    if (limit > maxLogRetrieveLimit || limit < 0) {
+      throw new ClientErrorException("Invalid limit " + limit, Status.REQUESTED_RANGE_NOT_SATISFIABLE);
+    }
     getClusterLogbackStatus(limit, new AsyncResponseWrapper(ar) {
       @Override
       public boolean resume(final Object response) {
@@ -113,6 +123,9 @@ public class LogbackClusterResource {
   public void getClusterLogbackStatus(@QueryParam("limit") @DefaultValue("100") final int limit,
           @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
+    if (limit > maxLogRetrieveLimit || limit < 0) {
+      throw new ClientErrorException("Invalid limit " + limit, Status.REQUESTED_RANGE_NOT_SATISFIABLE);
+    }
     CompletableFuture<PriorityQueue<LogRecord>> cf
             = ContextPropagatingCompletableFuture.supplyAsync(() -> {
               PriorityQueue<LogRecord> result = new PriorityQueue(limit, LogUtils.TS_ORDER_ASC);
