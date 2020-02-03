@@ -84,7 +84,7 @@ public class LogsClusterResource {
 
   @GET
   @Produces(value = {"text/plain"})
-  public void getClusterLogsText(@QueryParam("limit") @DefaultValue("1000") final int limit,
+  public void getClusterLogsText(@QueryParam("limit") @DefaultValue("100") final int limit,
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
           @Suspended final AsyncResponse ar)
@@ -118,7 +118,7 @@ public class LogsClusterResource {
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream"})
   @ProjectionSupport
-  public void getClusterLogs(@QueryParam("limit") @DefaultValue("1000") final int limit,
+  public void getClusterLogs(@QueryParam("limit") @DefaultValue("100") final int limit,
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
           @Suspended final AsyncResponse ar)
@@ -140,7 +140,7 @@ public class LogsClusterResource {
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream"})
   @ProjectionSupport
-  public void getClusterLogs(@QueryParam("limit") @DefaultValue("1000") final int limit,
+  public void getClusterLogs(@QueryParam("limit") @DefaultValue("100") final int limit,
           @QueryParam("filter") @Nullable final String filter,
            @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
           @PathParam("appenderName") final String appender, @Suspended final AsyncResponse ar)
