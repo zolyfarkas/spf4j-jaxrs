@@ -35,7 +35,6 @@ import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.getLong
 import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.resolveModelConverterClasses;
 import static io.swagger.v3.jaxrs2.integration.ServletConfigContextUtils.resolveResourcePackages;
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import io.swagger.v3.oas.integration.api.OpenApiContext;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -66,7 +65,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spf4j.jaxrs.RawSerialization;
 
 @Path("/")
 @Singleton
@@ -86,9 +84,7 @@ public final class OpenApiResource extends BaseOpenApiResource {
   }
 
   @GET
-  @Produces({MediaType.APPLICATION_JSON})
-  @Operation(hidden = true)
-  @RawSerialization
+  @Produces(MediaType.APPLICATION_JSON)
   @Path("openapi.json")
   public Response getOpenApi(@Context final HttpHeaders headers,
           @Context final UriInfo uriInfo, @Context final Application app) throws Exception {
@@ -97,8 +93,6 @@ public final class OpenApiResource extends BaseOpenApiResource {
 
   @GET
   @Produces("application/yaml")
-  @Operation(hidden = true)
-  @RawSerialization
   @Path("openapi.yaml")
   public Response getOpenApiYaml(@Context final HttpHeaders headers,
           @Context final UriInfo uriInfo, @Context final Application app) throws Exception {

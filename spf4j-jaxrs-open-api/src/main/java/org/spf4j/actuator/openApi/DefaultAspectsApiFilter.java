@@ -19,6 +19,7 @@ import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.filter.AbstractSpecFilter;
 import io.swagger.v3.core.model.ApiDescription;
 import io.swagger.v3.core.util.PrimitiveType;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.Paths;
@@ -29,6 +30,7 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,7 +46,17 @@ public final class DefaultAspectsApiFilter extends AbstractSpecFilter {
   @Override
   public Optional<OpenAPI> filterOpenAPI(final OpenAPI openAPI, final Map<String, List<String>> params,
           final Map<String, String> cookies, final Map<String, List<String>> headers) {
-    openAPI.getComponents().getSchemas().putAll(ModelConverters.getInstance().readAll(ServiceError.class));
+    Components components = openAPI.getComponents();
+    if (components == null) {
+      components = new Components();
+      openAPI.setComponents(components);
+    }
+    Map<String, Schema> schemas = components.getSchemas();
+    if (schemas == null) {
+      schemas = new HashMap<>(4);
+      components.setSchemas(schemas);
+    }
+    schemas.putAll(ModelConverters.getInstance().readAll(ServiceError.class));
     Paths np = new Paths();
     openAPI.getPaths().entrySet().stream()
       .sorted(Map.Entry.comparingByKey())
