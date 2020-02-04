@@ -131,8 +131,7 @@ public class MetricsClusterResource {
       URI uri = new URI(protocol, null,
               addr.getHostAddress(), port, "/metrics/local", null, null);
       cf = cf.thenCombine(httpClient.target(uri).request("application/avro")
-              .rx().get(new GenericType<List<String>>() {
-              }),
+              .rx().get(new GenericType<List<String>>() { }),
               (Set<String> result, List<String> resp) -> {
                 result.addAll(resp);
                 return result;
@@ -142,8 +141,7 @@ public class MetricsClusterResource {
       if (t != null) {
         ar.resume(t);
       } else {
-        ar.resume(new GenericEntity<Collection<String>>(labels) {
-        });
+        ar.resume(new GenericEntity<Collection<String>>(labels) { });
       }
     });
   }
