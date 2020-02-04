@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.ServiceIntegrationBase;
 import static org.spf4j.actuator.ServiceIntegrationBase.getTarget;
 import org.spf4j.base.CloseableIterable;
+import org.spf4j.jaxrs.client.Spf4jWebTarget;
 import org.spf4j.perf.impl.MeasurementsInfoImpl;
 import org.spf4j.perf.impl.RecorderFactory;
 import org.spf4j.tsdb2.avro.MeasurementType;
@@ -36,7 +37,7 @@ import org.spf4j.tsdb2.avro.MeasurementType;
  *
  * @author Zoltan Farkas
  */
-public class MetricsResourceTest  extends ServiceIntegrationBase {
+public class MetricsResourceTest extends ServiceIntegrationBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetricsResourceTest.class);
 
@@ -44,14 +45,17 @@ public class MetricsResourceTest  extends ServiceIntegrationBase {
   public void testMetrics() throws IOException {
     long mid = RecorderFactory.MEASUREMENT_STORE.alocateMeasurements(
             new MeasurementsInfoImpl("test", "test measurement",
-            new String[] {"a", "b"}, new String[] {"ms", "ms"}, MeasurementType.GAUGE), 0);
+                    new String[]{"a", "b"}, new String[]{"ms", "ms"}, MeasurementType.GAUGE), 0);
     RecorderFactory.MEASUREMENT_STORE.saveMeasurements(mid, System.currentTimeMillis(), 1, 2);
-     List<String> metrics = getTarget().path("metrics/local")
-            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
-     LOG.debug("Metrics: {}", metrics);
-     Assert.assertFalse(metrics.isEmpty());
-     CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/local/test/data")
-            .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() { });
+    Spf4jWebTarget target = getTarget();
+    List<String> metrics = target.path("metrics/local")
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() {
+    });
+    LOG.debug("Metrics: {}", metrics);
+    Assert.assertFalse(metrics.isEmpty());
+    CloseableIterable<GenericRecord> measurements = target.path("metrics/local/test/data")
+            .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
+    });
     Assert.assertNotNull(measurements);
     for (GenericRecord data : measurements) {
       LOG.debug("data", data);
@@ -64,17 +68,19 @@ public class MetricsResourceTest  extends ServiceIntegrationBase {
   public void testPrometheusMetrics() throws IOException {
     long mid = RecorderFactory.MEASUREMENT_STORE.alocateMeasurements(
             new MeasurementsInfoImpl("test", "test measurement",
-            new String[] {"a", "b"}, new String[] {"ms", "ms"}, MeasurementType.GAUGE), 0);
+                    new String[]{"a", "b"}, new String[]{"ms", "ms"}, MeasurementType.GAUGE), 0);
     RecorderFactory.MEASUREMENT_STORE.saveMeasurements(mid, System.currentTimeMillis(), 1, 2);
-     List<String> metrics = getTarget().path("metrics/local")
-            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
-     LOG.debug("Metrics: {}", metrics);
-     Assert.assertFalse(metrics.isEmpty());
-     CharSequence measurements = getTarget().path("metrics/local/test/data")
+    Spf4jWebTarget target = getTarget();
+    List<String> metrics = target.path("metrics/local")
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() {
+    });
+    LOG.debug("Metrics: {}", metrics);
+    Assert.assertFalse(metrics.isEmpty());
+    CharSequence measurements = target.path("metrics/local/test/data")
             .request(TextFormat.CONTENT_TYPE_004).get(CharSequence.class);
     Assert.assertNotNull(measurements);
     LOG.debug("Metrics data: {}", measurements);
-    CharSequence allMeasurements = getTarget().path("metrics")
+    CharSequence allMeasurements = target.path("metrics")
             .request(TextFormat.CONTENT_TYPE_004).get(CharSequence.class);
     Assert.assertNotNull(measurements);
     LOG.debug("All Metrics data: {}", allMeasurements);

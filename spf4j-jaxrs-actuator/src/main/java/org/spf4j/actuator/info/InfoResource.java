@@ -96,5 +96,9 @@ public class InfoResource {
     return builder.build();
   }
 
+  @Override
+  public String toString() {
+    return "InfoResource{" + "service=" + service + ", hostName=" + hostName + '}';
+  }
 
 }

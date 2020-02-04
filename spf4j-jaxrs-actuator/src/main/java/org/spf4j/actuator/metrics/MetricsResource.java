@@ -37,7 +37,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.avro.Schema;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -81,7 +80,7 @@ public class MetricsResource {
     Instant to = pto == null ? Instant.now() : pto;
     return new StreamingOutput() {
       @Override
-      public void write(final OutputStream out) throws IOException, WebApplicationException {
+      public void write(final OutputStream out) throws IOException {
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8))) {
           Set<String> metrics = getMetrics();
           for (String metric : metrics) {
@@ -126,7 +125,7 @@ public class MetricsResource {
           @Nullable @QueryParam("to") final Instant pto) throws IOException {
     return new StreamingOutput() {
       @Override
-      public void write(final OutputStream out) throws IOException, WebApplicationException {
+      public void write(final OutputStream out) throws IOException {
         try (AvroCloseableIterable<TimeSeriesRecord> metrics = getMetrics(metricName, pfrom, pto);
              BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8))) {
 
@@ -160,6 +159,11 @@ public class MetricsResource {
       throw new NotFoundException("Metric not found " + metricName);
     }
     return measurementSchema;
+  }
+
+  @Override
+  public String toString() {
+    return "MetricsResource{" + "defaultFromDuration=" + defaultFromDuration + '}';
   }
 
 }

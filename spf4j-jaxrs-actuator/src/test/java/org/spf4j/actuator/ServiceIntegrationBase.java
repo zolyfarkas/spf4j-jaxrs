@@ -41,11 +41,10 @@ public abstract class ServiceIntegrationBase {
   private static JerseyService jerseyService;
   private static Spf4jWebTarget target;
   private static Spf4JClient client;
-  private static String localService;
 
 
   @BeforeClass
-  public static void setUp() throws IOException, URISyntaxException {
+  public static void setUp() throws IOException {
     // start the server
     jerseyService = new JerseyServiceBuilder(JVM)
             .withFeature(ActuatorFeature.class)
@@ -54,12 +53,11 @@ public abstract class ServiceIntegrationBase {
             .build();
     jerseyService.start();
     client = jerseyService.getApplication().getRestClient();
-    localService = "http://127.0.0.1:9090";
-    target = client.target(localService);
+    target = client.target("http://127.0.0.1:9090");
   }
 
   @AfterClass
-  public static void tearDown() throws Exception {
+  public static void tearDown() {
     jerseyService.close();
   }
 
@@ -69,10 +67,6 @@ public abstract class ServiceIntegrationBase {
 
   public static Spf4JClient getClient() {
     return client;
-  }
-
-  public static String getLocalService() {
-    return localService;
   }
 
 }

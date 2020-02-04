@@ -16,6 +16,7 @@
 package org.spf4j.actuator.jmx;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -66,6 +67,7 @@ public interface OpenTypeAvroConverter<T extends OpenType, A, C> {
           new OpenTypeAvroConverter<SimpleType, Object, Object>() {
     @Override
     @SuppressForbiden
+    @SuppressFBWarnings("URV_UNRELATED_RETURN_VALUES")
     public Object fromOpenValue(final SimpleType type, final Object openValue,
             final OpenTypeConverterSupplier convSupp) {
       if (openValue == null) {
@@ -84,6 +86,7 @@ public interface OpenTypeAvroConverter<T extends OpenType, A, C> {
 
     @Override
     @SuppressForbiden
+    @SuppressFBWarnings("URV_UNRELATED_RETURN_VALUES")
     public Object toOpenValue(final SimpleType type, final Object value, final OpenTypeConverterSupplier convSupp) {
       if (value == null) {
         return value;

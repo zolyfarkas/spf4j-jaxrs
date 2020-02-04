@@ -52,4 +52,10 @@ public final class OpenTypeConverterSupplier {
       return exact;
     }
   }
+
+  @Override
+  public String toString() {
+    return "OpenTypeConverterSupplier{" + "typeHandler=" + typeHandler + '}';
+  }
+  
 }

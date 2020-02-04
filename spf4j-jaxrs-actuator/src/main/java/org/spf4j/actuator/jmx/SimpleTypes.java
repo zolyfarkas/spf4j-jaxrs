@@ -15,6 +15,7 @@
  */
 package org.spf4j.actuator.jmx;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.HashMap;
 import java.util.Map;
 import javax.management.openmbean.ArrayType;
@@ -73,6 +74,7 @@ public final class SimpleTypes {
 
     private SimpleTypes() { }
 
+    @SuppressFBWarnings("ITC_INHERITANCE_TYPE_CHECKING")
     public static OpenType getOpenType(final String typeName) {
       if (typeName.startsWith("[")) {
         try {

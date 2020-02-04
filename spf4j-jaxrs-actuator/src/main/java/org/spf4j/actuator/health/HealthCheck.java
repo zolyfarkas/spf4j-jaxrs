@@ -1,6 +1,7 @@
 
 package org.spf4j.actuator.health;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.spf4j.base.ExecutionContext;
@@ -54,6 +55,7 @@ public interface HealthCheck {
      */
     void test(Logger logger) throws Exception;
 
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION") // this is a fb bug.
     default HealthRecord getRecord(final String name, final String origin, final Logger logger,
             final boolean isDebug, final boolean isDebugOnError) {
       try (ExecutionContext ec = ExecutionContexts.start(name,

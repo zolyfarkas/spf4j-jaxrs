@@ -111,8 +111,14 @@ public class LogbackResource {
               t == null ? null : Converters.convert(t),
               Collections.EMPTY_LIST));
       if (status.hasChildren()) {
-        addStatuses(() -> status.iterator(), result, limit);
+        addStatuses(status::iterator, result, limit);
       }
     }
   }
+
+  @Override
+  public String toString() {
+    return "LogbackResource{" + "hostName=" + hostName + '}';
+  }
+  
 }

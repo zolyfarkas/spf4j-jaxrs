@@ -44,12 +44,10 @@ public final class LogUtils {
   public static void addAll(final int limit,
           final PriorityQueue<LogRecord> result,
           final Iterable<LogRecord> records) {
-    synchronized (result) {
-      for (LogRecord log : records) {
-        result.add(log);
-        while (result.size() > limit) {
-           result.remove();
-        }
+    for (LogRecord log : records) {
+      result.add(log);
+      while (result.size() > limit) {
+        result.remove();
       }
     }
   }

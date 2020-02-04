@@ -44,4 +44,9 @@ public final class LogFilesResource {
     return files;
   }
 
+  @Override
+  public String toString() {
+    return "LogFilesResource{" + "files=" + files + '}';
+  }
+  
 }

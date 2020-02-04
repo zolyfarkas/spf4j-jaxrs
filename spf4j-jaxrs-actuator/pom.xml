@@ -107,60 +107,14 @@
 
   <build>
     <plugins>
-      <!--
       <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
       </plugin>
--->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
       </plugin>
-      <!--
-    <plugin>
-      <groupId>io.openapitools.swagger</groupId>
-      <artifactId>swagger-maven-plugin</artifactId>
-      <version>2.0.3</version>
-      <configuration>
-        <useResourcePackagesChildren>true</useResourcePackagesChildren>
-        <resourcePackages>
-          <resourcePackage>org.spf4j.actuator</resourcePackage>
-        </resourcePackages>
-        <outputDirectory>${basedir}/target/</outputDirectory>
-        <outputFilename>swagger</outputFilename>
-        <outputFormats>JSON,YAML</outputFormats>
-        <prettyPrint>true</prettyPrint>
-        <swaggerConfig>
-          <info>
-            <title>actuator</title>
-            <version>${project.version}</version>
-            <termsOfService>API for operators</termsOfService>
-          </info>
-        </swaggerConfig>
-      </configuration>
-      <executions>
-        <execution>
-          <goals>
-            <goal>generate</goal>
-          </goals>
-        </execution>
-      </executions>
-      <dependencies>
-        <dependency>
-          <groupId>org.spf4j</groupId>
-          <artifactId>spf4j-jaxrs-server</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-        <dependency>
-          <groupId>org.spf4j</groupId>
-          <artifactId>spf4j-zel</artifactId>
-          <version>${spf4j.version}</version>
-        </dependency>
-      </dependencies>
-    </plugin>
-          -->
-
     </plugins>
   </build>
 

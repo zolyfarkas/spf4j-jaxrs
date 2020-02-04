@@ -30,6 +30,7 @@ import org.spf4j.base.avro.jmx.AttributeValue;
 import org.spf4j.base.avro.jmx.MBeanAttributeInfo;
 import org.spf4j.base.avro.jmx.MBeanOperationInfo;
 import org.spf4j.base.avro.jmx.OperationInvocation;
+import org.spf4j.jaxrs.client.Spf4jWebTarget;
 
 /**
  *
@@ -45,32 +46,38 @@ public class JMXResourceTest extends ServiceIntegrationBase {
 
   @Test
   public void testJmxEndpoint() {
-    List<String> beans = getTarget().path("jmx/local").request(
+    Spf4jWebTarget target = getTarget();
+    List<String> beans = target.path("jmx/local").request(
             MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
     LOG.debug("Jmx resource ", beans);
+    Spf4jWebTarget beanTarget = target.path("jmx/local/{mbean}");
+    Spf4jWebTarget beanAttributesTarget = target.path("jmx/local/{mbean}/attributes");
+    Spf4jWebTarget beanAttributesValuesTarget = target.path("jmx/local/{mbean}/attributes/values");
+    Spf4jWebTarget beanAttributeValueTarget = target.path("jmx/local/{mbean}/attributes/values/{attrName}");
     for (String beanName : beans) {
-      List<String> memory = getTarget().path("jmx/local/{mbean}").resolveTemplate("mbean", beanName)
+      List<String> memory = beanTarget.resolveTemplate("mbean", beanName)
               .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
       LOG.debug("Jmx {} resource ", beanName, memory);
-      List<MBeanAttributeInfo> attrs = getTarget().path("jmx/local/{mbean}/attributes")
+      List<MBeanAttributeInfo> attrs = beanAttributesTarget
             .resolveTemplate("mbean", beanName)
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<MBeanAttributeInfo>>() { });
       LOG.debug("Jmx {} attributes ", beanName, attrs);
 
-      List<AttributeValue> values = getTarget().path("jmx/local/{mbean}/attributes/values")
-              .resolveTemplate("mbean", beanName)
+      List<AttributeValue> values = beanAttributesValuesTarget
+            .resolveTemplate("mbean", beanName)
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<AttributeValue>>() { });
       LOG.debug("Jmx {} attributes values ", beanName, values);
 
       if (!attrs.isEmpty()) {
         MBeanAttributeInfo ai = attrs.get(0);
-        Object resp = getTarget().path("jmx/local/{mbean}/attributes/values/{attrName}")
+        String attrrributename = ai.getName();
+        Object resp = beanAttributeValueTarget
               .resolveTemplate("mbean", beanName)
-              .resolveTemplate("attrName", ai.getName())
+              .resolveTemplate("attrName", attrrributename)
               .request(MediaType.APPLICATION_JSON).get(new GenericType<Object>() { });
-        LOG.debug("Jmx {} attribute  {} value ", beanName, ai.getName(), resp);
+        LOG.debug("Jmx {} attribute  {} value ", beanName, attrrributename, resp);
       }
-      List<MBeanOperationInfo> ops = getTarget().path("jmx/local/{mbean}/operations")
+      List<MBeanOperationInfo> ops = target.path("jmx/local/{mbean}/operations")
             .resolveTemplate("mbean", beanName)
             .request(MediaType.APPLICATION_JSON).get(new GenericType<List<MBeanOperationInfo>>() { });
       LOG.debug("Jmx {} operations ", beanName, ops);
@@ -124,7 +131,8 @@ public class JMXResourceTest extends ServiceIntegrationBase {
   }
     */
     OperationInvocation invocation = new OperationInvocation("gcClassHistogram",
-            Arrays.asList("[Ljava.lang.String;"), Collections.singletonList(Collections.singletonList("-all")));
+            Collections.singletonList("[Ljava.lang.String;"),
+            Collections.singletonList(Collections.singletonList("-all")));
      Object resp = getTarget().path("jmx/local/{mbean}/operations")
               .resolveTemplate("mbean", "com.sun.management:type=DiagnosticCommand")
               .request(MediaType.APPLICATION_JSON).

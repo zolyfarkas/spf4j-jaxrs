@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
@@ -101,7 +102,7 @@ public class HealthResource {
     return hNode.getHealthCheckInfo("", maxDepth);
   }
 
-  private static String[] toStrArray(final List<PathSegment> path) {
+  private static String[] toStrArray(final Collection<PathSegment> path) {
     String[] pathArr = new String[path.size()];
     int i = 0;
     for (PathSegment seg : path) {

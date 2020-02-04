@@ -16,6 +16,7 @@
 package org.spf4j.actuator.jmx;
 
 import com.google.common.annotations.Beta;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -80,6 +81,7 @@ import org.spf4j.jaxrs.StreamingArrayContent;
 @Produces(value = {"application/avro-x+json", "application/json",
   "application/avro+json", "application/avro", "application/octet-stream"})
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
+@SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
 @Beta
 public class JmxResource implements JmxRestApi {
 
@@ -92,6 +94,7 @@ public class JmxResource implements JmxRestApi {
 
   @GET
   @Override
+  @SuppressFBWarnings("EXS_EXCEPTION_SOFTENING_NO_CHECKED")// intentional
   public StreamingArrayContent<String> getMBeans() {
     MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
     Set<ObjectInstance> beans;
@@ -102,7 +105,7 @@ public class JmxResource implements JmxRestApi {
     }
     return new StreamingArrayContent<String>() {
       @Override
-      public void write(final ArrayWriter<String> output) throws IOException {
+      public void write(final ArrayWriter<String> output) {
         for (ObjectInstance bean : beans) {
           output.accept(bean.getObjectName().getCanonicalName());
         }
@@ -113,10 +116,12 @@ public class JmxResource implements JmxRestApi {
   @GET
   @Path("{mbeanName}")
   @Override
+  @SuppressFBWarnings("EI_EXPOSE_REP") // not really, since result is serialized.
   public String[] get(@PathParam("mbeanName") final String mbeanName) {
     return MBEAN_RESOURCES;
   }
 
+  @Nullable
   private static Schema getSimpleTypeSchema(final String typeName) {
     try {
       return ExtendedReflectData.get().getSchema(Reflections.forName(typeName));
@@ -136,16 +141,16 @@ public class JmxResource implements JmxRestApi {
       public void write(final ArrayWriter<org.spf4j.base.avro.jmx.MBeanAttributeInfo> output) throws IOException {
         for (MBeanAttributeInfo attr : attrs) {
           Map<String, Object> descriptorMap = toDescriptorMap(attr.getDescriptor());
+          String type = attr.getType();
           if (attr instanceof OpenMBeanAttributeInfoSupport) {
             OpenType openType = ((OpenMBeanAttributeInfoSupport) attr).getOpenType();
             OpenTypeAvroConverter converter = OpenTypeConverterSupplier.INSTANCE
                     .getConverter(openType);
-            output.accept(new org.spf4j.base.avro.jmx.MBeanAttributeInfo(attr.getName(), attr.getType(),
+            output.accept(new org.spf4j.base.avro.jmx.MBeanAttributeInfo(attr.getName(), type,
                     converter.getSchema(openType, OpenTypeConverterSupplier.INSTANCE),
                     attr.getDescription(), attr.isReadable(), attr.isWritable(), attr.isIs(), descriptorMap));
           } else {
-            output.accept(new org.spf4j.base.avro.jmx.MBeanAttributeInfo(attr.getName(), attr.getType(),
-                    getSimpleTypeSchema(attr.getType()),
+            output.accept(new org.spf4j.base.avro.jmx.MBeanAttributeInfo(attr.getName(), type, getSimpleTypeSchema(type),
                     attr.getDescription(), attr.isReadable(), attr.isWritable(), attr.isIs(), descriptorMap));
           }
         }
@@ -252,7 +257,7 @@ public class JmxResource implements JmxRestApi {
     } catch (AttributeNotFoundException | InstanceNotFoundException ex) {
       throw new NotFoundException("Atttr not found: " + attrName + " for " + mbeanName, ex);
     } catch (UnsupportedOperationException ex) {
-      throw new ClientErrorException("Attribute " + mbeanName + '/' + attrName + " not readable", 400);
+      throw new ClientErrorException("Attribute " + mbeanName + '/' + attrName + " not readable", 400, ex);
     }
   }
 
@@ -408,14 +413,13 @@ public class JmxResource implements JmxRestApi {
     }
   }
 
-  private static MBeanInfo getMBeanInfo(final String mbeanName) throws NotFoundException, RuntimeException {
+  private static MBeanInfo getMBeanInfo(final String mbeanName) {
     MBeanServerConnection srv = ManagementFactory.getPlatformMBeanServer();
     ObjectName mname = getJmxObjName(mbeanName);
     return getMBeanInfo(srv, mname);
   }
 
-  private static MBeanInfo getMBeanInfo(final MBeanServerConnection srv, final ObjectName mname)
-          throws RuntimeException {
+  private static MBeanInfo getMBeanInfo(final MBeanServerConnection srv, final ObjectName mname) {
     MBeanInfo mBeanInfo;
     try {
       mBeanInfo = srv.getMBeanInfo(mname);
@@ -427,7 +431,7 @@ public class JmxResource implements JmxRestApi {
     return mBeanInfo;
   }
 
-  private static ObjectName getJmxObjName(final String mbeanName) throws NotFoundException {
+  private static ObjectName getJmxObjName(final String mbeanName) {
     ObjectName mname;
     try {
       mname = new ObjectName(mbeanName);
