@@ -28,7 +28,7 @@
     <version>8.7.3</version>
   </parent>
   <name>${project.artifactId}-${project.version}</name>
-  <version>2.1.25-SNAPSHOT</version>
+  <version>2.1.26-SNAPSHOT</version>
   <description>JAX-RS features and components</description>
   <properties>
     <findbugs.excludeFilterFile>${basedir}/../findbugs_exclude.xml</findbugs.excludeFilterFile>
