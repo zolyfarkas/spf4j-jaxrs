@@ -150,7 +150,8 @@ public class JmxResource implements JmxRestApi {
                     converter.getSchema(openType, OpenTypeConverterSupplier.INSTANCE),
                     attr.getDescription(), attr.isReadable(), attr.isWritable(), attr.isIs(), descriptorMap));
           } else {
-            output.accept(new org.spf4j.base.avro.jmx.MBeanAttributeInfo(attr.getName(), type, getSimpleTypeSchema(type),
+            output.accept(new org.spf4j.base.avro.jmx.MBeanAttributeInfo(attr.getName(),
+                    type, getSimpleTypeSchema(type),
                     attr.getDescription(), attr.isReadable(), attr.isWritable(), attr.isIs(), descriptorMap));
           }
         }

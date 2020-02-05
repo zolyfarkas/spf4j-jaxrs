@@ -19,6 +19,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
 import io.prometheus.client.Collector;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -91,8 +92,8 @@ public final class PrometheusUtils {
 
   private static List<Collector.MetricFamilySamples.Sample> convertHistogram(
           final Schema schema,
-          final List<String> labels,
-          final List<String> labelValues,
+          final Collection<String> labels,
+          final Collection<String> labelValues,
           final Iterable<TimeSeriesRecord> recs) {
     List<Schema.Field> fields = schema.getFields();
     List<Pair<String, String>> les = new ArrayList<>();

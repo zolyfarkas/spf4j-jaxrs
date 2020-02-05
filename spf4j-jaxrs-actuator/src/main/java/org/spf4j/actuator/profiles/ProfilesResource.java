@@ -76,6 +76,7 @@ public class ProfilesResource {
   @Path("local/traces/{trId}")
   @GET
   @Produces({"application/stack.samples+json", "application/stack.samples.d3+json"})
+  @Nullable
   public SampleNode getSamples(@PathParam("trId") final String traceId) throws IOException {
     StringBuilder sb = new StringBuilder(traceId.length());
     AppendableUtils.escapeJsonString(traceId, sb);
@@ -107,7 +108,11 @@ public class ProfilesResource {
         if (Files.isDirectory(elem)) { // will not recurse for now.
           continue;
         }
-        String fileName = elem.getFileName().toString();
+        java.nio.file.Path fname = elem.getFileName();
+        if (fname == null) {
+          continue;
+        }
+        String fileName = fname.toString();
         if (fileName.endsWith(".ssdump3") || fileName.endsWith(".ssdump3.gz")) {
           Converter.loadLabels(elem.toFile(), result::add);
         } else if (fileName.endsWith(".ssdump2") || fileName.endsWith(".ssdump2.gz")) {
@@ -141,7 +146,11 @@ public class ProfilesResource {
           if (Files.isDirectory(elem)) { // will not recurse for now.
             continue;
           }
-          String fileName = elem.getFileName().toString();
+          java.nio.file.Path elemName = elem.getFileName();
+          if (elemName == null) {
+            continue;
+          }
+          String fileName = elemName.toString();
           if (fileName.endsWith(".ssdump3") || fileName.endsWith(".ssdump3.gz")) {
             if (inRange(elem, from, to)) {
               samples = SampleNode.aggregateNullableUnsafe(samples, Converter.loadLabeledDump(elem.toFile(), label));
@@ -204,8 +213,8 @@ public class ProfilesResource {
       public void write(final OutputStream os) throws IOException {
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
           StringBuilder url = new StringBuilder(64);
-          url.append("/profiles/local/groups/" + UriComponent.encode(label, UriComponent.Type.PATH_SEGMENT)
-                  + "?_Accept=application/stack.samples.d3%2Bjson");
+          url.append("/profiles/local/groups/").append(UriComponent.encode(label, UriComponent.Type.PATH_SEGMENT))
+                  .append("?_Accept=application/stack.samples.d3%2Bjson");
           if (from != null) {
             url.append("&from=");
             url.append(UriComponent.encode(from.toString(), UriComponent.Type.QUERY_PARAM));
@@ -220,5 +229,14 @@ public class ProfilesResource {
     };
 
   }
+
+  @Override
+  public String toString() {
+    return "ProfilesResource{" + "logsResource=" + logsResource + ", logFilesResource="
+            + logFilesResource + ", visualizePage=" + visualizePage
+            + ", sampler=" + sampler + ", hostName=" + hostName + '}';
+  }
+
+
 
 }

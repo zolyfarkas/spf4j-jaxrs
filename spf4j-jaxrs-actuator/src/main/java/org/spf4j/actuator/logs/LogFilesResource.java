@@ -15,6 +15,7 @@
  */
 package org.spf4j.actuator.logs;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.nio.file.Paths;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -34,6 +35,7 @@ public final class LogFilesResource {
   private final FilesResource files;
 
   @Inject
+  @SuppressFBWarnings("PATH_TRAVERSAL_IN") // not from the userr.
   public LogFilesResource(@ConfigProperty(name = "application.logFilesPath", defaultValue = "/var/log")
     final String basePath) {
     this.files = new FilesResource(Paths.get(basePath));
@@ -48,5 +50,5 @@ public final class LogFilesResource {
   public String toString() {
     return "LogFilesResource{" + "files=" + files + '}';
   }
-  
+
 }

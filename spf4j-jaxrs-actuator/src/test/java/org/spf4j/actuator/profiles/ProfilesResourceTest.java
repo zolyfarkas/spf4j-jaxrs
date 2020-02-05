@@ -24,7 +24,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.ServiceIntegrationBase;
+import org.spf4j.jaxrs.client.Spf4jWebTarget;
 import org.spf4j.stackmonitor.SampleNode;
+
 /**
  *
  * @author Zoltan Farkas
@@ -35,16 +37,19 @@ public class ProfilesResourceTest extends ServiceIntegrationBase {
 
   @Test
   public void testProfiles() {
-     List<String> labels = getTarget().path("profiles/local/groups")
-            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() { });
-     LOG.debug("Labels: {}", labels);
-     Assert.assertFalse(labels.isEmpty());
-     SampleNode node = getTarget().path("profiles/local/groups/" + labels.get(0))
-            .request("application/stack.samples+json").get(new GenericType<SampleNode>() { });
+    Spf4jWebTarget target = getTarget();
+    List<String> labels = target.path("profiles/local/groups")
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() {
+    });
+    LOG.debug("Labels: {}", labels);
+    Assert.assertFalse(labels.isEmpty());
+    SampleNode node = target.path("profiles/local/groups/" + labels.get(0))
+            .request("application/stack.samples+json").get(new GenericType<SampleNode>() {
+    });
     Assert.assertNotNull(node);
-    CharSequence html = getTarget().path("profiles/local/visualize/groups/" + labels.get(0))
+    CharSequence html = target.path("profiles/local/visualize/groups/" + labels.get(0))
             .request("*/*").get(CharSequence.class);
-     LOG.debug("HTML: {}", html);
+    LOG.debug("HTML: {}", html);
     Assert.assertThat(html.toString(), Matchers.containsString("Node profile for"));
   }
 

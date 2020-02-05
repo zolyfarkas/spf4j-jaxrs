@@ -17,7 +17,6 @@ package org.spf4j.actuator;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.spf4j.grizzly.JerseyService;
@@ -37,7 +36,7 @@ public abstract class ServiceIntegrationBase {
   private static final JvmServices JVM = new JvmServicesBuilder()
             .withApplicationName("actuatorTest")
             .withLogFolder("./target")
-            .build().closeOnShutdown();
+            .build().start().closeOnShutdown();
   private static JerseyService jerseyService;
   private static Spf4jWebTarget target;
   private static Spf4JClient client;

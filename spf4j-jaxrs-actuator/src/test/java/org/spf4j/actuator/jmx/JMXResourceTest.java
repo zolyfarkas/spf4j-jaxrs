@@ -15,7 +15,6 @@
  */
 package org.spf4j.actuator.jmx;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import javax.ws.rs.client.Entity;
