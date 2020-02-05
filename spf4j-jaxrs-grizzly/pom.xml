@@ -64,7 +64,7 @@
     <dependency>
       <groupId>org.spf4j</groupId>
       <artifactId>spf4j-logback</artifactId>
-      <version>1.2.14</version>
+      <version>${spf4j.logback.version}</version>
     </dependency>
   </dependencies>
 
