@@ -15,10 +15,12 @@
  */
 package org.spf4j.grizzly;
 
+import java.util.function.Function;
 import org.spf4j.base.Env;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
+import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.SysExits;
 import org.spf4j.base.ThreadLocalContextAttacher;
@@ -58,6 +60,8 @@ public final class JvmServicesBuilder {
   private int threadUseSampleTimeMillis;
   private int cpuUseSampleTimeMillis;
 
+  private Function<ExecutionContext, String> aggregationGroups;
+
 
   public JvmServicesBuilder() {
     this.profilerSampleTimeMillis = Env.getValue("PROFILER_SAMPLE_MILLIS", 10);
@@ -71,6 +75,22 @@ public final class JvmServicesBuilder {
     this.gcUseSampleTimeMillis = Env.getValue("V_GC_USE_S_MILLIS", 10000);
     this.threadUseSampleTimeMillis = Env.getValue("V_THREAD_USE_S_MILLIS", 10000);
     this.cpuUseSampleTimeMillis = Env.getValue("V_CPU_USE_S_MILLIS", 10000);
+    this.aggregationGroups = (ctx) -> {
+                        String name = ctx.getName();
+                        if (name.startsWith("GET")) {
+                          return "GET";
+                        } else if (ctx.getName().startsWith("POST")) {
+                          return "POST";
+                        } else {
+                          return "OTHER";
+                        }
+                      };
+  }
+
+  public JvmServicesBuilder withProfilingAggregationGroups(
+          final Function<ExecutionContext, String> contextAggregations) {
+    this.aggregationGroups = contextAggregations;
+    return this;
   }
 
   public JvmServicesBuilder withHostName(final String phostName) {
@@ -129,17 +149,8 @@ public final class JvmServicesBuilder {
     } else {
       ProfilingTLAttacher contextFactory = (ProfilingTLAttacher) threadLocalAttacher;
       sampler = new Sampler(profilerSampleTimeMillis, profilerDumpTimeMillis,
-              (t) -> new TracingExecutionContexSampler(contextFactory::getCurrentThreadContexts,
-                      (ctx) -> {
-                        String name = ctx.getName();
-                        if (name.startsWith("GET")) {
-                          return "GET";
-                        } else if (ctx.getName().startsWith("POST")) {
-                          return "POST";
-                        } else {
-                          return "OTHER";
-                        }
-                      }), logFolder, applicationName);
+              (t) -> new TracingExecutionContexSampler(contextFactory::getCurrentThreadContexts, aggregationGroups),
+              logFolder, applicationName);
     }
     if (profilerJmx) {
       sampler.registerJmx();
