@@ -16,9 +16,9 @@
 package org.spf4j.jaxrs;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import gnu.trove.set.hash.THashSet;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.ws.rs.RuntimeType;
@@ -72,13 +72,11 @@ public final class SystemConfiguration implements Configuration {
 
   @Override
   public Collection<String> getPropertyNames() {
-    Set<String> result = new HashSet<>(cfg.getProperties().keySet());
+    Set<String> result = new THashSet<>(cfg.getProperties().keySet());
     for (Object key : System.getProperties().keySet()) {
       result.add(key.toString());
     }
-    for (String key : System.getenv().keySet()) {
-      result.add(key);
-    }
+    result.addAll(System.getenv().keySet());
     return result;
   }
 
