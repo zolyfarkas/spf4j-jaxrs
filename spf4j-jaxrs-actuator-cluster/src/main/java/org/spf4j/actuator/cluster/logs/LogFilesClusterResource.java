@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -85,6 +86,15 @@ public class LogFilesClusterResource {
     return result;
   }
 
+  private boolean isClusterMember(final String host) {
+     for (InetAddress addr : cluster.getClusterInfo().getAddresses()) {
+       if (host.equals(addr.getHostAddress())) {
+         return true;
+       }
+     }
+     return false;
+  }
+
   @Operation(
           description = "Get cluster information.",
           responses = {
@@ -118,7 +128,11 @@ public class LogFilesClusterResource {
               .collect(Collectors.joining("/"));
       tPath  = tPath + restpath;
     }
-    URI uri = new URI(protocol, null,  path.get(0).getPath(), port, tPath, null, null);
+    String host = path.get(0).getPath();
+    if (!isClusterMember(host)) {
+      throw new NotFoundException("No such host: " + host);
+    }
+    URI uri = new URI(protocol, null, host, port, tPath, null, null);
     Response resp = httpClient.target(uri).request(MediaType.WILDCARD).get(Response.class);
     return Response.ok(new StreamedResponseContent(() -> resp.readEntity(InputStream.class)),
             resp.getHeaderString(HttpHeaders.CONTENT_TYPE)).build();
