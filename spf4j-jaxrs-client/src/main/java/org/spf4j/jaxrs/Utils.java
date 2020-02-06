@@ -93,6 +93,8 @@ public final class Utils {
       }
     })
     .withRetryOnException(Exception.class, 2) // will retry any other exception twice.
+    .withInitialRetries(2)
+    .withInitialDelay(10, TimeUnit.MILLISECONDS)
             .build();
   }
 
