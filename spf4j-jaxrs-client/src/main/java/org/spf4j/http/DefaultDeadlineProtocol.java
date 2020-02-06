@@ -25,7 +25,12 @@ public final class DefaultDeadlineProtocol implements DeadlineProtocol {
   private final long maxTimeoutNanos;
 
   public DefaultDeadlineProtocol() {
-    this(Headers.REQ_DEADLINE, Headers.REQ_TIMEOUT, 60000000000L, 600000000000L);
+    this(25, 300, TimeUnit.SECONDS);
+  }
+
+  public DefaultDeadlineProtocol(
+          final long defaultTimeout, final long maxTimeout, final TimeUnit unit) {
+    this(Headers.REQ_DEADLINE, Headers.REQ_TIMEOUT, unit.toNanos(defaultTimeout), unit.toNanos(maxTimeout));
   }
 
   public DefaultDeadlineProtocol(final String deadlineHeaderName, final String timeoutHeaderName,
