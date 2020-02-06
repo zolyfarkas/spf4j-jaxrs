@@ -27,6 +27,7 @@ import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -80,14 +81,24 @@ public class JmxClusterResource {
     return result;
   }
 
+  private boolean isClusterMember(final String host) {
+    for (InetAddress addr : cluster.getClusterInfo().getAddresses()) {
+      if (host.equals(addr.getHostAddress())) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   @Path("{node}")
   public JmxRestApi handleGet(@PathParam("node") final String node,
           @HeaderParam("Accept") @DefaultValue(MediaType.WILDCARD) final String accept) throws URISyntaxException {
-      return WebResourceFactory.newResource(JmxRestApi.class, httpClient.target(
+    if (!isClusterMember(node)) {
+      throw new NotFoundException("No such host: " + node);
+    }
+    return WebResourceFactory.newResource(JmxRestApi.class, httpClient.target(
             new URI(protocol, null, node, port, "/jmx/local", null, null)));
 
   }
-
 
 }
