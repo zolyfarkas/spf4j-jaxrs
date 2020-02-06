@@ -100,6 +100,10 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
 
   private int maxHeaderSizeBytes;
 
+  private long defaultTimeoutNanos;
+
+  private long maximumAllowedTimeoutNanos;
+
   /* see https://github.com/jersey/jersey/blob/master/examples/
   https-clientserver-grizzly/src/main/java/org/glassfish/jersey/examples/httpsclientservergrizzly/Server.java */
   private SSLEngineConfigurator sslConfig;
@@ -121,11 +125,24 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
     this.workerThreadsMaxSize = 256;
     this.sslConfig = null;
     this.maxHeaderSizeBytes = 256 * 1024;
+    this.defaultTimeoutNanos = TimeUnit.SECONDS.toNanos(25);
+    this.maximumAllowedTimeoutNanos = TimeUnit.MINUTES.toNanos(5);
   }
 
   public JerseyServiceBuilder removeDefaults() {
     mavenRepos.clear();
     features.clear();
+    return this;
+  }
+
+
+  public JerseyServiceBuilder withDefaultTimeout(final long timeout, final TimeUnit tu) {
+    this.defaultTimeoutNanos = tu.toNanos(timeout);
+    return this;
+  }
+
+  public JerseyServiceBuilder withMaximumAllowedTimeout(final long timeout, final TimeUnit tu) {
+    this.maximumAllowedTimeoutNanos = tu.toNanos(timeout);
     return this;
   }
 
@@ -230,7 +247,8 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
             throws IOException {
       String jerseyAppName = bindAddr + ':' + listenPort;
       FixedWebappContext webappContext = new FixedWebappContext(jerseyAppName, "");
-      DefaultDeadlineProtocol dp = new DefaultDeadlineProtocol();
+      DefaultDeadlineProtocol dp = new DefaultDeadlineProtocol(defaultTimeoutNanos, maximumAllowedTimeoutNanos,
+              TimeUnit.NANOSECONDS);
       FilterRegistration fr = webappContext.addFilter("ecFilter", new ExecutionContextFilter(dp));
       fr.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "/*");
 
