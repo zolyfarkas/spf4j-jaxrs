@@ -60,7 +60,7 @@ public class MetricsResource {
   private final Duration defaultFromDuration;
 
   public MetricsResource(@ConfigProperty(name = "metrics.frorm",
-          defaultValue = "-PT2M") final Duration defaultFromDuration) {
+          defaultValue = "-PT1M") final Duration defaultFromDuration) {
     this.defaultFromDuration = defaultFromDuration;
   }
 
@@ -79,9 +79,10 @@ public class MetricsResource {
   public StreamingOutput getMetricsTextPrometheus(
           @Nullable @QueryParam("from") final Instant pfrom,
           @Nullable @QueryParam("to") final Instant pto,
-          @Nullable @QueryParam("aggDuration") final Duration agg) throws IOException {
+          @Nullable @QueryParam("aggDuration") final Duration pagg) throws IOException {
     Instant from = pfrom == null ? Instant.now().plus(defaultFromDuration) : pfrom;
     Instant to = pto == null ? Instant.now() : pto;
+    Duration agg = pagg == null ? defaultFromDuration : pagg;
     return new StreamingOutput() {
       @Override
       public void write(final OutputStream out) throws IOException {
