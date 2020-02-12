@@ -28,9 +28,11 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
@@ -44,6 +46,7 @@ import org.spf4j.base.avro.AvroCloseableIterable;
 import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.perf.TimeSeriesRecord;
 import org.spf4j.perf.impl.RecorderFactory;
+import org.spf4j.tsdb2.TSDBQuery;
 
 /**
  * @author Zoltan Farkas
@@ -75,7 +78,8 @@ public class MetricsResource {
   @Produces(value = {TextFormat.CONTENT_TYPE_004})
   public StreamingOutput getMetricsTextPrometheus(
           @Nullable @QueryParam("from") final Instant pfrom,
-          @Nullable @QueryParam("to") final Instant pto) throws IOException {
+          @Nullable @QueryParam("to") final Instant pto,
+          @Nullable @QueryParam("aggDuration") final Duration agg) throws IOException {
     Instant from = pfrom == null ? Instant.now().plus(defaultFromDuration) : pfrom;
     Instant to = pto == null ? Instant.now() : pto;
     return new StreamingOutput() {
@@ -84,7 +88,7 @@ public class MetricsResource {
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8))) {
           Set<String> metrics = getMetrics();
           for (String metric : metrics) {
-            try (AvroCloseableIterable<TimeSeriesRecord> values = getMetrics(metric, from, to)) {
+            try (AvroCloseableIterable<TimeSeriesRecord> values = getMetrics(metric, from, to, agg)) {
               Collector.MetricFamilySamples mfs = PrometheusUtils.convert(values);
               if (mfs != null) {
                 TextFormat.write004(bw,
@@ -104,7 +108,8 @@ public class MetricsResource {
     "application/avro+json", "application/avro", "application/octet-stream", "text/csv"})
   public AvroCloseableIterable<TimeSeriesRecord> getMetrics(@PathParam("metric") final String metricName,
           @Nullable @QueryParam("from") final Instant pfrom,
-          @Nullable @QueryParam("to") final Instant pto) throws IOException {
+          @Nullable @QueryParam("to") final Instant pto,
+          @Nullable @QueryParam("aggDuration") final Duration agg) throws IOException {
     Instant from = pfrom == null ? Instant.now().plus(defaultFromDuration) : pfrom;
     Instant to = pto == null ? Instant.now() : pto;
     RecorderFactory.MEASUREMENT_STORE.flush();
@@ -112,6 +117,13 @@ public class MetricsResource {
             = RecorderFactory.MEASUREMENT_STORE.getMeasurementData(metricName, from, to);
     if (measurementData == null) {
        throw new NotFoundException("Metric not found " + metricName);
+    }
+    if (agg != null) {
+      long aggMillis = agg.toMillis();
+      if (aggMillis > Integer.MAX_VALUE) {
+        throw new ClientErrorException("Durration to large " +  agg, 400);
+      }
+      measurementData = TSDBQuery.aggregate(measurementData, (int) aggMillis, TimeUnit.MILLISECONDS);
     }
     return measurementData;
   }
@@ -122,11 +134,12 @@ public class MetricsResource {
   @Produces(value = {TextFormat.CONTENT_TYPE_004})
   public StreamingOutput getMetricsTextPrometheus(@PathParam("metric") final String metricName,
           @Nullable @QueryParam("from") final Instant pfrom,
-          @Nullable @QueryParam("to") final Instant pto) throws IOException {
+          @Nullable @QueryParam("to") final Instant pto,
+          @Nullable @QueryParam("aggDuration") final Duration agg) throws IOException {
     return new StreamingOutput() {
       @Override
       public void write(final OutputStream out) throws IOException {
-        try (AvroCloseableIterable<TimeSeriesRecord> metrics = getMetrics(metricName, pfrom, pto);
+        try (AvroCloseableIterable<TimeSeriesRecord> metrics = getMetrics(metricName, pfrom, pto, agg);
              BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8))) {
 
           Iterator<TimeSeriesRecord> iterator = metrics.iterator();
