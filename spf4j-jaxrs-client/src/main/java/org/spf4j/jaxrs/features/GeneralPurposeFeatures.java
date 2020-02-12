@@ -22,6 +22,7 @@ import org.spf4j.jaxrs.common.providers.GZipEncoderDecoder;
 import org.spf4j.jaxrs.common.providers.gp.CharSequenceMessageProvider;
 import org.spf4j.jaxrs.common.providers.gp.CsvParameterConverterProvider;
 import org.spf4j.jaxrs.common.providers.gp.DirectStringMessageProvider;
+import org.spf4j.jaxrs.common.providers.gp.DurationParameterConverterProvider;
 import org.spf4j.jaxrs.common.providers.gp.InstantParameterConverterProvider;
 import org.spf4j.jaxrs.common.providers.gp.NullabilityParameterConverterProvider;
 import org.spf4j.jaxrs.common.providers.gp.SampleNodeMessageProviderD3Json;
@@ -39,6 +40,7 @@ public final class GeneralPurposeFeatures implements Feature {
     fc.register(new CharSequenceMessageProvider());
     fc.register(new DirectStringMessageProvider());
     fc.register(new InstantParameterConverterProvider());
+    fc.register(new DurationParameterConverterProvider());
     fc.register(new SampleNodeMessageProviderJson());
     fc.register(new SampleNodeMessageProviderD3Json());
     fc.register(new GZipEncoderDecoder());
