@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,6 +68,7 @@ import org.spf4j.concurrent.DefaultExecutor;
 import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.jaxrs.StreamingArrayContent;
 import org.spf4j.jaxrs.client.Spf4JClient;
+import org.spf4j.jaxrs.client.Spf4jWebTarget;
 import org.spf4j.perf.TimeSeriesRecord;
 
 /**
@@ -181,7 +183,8 @@ public class MetricsClusterResource {
   @ProjectionSupport
   public StreamingArrayContent<GenericRecord> getClusterMetricsData(@PathParam("metric") final String metricName,
           @Nullable @QueryParam("from") final Instant pfrom,
-          @Nullable @QueryParam("to") final Instant pto) throws URISyntaxException, IOException {
+          @Nullable @QueryParam("to") final Instant pto,
+          @Nullable @QueryParam("aggDuration") final Duration agg) throws URISyntaxException, IOException {
     org.apache.avro.Schema nSchema = getMetricSchema(metricName);
     Instant from = pfrom == null ? Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime()) : pfrom;
     Instant to = pto == null ? Instant.now() : pto;
@@ -191,7 +194,7 @@ public class MetricsClusterResource {
     return new StreamingArrayContent<GenericRecord>() {
       @Override
       public void write(final ArrayWriter<GenericRecord> output) throws IOException {
-        try (AvroCloseableIterable<TimeSeriesRecord> metrics = localResource.getMetrics(metricName, from, to)) {
+        try (AvroCloseableIterable<TimeSeriesRecord> metrics = localResource.getMetrics(metricName, from, to, agg)) {
           for (TimeSeriesRecord rec : metrics) {
             output.write(addNodeToRecord(nSchema, rec, localAddress.getHostAddress()));
           }
@@ -204,9 +207,13 @@ public class MetricsClusterResource {
           } catch (URISyntaxException ex) {
             throw new RuntimeException(ex);
           }
-          try (AvroCloseableIterable<GenericRecord> metrics = httpClient.target(uri)
+          Spf4jWebTarget peerTarget = httpClient.target(uri)
                   .queryParam("from", from)
-                  .queryParam("to", to)
+                  .queryParam("to", to);
+          if (agg != null) {
+            peerTarget = peerTarget.queryParam("aggDuration", agg);
+          }
+          try (AvroCloseableIterable<GenericRecord> metrics = peerTarget
                   .request("application/avro").get(new GenericType<AvroCloseableIterable<GenericRecord>>() {
           })) {
             for (GenericRecord rec : metrics) {
@@ -236,12 +243,13 @@ public class MetricsClusterResource {
   public AvroCloseableIterable<GenericRecord> getClusterMetricsData(@PathParam("metric") final String metricName,
           @PathParam("field") final String field,
           @Nullable @QueryParam("from") final Instant pfrom,
-          @Nullable @QueryParam("to") final Instant pto) throws URISyntaxException, IOException {
+          @Nullable @QueryParam("to") final Instant pto,
+          @Nullable @QueryParam("aggDuration") final Duration agg) throws URISyntaxException, IOException {
     org.apache.avro.Schema metricSchema = getMetricSchema(metricName);
     org.apache.avro.Schema.Field afield = metricSchema.getField(field);
     SortedMap<Instant, List<BigDecimal>> join = new TreeMap<>();
     Map<String, Integer> node2ColIdx = new LinkedHashMap<>();
-    StreamingArrayContent<GenericRecord> stream = getClusterMetricsData(metricName, pfrom, pto);
+    StreamingArrayContent<GenericRecord> stream = getClusterMetricsData(metricName, pfrom, pto, agg);
     List<GenericRecord> result = new ArrayList<>();
     stream.write(new ArrayWriter<GenericRecord>() {
       @Override
