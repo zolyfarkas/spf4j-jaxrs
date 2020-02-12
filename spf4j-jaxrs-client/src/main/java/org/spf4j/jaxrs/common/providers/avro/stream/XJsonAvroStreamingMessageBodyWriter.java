@@ -29,7 +29,7 @@ import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
  * @author Zoltan Farkas
  */
 @Provider
-@Produces({"application/json;fmt=avro-x", "application/avro-x+json", "text/plain;fmt=avro-x+json"})
+@Produces({"application/json;fmt=avro-x", "application/avro-x+json"})
 public final class XJsonAvroStreamingMessageBodyWriter  extends AvroStreamingMessageBodyWriter {
 
   public XJsonAvroStreamingMessageBodyWriter(final SchemaProtocol protocol) {

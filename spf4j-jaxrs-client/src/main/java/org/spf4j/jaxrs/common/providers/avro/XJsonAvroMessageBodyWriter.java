@@ -13,7 +13,7 @@ import org.apache.avro.io.ExtendedJsonEncoder;
  * @author Zoltan Farkas
  */
 @Provider
-@Produces({"application/json;fmt=avro-x", "application/avro-x+json", "text/plain;fmt=avro-x+json"})
+@Produces({"application/json;fmt=avro-x", "application/avro-x+json"})
 public final class XJsonAvroMessageBodyWriter extends  AvroMessageBodyWriter {
 
   @Inject
