@@ -56,6 +56,7 @@ public final class PrometheusUtils {
   }
 
   private static List<Collector.MetricFamilySamples.Sample> convertValues(
+          final String metricName,
           final Schema schema,
           final List<String> labels,
           final List<String> labelValues,
@@ -71,8 +72,9 @@ public final class PrometheusUtils {
         String fName = f.name();
         String unit = fSchema.getProp("unit");
         if (unit != null) {
-          fName = unit + '_' + fName;  // https://prometheus.io/docs/instrumenting/exposition_formats/
+          fName = fName + '_' + unit;  // https://prometheus.io/docs/instrumenting/exposition_formats/
         }
+        fName = metricName  +  '_' +  fName;
         switch (fSchema.getType()) {
           case LONG:
             samples.add(new Collector.MetricFamilySamples.Sample(fName, labels, labelValues,
@@ -91,6 +93,7 @@ public final class PrometheusUtils {
   }
 
   private static List<Collector.MetricFamilySamples.Sample> convertHistogram(
+          final String metricName,
           final Schema schema,
           final Collection<String> labels,
           final Collection<String> labelValues,
@@ -114,7 +117,7 @@ public final class PrometheusUtils {
         List<String> lv = new ArrayList<>(2);
         l.addAll(labelValues);
         lv.add(le.getSecond());
-        samples.add(new Collector.MetricFamilySamples.Sample("count", l,
+        samples.add(new Collector.MetricFamilySamples.Sample(metricName + '_' + "count", l,
                 lv, rec.getLongValue(le.getFirst()), ts));
       }
     }
@@ -151,16 +154,16 @@ public final class PrometheusUtils {
     switch (measurementType) {
       case COUNTER:
         return new Collector.MetricFamilySamples(name, Collector.Type.COUNTER, schema.getDoc(),
-                convertValues(schema, labels, labelValues, recs));
+                convertValues(name, schema, labels, labelValues, recs));
       case GAUGE:
         return new Collector.MetricFamilySamples(name, Collector.Type.GAUGE, schema.getDoc(),
-                convertValues(schema, labels, labelValues, recs));
+                convertValues(name, schema, labels, labelValues, recs));
       case SUMMARY:
         return new Collector.MetricFamilySamples(name, Collector.Type.SUMMARY, schema.getDoc(),
-                convertValues(schema, labels, labelValues, recs));
+                convertValues(name, schema, labels, labelValues, recs));
       case HISTOGRAM:
         return new Collector.MetricFamilySamples(name, Collector.Type.HISTOGRAM, schema.getDoc(),
-                convertHistogram(schema, labels, labelValues, recs));
+                convertHistogram(name, schema, labels, labelValues, recs));
       default:
         throw new UnsupportedOperationException("Unsupported type " + measurementType);
     }

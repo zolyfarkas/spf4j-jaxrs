@@ -21,6 +21,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -75,7 +76,7 @@ public class MetricsResource {
   }
 
   /**
-   * Prometheus metrics endpoint.
+   * Prometheus metrics endpoint tailored for prometheus-to-sd.
    * Defaults are compatible with gcr.io/google-containers/prometheus-to-sd:v0.9.1
    * @param pfrom when null will default to: now - metrics.fromDefaultDuration
    * @param pto when null it will default to now.
@@ -107,6 +108,12 @@ public class MetricsResource {
               }
             }
           }
+          TextFormat.write004(bw, Collections.enumeration(Collections.singletonList(
+                  new Collector.MetricFamilySamples("process_start_time_seconds",
+                  Collector.Type.COUNTER, "Seconds since process start",
+                  Collections.singletonList(new Collector.MetricFamilySamples.Sample("process_start_time_seconds",
+                          Collections.emptyList(), Collections.emptyList(),
+                          ((double) ManagementFactory.getRuntimeMXBean().getUptime()) / 1000))))));
         }
       }
     };
