@@ -59,8 +59,8 @@ public class MetricsResource {
 
   private final Duration defaultFromDuration;
 
-  public MetricsResource(@ConfigProperty(name = "metrics.frorm",
-          defaultValue = "-PT1M") final Duration defaultFromDuration) {
+  public MetricsResource(@ConfigProperty(name = "metrics.fromDefaultDuration",
+          defaultValue = "PT1M") final Duration defaultFromDuration) {
     this.defaultFromDuration = defaultFromDuration;
   }
 
@@ -74,15 +74,25 @@ public class MetricsResource {
     return RecorderFactory.MEASUREMENT_STORE.getMeasurements();
   }
 
+  /**
+   * Prometheus metrics endpoint.
+   * Defaults are compatible with gcr.io/google-containers/prometheus-to-sd:v0.9.1
+   * @param pfrom when null will default to: now - metrics.fromDefaultDuration
+   * @param pto when null it will default to now.
+   * @param pagg when null it will default to metrics.fromDefaultDuration,
+   * for no aggregation zero duration should be used
+   * @return prometheus metrics
+   * @throws IOException
+   */
   @GET
   @Produces(value = {TextFormat.CONTENT_TYPE_004})
   public StreamingOutput getMetricsTextPrometheus(
           @Nullable @QueryParam("from") final Instant pfrom,
           @Nullable @QueryParam("to") final Instant pto,
           @Nullable @QueryParam("aggDuration") final Duration pagg) throws IOException {
-    Instant from = pfrom == null ? Instant.now().plus(defaultFromDuration) : pfrom;
+    Instant from = pfrom == null ? Instant.now().minus(defaultFromDuration) : pfrom;
     Instant to = pto == null ? Instant.now() : pto;
-    Duration agg = pagg == null ? defaultFromDuration : pagg;
+    Duration agg = pagg == null ? defaultFromDuration : (Duration.ZERO.equals(pagg) ? null : pagg);
     return new StreamingOutput() {
       @Override
       public void write(final OutputStream out) throws IOException {
@@ -111,7 +121,7 @@ public class MetricsResource {
           @Nullable @QueryParam("from") final Instant pfrom,
           @Nullable @QueryParam("to") final Instant pto,
           @Nullable @QueryParam("aggDuration") final Duration agg) throws IOException {
-    Instant from = pfrom == null ? Instant.now().plus(defaultFromDuration) : pfrom;
+    Instant from = pfrom == null ? Instant.now().minus(defaultFromDuration) : pfrom;
     Instant to = pto == null ? Instant.now() : pto;
     RecorderFactory.MEASUREMENT_STORE.flush();
     AvroCloseableIterable<TimeSeriesRecord> measurementData
