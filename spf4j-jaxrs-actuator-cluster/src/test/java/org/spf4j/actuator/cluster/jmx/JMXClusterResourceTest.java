@@ -22,6 +22,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
+import junit.framework.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,17 @@ import org.spf4j.jmx.Registry;
 public class JMXClusterResourceTest extends ServiceIntegrationBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(JMXClusterResourceTest.class);
+
+  @Test
+  public void testGetClusterMembers() {
+    TestJmxEndpoint jmxEndpoint = new TestJmxEndpoint();
+    Registry.export(jmxEndpoint);
+    String[] members = getTarget().path("jmx/cluster")
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<String[]>() { });
+    LOG.debug("members {} ", members);
+    Assert.assertEquals("127.0.0.1", members[0]);
+  }
+
 
   @Test
   public void testGetMbeansCluster() {

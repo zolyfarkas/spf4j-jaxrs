@@ -51,6 +51,7 @@ public abstract class ServiceIntegrationBase {
     jerseyService = new JerseyServiceBuilder(JVM)
             .withFeature(ClusterActuatorFeature.class)
             .withFeature(SingleNodeClusterFeature.class)
+            .withBindAddress("127.0.0.1")
             .withPort(9090)
             .build();
     jerseyService.start();

@@ -135,6 +135,10 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
     return this;
   }
 
+  public   JerseyServiceBuilder withBindAddress(final String pbindAddr) {
+    this.bindAddr = pbindAddr;
+    return this;
+  }
 
   public JerseyServiceBuilder withDefaultTimeout(final long timeout, final TimeUnit tu) {
     this.defaultTimeoutNanos = tu.toNanos(timeout);
