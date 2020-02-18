@@ -16,6 +16,7 @@ import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.jersey.server.spi.ResponseErrorMapper;
+import org.spf4j.base.ContextValue;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.Throwables;
@@ -26,6 +27,7 @@ import org.spf4j.log.Level;
 import org.spf4j.http.ContextTags;
 import org.spf4j.jaxrs.server.DebugDetailEntitlement;
 import org.spf4j.jaxrs.server.MediaTypes;
+import org.spf4j.servlet.CountingHttpServletResponse;
 
 /**
  * @author Zoltan Farkas
@@ -108,7 +110,8 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
               .build();
     }
     if (status >= 500) {
-      ctx.accumulate(ContextTags.LOG_LEVEL, Level.ERROR);
+      ContextValue<CountingHttpServletResponse> contextAndValue = ctx.getContextAndValue(ContextTags.HTTP_RESP);
+      contextAndValue.getContext().accumulate(ContextTags.LOG_LEVEL, Level.ERROR);
     }
     ctx.accumulateComponent(ContextTags.LOG_ATTRIBUTES, exception);
     return Response.status(status)

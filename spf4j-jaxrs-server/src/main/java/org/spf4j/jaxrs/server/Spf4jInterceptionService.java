@@ -24,6 +24,7 @@ import org.glassfish.hk2.api.InterceptionService;
 import org.jvnet.hk2.internal.SystemDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spf4j.base.ContextValue;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
 import org.spf4j.http.ContextTags;
@@ -202,11 +203,13 @@ public final class Spf4jInterceptionService implements InterceptionService {
     @SuppressFBWarnings("HTTP_RESPONSE_SPLITTING") // Warning text message is validated for cr/lf
     public Object invoke(final MethodInvocation invocation) throws Throwable {
       ExecutionContext current = ExecutionContexts.current();
-      CountingHttpServletResponse resp = current.get(ContextTags.HTTP_RESP);
+      ContextValue<CountingHttpServletResponse> contextAndValue = current.getContextAndValue(ContextTags.HTTP_RESP);
+      ExecutionContext ctxt = contextAndValue.getContext();
+      CountingHttpServletResponse value = contextAndValue.getValue();
       for (HttpWarning warning: warnings) {
-        current.accumulateComponent(ContextTags.HTTP_WARNINGS, warning);
-        current.accumulate(ContextTags.LOG_LEVEL, Level.WARN);
-        resp.addHeader(Headers.WARNING, warning.toString());
+        ctxt.accumulateComponent(ContextTags.HTTP_WARNINGS, warning);
+        ctxt.accumulate(ContextTags.LOG_LEVEL, Level.WARN);
+        value.addHeader(Headers.WARNING, warning.toString());
       }
       return invocation.proceed();
     }
