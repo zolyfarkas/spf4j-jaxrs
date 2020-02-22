@@ -25,10 +25,10 @@ import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
@@ -42,12 +42,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.avro.Schema;
+import org.apache.avro.reflect.AvroSchema;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.base.avro.AvroCloseableIterable;
 import org.spf4j.jaxrs.ProjectionSupport;
+import org.spf4j.perf.MeasurementStoreQuery;
 import org.spf4j.perf.TimeSeriesRecord;
 import org.spf4j.perf.impl.RecorderFactory;
-import org.spf4j.tsdb2.TSDBQuery;
 
 /**
  * @author Zoltan Farkas
@@ -70,9 +71,10 @@ public class MetricsResource {
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream", "text/csv"})
   @Path("local")
-  public Set<String> getMetrics() throws IOException {
+  @AvroSchema(value = "{\"type\":\"array\",\"items\": {\"type\":\"string\", \"logicalType\":\"avsc\"}}")
+  public Collection<Schema> getMetrics() throws IOException {
     RecorderFactory.MEASUREMENT_STORE.flush();
-    return RecorderFactory.MEASUREMENT_STORE.getMeasurements();
+    return RecorderFactory.MEASUREMENT_STORE.query().getMeasurements((x) -> true);
   }
 
   /**
@@ -93,34 +95,18 @@ public class MetricsResource {
           @Nullable @QueryParam("aggDuration") final Duration pagg) throws IOException {
     Instant from = pfrom == null ? Instant.now().minus(defaultFromDuration) : pfrom;
     Instant to = pto == null ? Instant.now() : pto;
-    Duration agg = pagg == null ? defaultFromDuration : (Duration.ZERO.equals(pagg) ? null : pagg);
-    return new StreamingOutput() {
-      @Override
-      public void write(final OutputStream out) throws IOException {
-        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8))) {
-          Set<String> metrics = getMetrics();
-          for (String metric : metrics) {
-            try (AvroCloseableIterable<TimeSeriesRecord> values = getMetrics(metric, from, to, agg)) {
-              Collector.MetricFamilySamples mfs = PrometheusUtils.convert(values);
-              if (mfs != null) {
-                TextFormat.write004(bw,
-                      Collections.enumeration(Collections.singletonList(mfs)));
-              }
-            }
-          }
-          TextFormat.write004(bw, Collections.enumeration(Collections.singletonList(
-                  new Collector.MetricFamilySamples("process_start_time_seconds",
-                  Collector.Type.COUNTER, "Seconds since process start",
-                  Collections.singletonList(new Collector.MetricFamilySamples.Sample("process_start_time_seconds",
-                          Collections.emptyList(), Collections.emptyList(),
-                          ((double) ManagementFactory.getRuntimeMXBean().getUptime()) / 1000))))));
-        }
-      }
-    };
+    Duration agg = pagg == null ? defaultFromDuration : pagg;
+    long aggMillis = agg.toMillis();
+    if (aggMillis > Integer.MAX_VALUE) {
+      throw new ClientErrorException("Invalid aggregation durration: " + agg, 400);
+    }
+    RecorderFactory.MEASUREMENT_STORE.flush();
+    MeasurementStoreQuery query = RecorderFactory.MEASUREMENT_STORE.query();
+    return new PrometheusOutput(query, aggMillis, from, to);
   }
 
   @GET
-  @Path("local/{metric}/data")
+  @Path("local/{metric}")
   @ProjectionSupport
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream", "text/csv"})
@@ -131,24 +117,29 @@ public class MetricsResource {
     Instant from = pfrom == null ? Instant.now().minus(defaultFromDuration) : pfrom;
     Instant to = pto == null ? Instant.now() : pto;
     RecorderFactory.MEASUREMENT_STORE.flush();
-    AvroCloseableIterable<TimeSeriesRecord> measurementData
-            = RecorderFactory.MEASUREMENT_STORE.getMeasurementData(metricName, from, to);
-    if (measurementData == null) {
-       throw new NotFoundException("Metric not found " + metricName);
+    MeasurementStoreQuery query = RecorderFactory.MEASUREMENT_STORE.query();
+    Collection<Schema> measurements = query.getMeasurements((x) -> x.equals(metricName));
+    if (measurements.isEmpty()) {
+      throw new NotFoundException("Metric nod found: " + metricName);
+    } else if (measurements.size() > 1) {
+      throw new IllegalStateException("Multiple metrics found, this is a bug " + measurements);
     }
+    long aggMillis = 0;
     if (agg != null) {
-      long aggMillis = agg.toMillis();
+      aggMillis = agg.toMillis();
       if (aggMillis > Integer.MAX_VALUE) {
         throw new ClientErrorException("Durration to large " +  agg, 400);
       }
-      measurementData = TSDBQuery.aggregate(measurementData, (int) aggMillis, TimeUnit.MILLISECONDS);
     }
-    return measurementData;
+    Schema measurement = measurements.iterator().next();
+    return  aggMillis <= 0
+            ? query.getMeasurementData(measurement, from, to)
+            : query.getAggregatedMeasurementData(measurement, from, to, (int) aggMillis, TimeUnit.MILLISECONDS);
   }
 
 
   @GET
-  @Path("local/{metric}/data")
+  @Path("local/{metric}")
   @Produces(value = {TextFormat.CONTENT_TYPE_004})
   public StreamingOutput getMetricsTextPrometheus(@PathParam("metric") final String metricName,
           @Nullable @QueryParam("from") final Instant pfrom,
@@ -178,23 +169,49 @@ public class MetricsResource {
     };
   }
 
-
-
-  @GET
-  @Path("local/{metric}/schema")
-  @Produces("application/json")
-  public Schema getMetricSchema(@PathParam("metric") final String metricName) throws IOException {
-    RecorderFactory.MEASUREMENT_STORE.flush();
-    Schema measurementSchema = RecorderFactory.MEASUREMENT_STORE.getMeasurementSchema(metricName);
-    if (measurementSchema == null) {
-      throw new NotFoundException("Metric not found " + metricName);
-    }
-    return measurementSchema;
-  }
-
   @Override
   public String toString() {
     return "MetricsResource{" + "defaultFromDuration=" + defaultFromDuration + '}';
+  }
+
+  private static class PrometheusOutput implements StreamingOutput {
+
+    private final MeasurementStoreQuery query;
+    private final long aggMillis;
+    private final Instant from;
+    private final Instant to;
+
+    PrometheusOutput(final MeasurementStoreQuery query, final long aggMillis,
+            final Instant from, final Instant to) {
+      this.query = query;
+      this.aggMillis = aggMillis;
+      this.from = from;
+      this.to = to;
+    }
+
+    @Override
+    public void write(final OutputStream out) throws IOException {
+      try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8))) {
+        Collection<Schema> metrics = query.getMeasurements((x) -> true);
+        for (Schema metric : metrics) {
+          try (AvroCloseableIterable<TimeSeriesRecord> values = aggMillis <= 0
+                  ? query.getMeasurementData(metric, from, to)
+                  : query.getAggregatedMeasurementData(metric, from, to, (int) aggMillis, TimeUnit.MILLISECONDS)) {
+            Collector.MetricFamilySamples mfs = PrometheusUtils.convert(values);
+            if (mfs != null) {
+              TextFormat.write004(bw,
+                      Collections.enumeration(Collections.singletonList(mfs)));
+            }
+          }
+        }
+        TextFormat.write004(bw, Collections.enumeration(Collections.singletonList(
+                new Collector.MetricFamilySamples("process_start_time_seconds",
+                        Collector.Type.COUNTER, "Seconds since process start",
+                        Collections.singletonList(new Collector.MetricFamilySamples.Sample("process_start_time_seconds",
+                                Collections.emptyList(), Collections.emptyList(),
+                                ((double) ManagementFactory.getRuntimeMXBean().getUptime()) / 1000))))));
+      }
+    }
   }
 
 }

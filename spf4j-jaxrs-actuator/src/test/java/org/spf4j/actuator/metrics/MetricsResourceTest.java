@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.List;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
+import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.junit.Assert;
 import org.junit.Test;
@@ -48,12 +49,12 @@ public class MetricsResourceTest extends ServiceIntegrationBase {
                     new String[]{"a", "b"}, new String[]{"ms", "ms"}, MeasurementType.GAUGE), 0);
     RecorderFactory.MEASUREMENT_STORE.saveMeasurements(mid, System.currentTimeMillis(), 1, 2);
     Spf4jWebTarget target = getTarget();
-    List<String> metrics = target.path("metrics/local")
-            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() {
+    List<Schema> metrics = target.path("metrics/local")
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<Schema>>() {
     });
     LOG.debug("Metrics: {}", metrics);
     Assert.assertFalse(metrics.isEmpty());
-    CloseableIterable<GenericRecord> measurements = target.path("metrics/local/test/data")
+    CloseableIterable<GenericRecord> measurements = target.path("metrics/local/test")
             .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
     });
     Assert.assertNotNull(measurements);
@@ -71,12 +72,12 @@ public class MetricsResourceTest extends ServiceIntegrationBase {
                     new String[]{"a", "b"}, new String[]{"ms", "ms"}, MeasurementType.GAUGE), 0);
     RecorderFactory.MEASUREMENT_STORE.saveMeasurements(mid, System.currentTimeMillis(), 1, 2);
     Spf4jWebTarget target = getTarget();
-    List<String> metrics = target.path("metrics/local")
-            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() {
+    List<Schema> metrics = target.path("metrics/local")
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<Schema>>() {
     });
     LOG.debug("Metrics: {}", metrics);
     Assert.assertFalse(metrics.isEmpty());
-    CharSequence measurements = target.path("metrics/local/test/data")
+    CharSequence measurements = target.path("metrics/local/test")
             .request(TextFormat.CONTENT_TYPE_004).get(CharSequence.class);
     Assert.assertNotNull(measurements);
     LOG.debug("Metrics data: {}", measurements);
