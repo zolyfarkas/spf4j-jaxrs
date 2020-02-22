@@ -134,6 +134,7 @@ public final class MessageBodyRWUtils {
     return getAvroSchemaFromType2(effectiveType, annotations);
   }
 
+  @Nullable
   public static Schema getAvroSchemaFromType2(final Type effectiveType, final Annotation[] annotations) {
     if (effectiveType == null) {
       return null;
@@ -145,6 +146,7 @@ public final class MessageBodyRWUtils {
     return makeNullableIfNeeded(annotations, schema);
   }
 
+  @Nullable
   public static Schema getSchemaFromAnnotations(final Annotation[] annotations) {
     for (Annotation annot : annotations) {
       if (annot.annotationType() == AvroSchema.class) {
