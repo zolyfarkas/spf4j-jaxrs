@@ -108,14 +108,9 @@ public class MetricsResource {
   @GET
   @Path("local/{metric}")
   @ProjectionSupport
-  @Produces(value = {"application/avro-x+json", "application/json",
-    "application/avro+json", "application/avro", "application/octet-stream", "text/csv"})
-  public AvroCloseableIterable<TimeSeriesRecord> getMetrics(@PathParam("metric") final String metricName,
-          @Nullable @QueryParam("from") final Instant pfrom,
-          @Nullable @QueryParam("to") final Instant pto,
-          @Nullable @QueryParam("aggDuration") final Duration agg) throws IOException {
-    Instant from = pfrom == null ? Instant.now().minus(defaultFromDuration) : pfrom;
-    Instant to = pto == null ? Instant.now() : pto;
+  @Produces(value = {"application/avsc+json"})
+  public Schema getMetricSchema(@PathParam("metric") final String metricName)
+          throws IOException {
     RecorderFactory.MEASUREMENT_STORE.flush();
     MeasurementStoreQuery query = RecorderFactory.MEASUREMENT_STORE.query();
     Collection<Schema> measurements = query.getMeasurements((x) -> x.equals(metricName));
@@ -124,6 +119,20 @@ public class MetricsResource {
     } else if (measurements.size() > 1) {
       throw new IllegalStateException("Multiple metrics found, this is a bug " + measurements);
     }
+    return measurements.iterator().next();
+  }
+
+  @GET
+  @Path("local/{metric}")
+  @ProjectionSupport
+  @Produces(value = {"application/avro-x+json", "application/json",
+    "application/avro+json", "application/avro", "application/octet-stream", "text/csv"})
+  public AvroCloseableIterable<TimeSeriesRecord> getMetrics(@PathParam("metric") final String metricName,
+          @Nullable @QueryParam("from") final Instant pfrom,
+          @Nullable @QueryParam("to") final Instant pto,
+          @Nullable @QueryParam("aggDuration") final Duration agg) throws IOException {
+    Instant from = pfrom == null ? Instant.now().minus(defaultFromDuration) : pfrom;
+    Instant to = pto == null ? Instant.now() : pto;
     long aggMillis = 0;
     if (agg != null) {
       aggMillis = agg.toMillis();
@@ -131,7 +140,8 @@ public class MetricsResource {
         throw new ClientErrorException("Durration to large " +  agg, 400);
       }
     }
-    Schema measurement = measurements.iterator().next();
+    Schema measurement = getMetricSchema(metricName);
+    MeasurementStoreQuery query = RecorderFactory.MEASUREMENT_STORE.query();
     return  aggMillis <= 0
             ? query.getMeasurementData(measurement, from, to)
             : query.getAggregatedMeasurementData(measurement, from, to, (int) aggMillis, TimeUnit.MILLISECONDS);
