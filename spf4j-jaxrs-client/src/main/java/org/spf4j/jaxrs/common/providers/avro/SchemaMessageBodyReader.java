@@ -16,7 +16,7 @@ import org.apache.avro.Schema;
  * @author Zoltan Farkas
  */
 @Provider
-@Consumes({"application/json", "text/plain"})
+@Consumes({"application/avsc.1.9+json", "application/avsc+json", "application/json", "text/plain"})
 public final class SchemaMessageBodyReader implements MessageBodyReader<Schema> {
 
   @Override

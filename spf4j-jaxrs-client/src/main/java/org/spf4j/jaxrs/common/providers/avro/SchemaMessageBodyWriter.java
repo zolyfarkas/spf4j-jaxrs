@@ -20,7 +20,7 @@ import org.spf4j.base.Json;
  * @author Zoltan Farkas
  */
 @Provider
-@Produces({"application/json", "text/plain"})
+@Produces({"application/avsc.1.9+json", "application/avsc+json", "application/json", "text/plain"})
 public final class SchemaMessageBodyWriter implements MessageBodyWriter<Schema> {
 
   @Override
