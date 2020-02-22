@@ -57,35 +57,42 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
           final OutputStream entityStream)
           throws IOException {
     Schema actualSchema;
-    Schema elemSchema = t instanceof AvroContainer ? ((AvroContainer) t).getElementSchema() : null;
-    if (elemSchema == null) {
-      ParameterizedType genericType = MessageBodyRWUtils.toParameterizedType(Iterable.class, pgenericType);
-      if (genericType == null) {
-        if (t instanceof Collection) {
-          Collection o = (Collection) t;
-          if (o.isEmpty()) {
-            elemSchema = Schema.create(Schema.Type.NULL);
-            actualSchema = Schema.createArray(Schema.createArray(elemSchema));
+    Schema elemSchema;
+    Schema schemaFromAnnotations = MessageBodyRWUtils.getSchemaFromAnnotations(annotations);
+    if (schemaFromAnnotations != null) {
+      actualSchema = schemaFromAnnotations;
+      elemSchema = schemaFromAnnotations.getElementType();
+    } else {
+      elemSchema = t instanceof AvroContainer ? ((AvroContainer) t).getElementSchema() : null;
+      if (elemSchema == null) {
+        ParameterizedType genericType = MessageBodyRWUtils.toParameterizedType(Iterable.class, pgenericType);
+        if (genericType == null) {
+          if (t instanceof Collection) {
+            Collection o = (Collection) t;
+            if (o.isEmpty()) {
+              elemSchema = Schema.create(Schema.Type.NULL);
+              actualSchema = Schema.createArray(Schema.createArray(elemSchema));
+            } else {
+              Object elemVal = o.iterator().next();
+              Class<? extends Object> aClass = elemVal.getClass();
+              elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(aClass, aClass, elemVal,
+                      Arrays.EMPTY_ANNOT_ARRAY);
+              actualSchema = Schema.createArray(elemSchema);
+            }
           } else {
-            Object elemVal = o.iterator().next();
-            Class<? extends Object> aClass = elemVal.getClass();
-            elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(aClass, aClass, elemVal,
-                    Arrays.EMPTY_ANNOT_ARRAY);
-            actualSchema = Schema.createArray(elemSchema);
+            throw new IllegalStateException("Cannot serialize " + t);
           }
         } else {
-          throw new IllegalStateException("Cannot serialize " + t);
+          Type actualTypeArgument = genericType.getActualTypeArguments()[0];
+          elemSchema = MessageBodyRWUtils.getAvroSchemaFromType2(actualTypeArgument, annotations);
+          if (elemSchema == null) {
+             throw new IllegalStateException("Cannot serialize " + actualTypeArgument + ": " + t);
+          }
+          actualSchema = Schema.createArray(elemSchema);
         }
       } else {
-        Type actualTypeArgument = genericType.getActualTypeArguments()[0];
-        elemSchema = MessageBodyRWUtils.getAvroSchemaFromType(actualTypeArgument, annotations);
-        if (elemSchema == null) {
-           throw new IllegalStateException("Cannot serialize " + actualTypeArgument + ": " + t);
-        }
         actualSchema = Schema.createArray(elemSchema);
       }
-    } else {
-      actualSchema = Schema.createArray(elemSchema);
     }
     Schema acceptedSchema = protocol.getAcceptableSchema(mediaType);
     if (acceptedSchema == null) {

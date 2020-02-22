@@ -81,10 +81,9 @@ public final class MessageBodyRWUtils {
         return Schema.createArray(elementSchema);
       }
     }
-    for (Annotation annot : annotations) {
-      if (annot.annotationType() == AvroSchema.class) {
-        return new Schema.Parser().parse(((AvroSchema) annot).value()); //todo cache parsing.
-      }
+    Schema s = getSchemaFromAnnotations(annotations);
+    if (s != null) {
+      return s;
     }
     Type effectiveType = effectiveType(type, genericType);
     Schema schema = null;
@@ -117,12 +116,25 @@ public final class MessageBodyRWUtils {
   @Nullable
   public static Schema getAvroSchemaFromType(final Class<?> type,
           final Type genericType, final Annotation[] annotations) {
-    for (Annotation annot : annotations) {
-      if (annot.annotationType() == AvroSchema.class) {
-        return new Schema.Parser().parse(((AvroSchema) annot).value()); //todo cache parsing.
-      }
+    Schema s = getSchemaFromAnnotations(annotations);
+    if (s != null) {
+      return s;
     }
     Type effectiveType = effectiveType(type, genericType);
+    return getAvroSchemaFromType2(effectiveType, annotations);
+  }
+
+  @Nullable
+  public static Schema getAvroSchemaFromType(
+          final Type effectiveType, final Annotation[] annotations) {
+    Schema s = getSchemaFromAnnotations(annotations);
+    if (s != null) {
+      return s;
+    }
+    return getAvroSchemaFromType2(effectiveType, annotations);
+  }
+
+  public static Schema getAvroSchemaFromType2(final Type effectiveType, final Annotation[] annotations) {
     if (effectiveType == null) {
       return null;
     }
@@ -133,22 +145,13 @@ public final class MessageBodyRWUtils {
     return makeNullableIfNeeded(annotations, schema);
   }
 
-  @Nullable
-  public static Schema getAvroSchemaFromType(
-          final Type effectiveType, final Annotation[] annotations) {
+  public static Schema getSchemaFromAnnotations(final Annotation[] annotations) {
     for (Annotation annot : annotations) {
       if (annot.annotationType() == AvroSchema.class) {
         return new Schema.Parser().parse(((AvroSchema) annot).value()); //todo cache parsing.
       }
     }
-    if (effectiveType == null) {
-      return null;
-    }
-    Schema schema = RFLCTOR.getSchema(effectiveType);
-    if (schema == null) {
-      return null;
-    }
-    return makeNullableIfNeeded(annotations, schema);
+    return null;
   }
 
 
