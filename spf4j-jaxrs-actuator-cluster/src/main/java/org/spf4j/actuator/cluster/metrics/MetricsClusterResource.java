@@ -158,7 +158,7 @@ public class MetricsClusterResource {
 
   @GET
   @Path("{metric}")
-  @Produces("application/avsc+json")
+  @Produces("application/avsc+json;qs=0.9")
   public org.apache.avro.Schema getMetricSchema(@PathParam("metric") final String metricName)
           throws IOException, URISyntaxException {
     try {

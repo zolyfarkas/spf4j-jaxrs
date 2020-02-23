@@ -108,7 +108,7 @@ public class MetricsResource {
   @GET
   @Path("local/{metric}")
   @ProjectionSupport
-  @Produces(value = {"application/avsc+json"})
+  @Produces(value = {"application/avsc+json;qs=0.9"})
   public Schema getMetricSchema(@PathParam("metric") final String metricName)
           throws IOException {
     RecorderFactory.MEASUREMENT_STORE.flush();
