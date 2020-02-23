@@ -53,9 +53,9 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.MediaType;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.reflect.AvroSchema;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.metrics.MetricsResource;
 import org.spf4j.avro.AvroCompatUtils;
@@ -117,12 +117,18 @@ public class MetricsClusterResource {
   )
   @Produces({"application/json", "application/avro", "text/csv"})
   @GET
+  @AvroSchema(value = "{\"type\":\"array\",\"items\": {\"type\":\"string\", \"logicalType\":\"avsc\"}}")
   public void getClusterMetrics(@Suspended final AsyncResponse ar)
           throws URISyntaxException {
-    CompletableFuture<Set<String>> cf
+    CompletableFuture<Set<org.apache.avro.Schema>> cf
             = ContextPropagatingCompletableFuture.supplyAsync(() -> {
               try {
-                return new THashSet<>(localResource.getMetrics());
+                Collection<org.apache.avro.Schema> metrics = localResource.getMetrics();
+                THashSet<org.apache.avro.Schema> tHashSet = new THashSet<>(metrics.size());
+                for (org.apache.avro.Schema s : metrics) {
+                  tHashSet.add(addNodeToSchema(s));
+                }
+                return tHashSet;
               } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
               }
@@ -133,9 +139,11 @@ public class MetricsClusterResource {
       URI uri = new URI(protocol, null,
               addr.getHostAddress(), port, "/metrics/local", null, null);
       cf = cf.thenCombine(httpClient.target(uri).request("application/avro")
-              .rx().get(new GenericType<List<String>>() { }),
-              (Set<String> result, List<String> resp) -> {
-                result.addAll(resp);
+              .rx().get(new GenericType<List<org.apache.avro.Schema>>() { }),
+              (Set<org.apache.avro.Schema> result, List<org.apache.avro.Schema> resp) -> {
+                 for (org.apache.avro.Schema s : resp) {
+                  result.add(addNodeToSchema(s));
+                }
                 return result;
               });
     }
@@ -143,14 +151,14 @@ public class MetricsClusterResource {
       if (t != null) {
         ar.resume(t);
       } else {
-        ar.resume(new GenericEntity<Collection<String>>(labels) { });
+        ar.resume(new GenericEntity<Collection<org.apache.avro.Schema>>(labels) { });
       }
     });
   }
 
   @GET
-  @Path("{metric}/schema")
-  @Produces("application/json")
+  @Path("{metric}")
+  @Produces("application/avsc+json")
   public org.apache.avro.Schema getMetricSchema(@PathParam("metric") final String metricName)
           throws IOException, URISyntaxException {
     try {
@@ -164,10 +172,11 @@ public class MetricsClusterResource {
     Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
     for (InetAddress addr : peerAddresses) {
       URI uri = new URI(protocol, null,
-              addr.getHostAddress(), port, "/metrics/local/" + metricName + "/schema", null, null);
+              addr.getHostAddress(), port, "/metrics/local/{metricName}", null, null);
       try {
         return addNodeToSchema(httpClient.target(uri)
-                .request(MediaType.APPLICATION_JSON).get(org.apache.avro.Schema.class));
+                .resolveTemplate("metricName", metricName)
+                .request("application/avsc+json").get(org.apache.avro.Schema.class));
       } catch (WebApplicationException ex) {
         if (ex.getResponse().getStatus() != 404) {
           throw ex;
@@ -179,7 +188,7 @@ public class MetricsClusterResource {
 
   @Produces({"application/json", "application/avro", "text/csv"})
   @GET
-  @Path("{metric}/data")
+  @Path("{metric}")
   @ProjectionSupport
   public StreamingArrayContent<GenericRecord> getClusterMetricsData(@PathParam("metric") final String metricName,
           @Nullable @QueryParam("from") final Instant pfrom,
@@ -203,11 +212,12 @@ public class MetricsClusterResource {
           URI uri;
           try {
             uri = new URI(protocol, null,
-                    addr.getHostAddress(), port, "/metrics/local/" + metricName + "/data", null, null);
+                    addr.getHostAddress(), port, "/metrics/local/{metricName}", null, null);
           } catch (URISyntaxException ex) {
             throw new RuntimeException(ex);
           }
           Spf4jWebTarget peerTarget = httpClient.target(uri)
+                  .resolveTemplate("metricName", metricName)
                   .queryParam("from", from)
                   .queryParam("to", to);
           if (agg != null) {
@@ -238,7 +248,7 @@ public class MetricsClusterResource {
 
   @Produces({"application/json", "application/avro", "text/csv"})
   @GET
-  @Path("{metric}/data/{field}")
+  @Path("{metric}/{field}")
   @ProjectionSupport
   public AvroCloseableIterable<GenericRecord> getClusterMetricsData(@PathParam("metric") final String metricName,
           @PathParam("field") final String field,

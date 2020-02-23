@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
+import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -51,13 +52,12 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
 
   @Test
   public void testMetrics() throws IOException {
-    List<String> nodes = getTarget().path("metrics/cluster")
-            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<String>>() {
+    List<Schema> nodes = getTarget().path("metrics/cluster")
+            .request(MediaType.APPLICATION_JSON).get(new GenericType<List<Schema>>() {
     });
     LOG.debug("metrics: {}", nodes);
     Assert.assertFalse(nodes.isEmpty());
-    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/" + nodes.get(0)
-            + "/data")
+    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/" + nodes.get(0).getName())
             .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
     });
     for (GenericRecord data : measurements) {
@@ -69,7 +69,7 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
 
   @Test
   public void testMetricsJoin() throws IOException {
-    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test-1/data/b")
+    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test-1/b")
             .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
     });
     for (GenericRecord data : measurements) {
@@ -81,7 +81,7 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
 
   @Test
   public void testMetricsProject() throws IOException {
-    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test-1/data")
+    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test-1")
             .queryParam("_project", "node,ts,b")
             .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
     });
@@ -93,9 +93,9 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
 
   @Test
   public void testMetricsProject2() throws IOException {
-    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test-1/data")
+    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test-1")
             .queryParam("_project", "ts,b")
-            .request("*/*").get(new GenericType<CloseableIterable<GenericRecord>>() {
+            .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
     });
     for (GenericRecord data : measurements) {
       LOG.debug("data", data);
