@@ -349,8 +349,16 @@ public class MetricsClusterResource {
     for (org.apache.avro.Schema.Field f : ofields) {
       fields.add(new org.apache.avro.Schema.Field(f, f.schema()));
     }
-    return AvroCompatUtils.createRecordSchema(schema.getName(),
+    org.apache.avro.Schema recSchema = AvroCompatUtils.createRecordSchema(schema.getName(),
             schema.getDoc(), schema.getNamespace(), false, fields, false);
+    Map<String, Object> objectProps = schema.getObjectProps();
+    for (Map.Entry<String, Object> entry : objectProps.entrySet()) {
+      String key = entry.getKey();
+      if (!TimeSeriesRecord.IDS_PROP.equals(key)) { // Strip IDSs since they are node specific
+        recSchema.addProp(key, entry.getValue());
+      }
+    }
+    return recSchema;
   }
 
   private static GenericRecord addNodeToRecord(final org.apache.avro.Schema nSchema,
