@@ -25,6 +25,7 @@ import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.SysExits;
 import org.spf4j.base.ThreadLocalContextAttacher;
 import org.spf4j.base.Throwables;
+import org.spf4j.io.Csv;
 import org.spf4j.log.LogbackService;
 import org.spf4j.os.OperatingSystem;
 import org.spf4j.perf.ProcessVitals;
@@ -62,6 +63,7 @@ public final class JvmServicesBuilder {
 
   private Function<ExecutionContext, String> aggregationGroups;
 
+  private String extraStoreConfig;
 
   public JvmServicesBuilder() {
     this.profilerSampleTimeMillis = Env.getValue("PROFILER_SAMPLE_MILLIS", 10);
@@ -70,6 +72,7 @@ public final class JvmServicesBuilder {
     this.applicationName = null;
     this.hostName = null;
     this.logFolder = null;
+    this.extraStoreConfig = "";
     this.openFilesSampleTimeMillis = Env.getValue("V_OPEN_FILES_S_MILLIS", 60000);
     this.memoryUseSampleTimeMillis = Env.getValue("V_MEM_USE_S_MILLIS", 10000);
     this.gcUseSampleTimeMillis = Env.getValue("V_GC_USE_S_MILLIS", 10000);
@@ -86,6 +89,8 @@ public final class JvmServicesBuilder {
                         }
                       };
   }
+
+
 
   public JvmServicesBuilder withProfilingAggregationGroups(
           final Function<ExecutionContext, String> contextAggregations) {
@@ -108,6 +113,15 @@ public final class JvmServicesBuilder {
     return this;
   }
 
+  public JvmServicesBuilder withExtraMetricsStore(final String storeCfg) {
+    if (extraStoreConfig.isEmpty()) {
+      extraStoreConfig = storeCfg;
+    } else {
+      extraStoreConfig += ',' + Csv.CSV.toCsvElement(storeCfg);
+    }
+    return this;
+  }
+
 
   private void initUncaughtExceptionHandler() {
     Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandlerImpl());
@@ -127,7 +141,8 @@ public final class JvmServicesBuilder {
   }
 
   private void initMetricsStorage() {
-    System.setProperty("spf4j.perf.ms.defaultTsdbFolderPath", logFolder); // for spf4j tsdb
+    String cfg = "TSDB_AVRO@" + logFolder + '/' + hostName + extraStoreConfig;
+    System.setProperty("spf4j.perf.ms.config", cfg);
   }
 
 
