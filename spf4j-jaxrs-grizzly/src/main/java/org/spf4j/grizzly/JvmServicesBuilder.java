@@ -61,6 +61,8 @@ public final class JvmServicesBuilder {
   private int threadUseSampleTimeMillis;
   private int cpuUseSampleTimeMillis;
 
+  private String metricsStoreConfig;
+
   private Function<ExecutionContext, String> aggregationGroups;
 
   private String extraStoreConfig;
@@ -113,6 +115,11 @@ public final class JvmServicesBuilder {
     return this;
   }
 
+  public JvmServicesBuilder withMetricsStore(final String pmetricsStoreConfig) {
+    this.metricsStoreConfig = pmetricsStoreConfig;
+    return this;
+  }
+
   public JvmServicesBuilder withExtraMetricsStore(final String storeCfg) {
     if (extraStoreConfig.isEmpty()) {
       extraStoreConfig = storeCfg;
@@ -141,7 +148,12 @@ public final class JvmServicesBuilder {
   }
 
   private void initMetricsStorage() {
-    String cfg = "TSDB_AVRO@" + logFolder + '/' + hostName + extraStoreConfig;
+    String cfg;
+    if (metricsStoreConfig == null || metricsStoreConfig.isEmpty()) {
+      cfg = "TSDB_AVRO@" + logFolder + '/' + hostName + extraStoreConfig;
+    } else {
+      cfg = metricsStoreConfig + extraStoreConfig;
+    }
     System.setProperty("spf4j.perf.ms.config", cfg);
   }
 
