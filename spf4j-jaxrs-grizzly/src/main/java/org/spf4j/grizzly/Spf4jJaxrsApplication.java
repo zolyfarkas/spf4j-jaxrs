@@ -19,7 +19,6 @@ import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Context;
 import org.glassfish.hk2.api.ServiceLocator;
-import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.spf4j.jaxrs.client.Spf4JClient;
 
@@ -34,7 +33,6 @@ public class Spf4jJaxrsApplication extends ResourceConfig {
   @Inject
   public Spf4jJaxrsApplication(@Context final ServletContext srvContext,
           final ServiceLocator locator) {
-    ServiceLocatorUtilities.enableImmediateScope(locator);
     this.locator = locator;
   }
 
