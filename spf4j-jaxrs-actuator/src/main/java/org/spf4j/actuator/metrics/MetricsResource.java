@@ -219,7 +219,7 @@ public class MetricsResource {
                         Collector.Type.COUNTER, "Seconds since process start",
                         Collections.singletonList(new Collector.MetricFamilySamples.Sample("process_start_time_seconds",
                                 Collections.emptyList(), Collections.emptyList(),
-                                ((double) ManagementFactory.getRuntimeMXBean().getUptime()) / 1000))))));
+                                ((double) ManagementFactory.getRuntimeMXBean().getStartTime()) / 1000))))));
       }
     }
   }
