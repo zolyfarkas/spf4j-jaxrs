@@ -337,7 +337,7 @@ public class MetricsClusterResource {
     return recSchema;
   }
 
-  private static org.apache.avro.Schema addNodeToSchema(final org.apache.avro.Schema schema) {
+  public static org.apache.avro.Schema addNodeToSchema(final org.apache.avro.Schema schema) {
     List<org.apache.avro.Schema.Field> ofields = schema.getFields();
     List<org.apache.avro.Schema.Field> fields = new ArrayList<>(ofields.size() + 1);
     fields.add(new org.apache.avro.Schema.Field("node",
