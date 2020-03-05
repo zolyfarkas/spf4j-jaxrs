@@ -37,12 +37,15 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import org.apache.avro.Schema;
+import org.apache.calcite.tools.FrameworkConfig;
+import org.glassfish.jersey.spi.Contract;
 
 /**
  * REST avro sql endpoint.
  * @author Zoltan Farkas
  */
 @SuppressFBWarnings("JAXRS_ENDPOINT")
+@Contract
 public interface AvroQueryResource {
 
 
@@ -194,5 +197,8 @@ public interface AvroQueryResource {
   @Path("schemas/{entityName}")
   @Produces({"application/json"})
   Schema entitySchema(@PathParam("entityName") String entityName, @Context SecurityContext secCtx);
+
+  FrameworkConfig getConfig();
+
 
 }

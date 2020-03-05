@@ -1,14 +1,15 @@
 package org.spf4j.jaxrs.aql;
 
+import com.google.common.collect.Maps;
 import org.spf4j.security.AbacAuthorizer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.Reader;
 import java.io.StringReader;
 import java.security.Principal;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -28,6 +29,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
@@ -62,7 +64,6 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
 
   private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(AvroQueryResourceImpl.class));
 
-  private final Map<String, Schema> schemas;
 
   private final FrameworkConfig config;
 
@@ -72,11 +73,8 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
   public AvroQueryResourceImpl(final Iterable<AvroDataSetContract> resources,
           @Nullable final AbacAuthorizer authorizer) {
     SchemaPlus schema = Frameworks.createRootSchema(true);
-    schemas = new HashMap<>();
     for (AvroDataSetContract res : resources) {
       String name = res.getName();
-      Schema tschema = res.getElementSchema();
-      schemas.put(name, tschema);
       LOG.debug("Registered {} table to schema", name);
       schema.add(name, new AvroDataSetAsProjectableFilterableTable(res));
     }
@@ -173,17 +171,32 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
   @Override
   @AvroSchema("{ \"type\" : \"map\", \"values\" : { \"type\" : \"string\" , \"logicalType\" : \"avsc\"} } ")
   public Map<String, Schema> schemas(final SecurityContext secCtx) {
-    return schemas;
+    SchemaPlus defaultSchema = config.getDefaultSchema();
+    Set<String> tableNames = defaultSchema.getTableNames();
+    Map<String, Schema> result = Maps.newHashMapWithExpectedSize(tableNames.size());
+    for (String tableName : tableNames) {
+      result.put(tableName, getTableSchema(defaultSchema.getTable(tableName)));
+    }
+    return result;
   }
 
   @Override
   public Schema entitySchema(final String entityName, final SecurityContext secCtx) {
-    return schemas.get(entityName);
+    Table table = config.getDefaultSchema().getTable(entityName);
+    return getTableSchema(table);
+  }
+
+  private static Schema getTableSchema(final Table table) {
+    if (table instanceof AvroDataSetAsProjectableFilterableTable) {
+      return ((AvroDataSetAsProjectableFilterableTable) table).getDataSet().getElementSchema();
+    } else {
+      return Types.from(table.getRowType(new JavaTypeFactoryImpl()));
+    }
   }
 
   @Override
   public String toString() {
-    return "QueryResourceImpl{" + "schemas=" + schemas + '}';
+    return "AvroQueryResourceImpl{" + "config=" + config + ", authorizer=" + authorizer + '}';
   }
 
   @Override
