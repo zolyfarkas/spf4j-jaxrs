@@ -15,6 +15,7 @@
  */
 package org.spf4j.actuator.cluster.metrics;
 
+import com.google.common.collect.Iterables;
 import gnu.trove.set.hash.THashSet;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -59,14 +60,13 @@ import org.apache.avro.reflect.AvroSchema;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.metrics.MetricsResource;
 import org.spf4j.avro.AvroCompatUtils;
-import org.spf4j.base.ArrayWriter;
+import org.spf4j.base.Closeables;
 import org.spf4j.base.avro.AvroCloseableIterable;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
 import org.spf4j.concurrent.DefaultExecutor;
 import org.spf4j.jaxrs.ProjectionSupport;
-import org.spf4j.jaxrs.StreamingArrayContent;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
 import org.spf4j.perf.TimeSeriesRecord;
@@ -139,9 +139,10 @@ public class MetricsClusterResource {
       URI uri = new URI(protocol, null,
               addr.getHostAddress(), port, "/metrics/local", null, null);
       cf = cf.thenCombine(httpClient.target(uri).request("application/avro")
-              .rx().get(new GenericType<List<org.apache.avro.Schema>>() { }),
+              .rx().get(new GenericType<List<org.apache.avro.Schema>>() {
+              }),
               (Set<org.apache.avro.Schema> result, List<org.apache.avro.Schema> resp) -> {
-                 for (org.apache.avro.Schema s : resp) {
+                for (org.apache.avro.Schema s : resp) {
                   result.add(addNodeToSchema(s));
                 }
                 return result;
@@ -151,7 +152,8 @@ public class MetricsClusterResource {
       if (t != null) {
         ar.resume(t);
       } else {
-        ar.resume(new GenericEntity<Collection<org.apache.avro.Schema>>(labels) { });
+        ar.resume(new GenericEntity<Collection<org.apache.avro.Schema>>(labels) {
+        });
       }
     });
   }
@@ -190,7 +192,7 @@ public class MetricsClusterResource {
   @GET
   @Path("{metric}")
   @ProjectionSupport
-  public StreamingArrayContent<GenericRecord> getClusterMetricsData(@PathParam("metric") final String metricName,
+  public AvroCloseableIterable<GenericRecord> getClusterMetricsData(@PathParam("metric") final String metricName,
           @Nullable @QueryParam("from") final Instant pfrom,
           @Nullable @QueryParam("to") final Instant pto,
           @Nullable @QueryParam("aggDuration") final Duration agg) throws URISyntaxException, IOException {
@@ -200,50 +202,49 @@ public class MetricsClusterResource {
     ClusterInfo clusterInfo = cluster.getClusterInfo();
     InetAddress localAddress = clusterInfo.getLocalAddress();
     Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
-    return new StreamingArrayContent<GenericRecord>() {
-      @Override
-      public void write(final ArrayWriter<GenericRecord> output) throws IOException {
-        try (AvroCloseableIterable<TimeSeriesRecord> metrics = localResource.getMetrics(metricName, from, to, agg)) {
-          for (TimeSeriesRecord rec : metrics) {
-            output.write(addNodeToRecord(nSchema, rec, localAddress.getHostAddress()));
-          }
-        }
-        for (InetAddress addr : peerAddresses) {
-          URI uri;
-          try {
-            uri = new URI(protocol, null,
-                    addr.getHostAddress(), port, "/metrics/local/{metricName}", null, null);
-          } catch (URISyntaxException ex) {
-            throw new RuntimeException(ex);
-          }
-          Spf4jWebTarget peerTarget = httpClient.target(uri)
-                  .resolveTemplate("metricName", metricName)
-                  .queryParam("from", from)
-                  .queryParam("to", to);
-          if (agg != null) {
-            peerTarget = peerTarget.queryParam("aggDuration", agg);
-          }
-          try (AvroCloseableIterable<GenericRecord> metrics = peerTarget
-                  .request("application/avro").get(new GenericType<AvroCloseableIterable<GenericRecord>>() {
-          })) {
-            for (GenericRecord rec : metrics) {
-              output.write(addNodeToRecord(nSchema, rec, addr.getHostAddress()));
-            }
-          } catch (WebApplicationException ex) {
-            if (ex.getResponse().getStatus() != 404) {
-              throw ex;
-            }
-          }
-        }
-
+    ArrayList<AvroCloseableIterable<? extends GenericRecord>> closeables = new ArrayList<>(peerAddresses.size() + 1);
+    AvroCloseableIterable<TimeSeriesRecord> metrics = localResource.getMetrics(metricName, from, to, agg);
+    closeables.add(AvroCloseableIterable.from(
+            Iterables.transform(metrics,
+                    (x) -> addNodeToRecord(nSchema, x, localAddress.getHostAddress())),
+            metrics, nSchema));
+    for (InetAddress addr : peerAddresses) {
+      URI uri;
+      try {
+        uri = new URI(protocol, null,
+                addr.getHostAddress(), port, "/metrics/local/{metricName}", null, null);
+      } catch (URISyntaxException ex) {
+        throw new RuntimeException(ex);
       }
-
-      @Override
-      public org.apache.avro.Schema getElementSchema() {
-        return nSchema;
+      Spf4jWebTarget peerTarget = httpClient.target(uri)
+              .resolveTemplate("metricName", metricName)
+              .queryParam("from", from)
+              .queryParam("to", to);
+      if (agg != null) {
+        peerTarget = peerTarget.queryParam("aggDuration", agg);
       }
+      try {
+        AvroCloseableIterable<GenericRecord> pm = peerTarget
+                .request("application/avro").get(new GenericType<AvroCloseableIterable<GenericRecord>>() {
+        });
+        closeables.add(AvroCloseableIterable.from(
+                Iterables.transform(pm,
+                        (x) -> addNodeToRecord(nSchema, x, localAddress.getHostAddress())),
+                pm, nSchema));
+      } catch (WebApplicationException ex) {
+        if (ex.getResponse().getStatus() != 404) {
+          throw ex;
+        }
+      }
+    }
+    return AvroCloseableIterable.from(Iterables.concat(closeables),
+            () -> {
+              Exception ex = Closeables.closeAll(closeables);
+              if (ex != null) {
+                throw new RuntimeException(ex);
+              }
+            }, nSchema);
 
-    };
   }
 
   @Produces({"application/json", "application/avro", "text/csv"})
@@ -259,17 +260,15 @@ public class MetricsClusterResource {
     org.apache.avro.Schema.Field afield = metricSchema.getField(field);
     SortedMap<Instant, List<BigDecimal>> join = new TreeMap<>();
     Map<String, Integer> node2ColIdx = new LinkedHashMap<>();
-    StreamingArrayContent<GenericRecord> stream = getClusterMetricsData(metricName, pfrom, pto, agg);
-    List<GenericRecord> result = new ArrayList<>();
-    stream.write(new ArrayWriter<GenericRecord>() {
-      @Override
-      public void write(final GenericRecord t) throws IOException {
+    try (AvroCloseableIterable<GenericRecord> stream = getClusterMetricsData(metricName, pfrom, pto, agg)) {
+      for (GenericRecord t : stream) {
         add(join, node2ColIdx, t, field);
       }
-    });
+    }
+    List<GenericRecord> result = new ArrayList<>(join.size());
     org.apache.avro.Schema elemSchema
             = createPivotSchema(metricName + '_' + field, (Integer) metricSchema.getObjectProp("frequency"),
-            afield.schema().getProp("unit"), node2ColIdx.keySet());
+                    afield.schema().getProp("unit"), node2ColIdx.keySet());
     for (Map.Entry<Instant, List<BigDecimal>> entry : join.entrySet()) {
       GenericRecord rec = new GenericData.Record(elemSchema);
       rec.put(0, entry.getKey());
@@ -279,13 +278,13 @@ public class MetricsClusterResource {
       }
       result.add(rec);
     }
-    return AvroCloseableIterable.from(result, stream, elemSchema);
+    return AvroCloseableIterable.from(result, () -> { }, elemSchema);
   }
 
   public static void add(final SortedMap<Instant, List<BigDecimal>> join, final Map<String, Integer> node2ColIdx,
           final GenericRecord normalized, final String field) {
     String node = (String) normalized.get(0);
-    Instant ts =  (Instant) normalized.get(1);
+    Instant ts = (Instant) normalized.get(1);
     Number value = (Number) normalized.get(field);
     Integer idx = node2ColIdx.get(node);
     if (idx == null) {
@@ -314,7 +313,6 @@ public class MetricsClusterResource {
     }
   }
 
-
   public static org.apache.avro.Schema createPivotSchema(final String name,
           final Integer sampleTime, final String unit, final Collection<String> nodes) {
     org.apache.avro.Schema recSchema = AvroCompatUtils.createRecordSchema(name,
@@ -325,11 +323,11 @@ public class MetricsClusterResource {
     fields.add(AvroCompatUtils.createField("ts", ts, "Measurement time stamp", null, true, false,
             org.apache.avro.Schema.Field.Order.IGNORE));
     for (String node : nodes) {
-          fields.add(AvroCompatUtils.createField(node,
-                  new org.apache.avro.Schema.Parser()
-                          .parse("[\"null\",{\"type\":\"string\",\"logicalType\":\"decimal\"}]"),
-                  null, null, true, false,
-            org.apache.avro.Schema.Field.Order.IGNORE));
+      fields.add(AvroCompatUtils.createField(node,
+              new org.apache.avro.Schema.Parser()
+                      .parse("[\"null\",{\"type\":\"string\",\"logicalType\":\"decimal\"}]"),
+              null, null, true, false,
+              org.apache.avro.Schema.Field.Order.IGNORE));
     }
     recSchema.setFields(fields);
     if (sampleTime != null) {
@@ -338,8 +336,6 @@ public class MetricsClusterResource {
     recSchema.addProp("unit", unit);
     return recSchema;
   }
-
-
 
   private static org.apache.avro.Schema addNodeToSchema(final org.apache.avro.Schema schema) {
     List<org.apache.avro.Schema.Field> ofields = schema.getFields();
