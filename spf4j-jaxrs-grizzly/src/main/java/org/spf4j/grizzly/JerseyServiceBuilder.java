@@ -66,6 +66,7 @@ import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
 import org.spf4j.jaxrs.features.AvroFeature;
 import org.spf4j.jaxrs.features.GeneralPurposeFeatures;
+import org.spf4j.jaxrs.server.features.ImmediateFeature;
 import org.spf4j.jaxrs.server.providers.DefaultServerProvidersFeatures;
 import org.spf4j.servlet.ExecutionContextFilter;
 import org.spf4j.stackmonitor.Sampler;
@@ -82,7 +83,7 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
 
   private final Set<String> providerPackages;
 
-  private final Set<Class<? extends Feature>> features;
+  private final Set<Class<?>> serviceProviders;
 
   private final List<Binder> binders;
 
@@ -111,14 +112,14 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
   public JerseyServiceBuilder(final JvmServices jvmServices) {
     this.bindAddr = "0.0.0.0";
     this.listenPort = Env.getValue("APP_SERVICE_PORT", 8080);
-    this.providerPackages = new THashSet<>(4);
-    this.features =  new THashSet<>(4);
+    this.providerPackages = new THashSet<>(5);
+    this.serviceProviders =  new THashSet<>(7);
     this.binders = new ArrayList<>(4);
     this.jvmServices = jvmServices;
     this.mavenRepos = new LinkedHashSet<>(4);
     mavenRepos.add("https://repo1.maven.org/maven2");
-    features.add(GeneralPurposeFeatures.class);
-    features.add(DefaultServerProvidersFeatures.class);
+    serviceProviders.add(GeneralPurposeFeatures.class);
+    serviceProviders.add(DefaultServerProvidersFeatures.class);
     this.kernelThreadsCoreSize = 1;
     this.kernelThreadsMaxSize = 4;
     this.workerThreadsCoreSize = 4;
@@ -131,7 +132,7 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
 
   public JerseyServiceBuilder removeDefaults() {
     mavenRepos.clear();
-    features.clear();
+    serviceProviders.clear();
     return this;
   }
 
@@ -156,7 +157,12 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
   }
 
   public JerseyServiceBuilder withFeature(final Class<? extends Feature> feature) {
-    this.features.add(feature);
+    this.serviceProviders.add(feature);
+    return this;
+  }
+
+  public JerseyServiceBuilder withServiceProvider(final Class<?> serviceClass) {
+    this.serviceProviders.add(serviceClass);
     return this;
   }
 
@@ -212,10 +218,6 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
     return providerPackages;
   }
 
-  public Set<Class<? extends Feature>> getFeatures() {
-    return features;
-  }
-
   public List<Binder> getBinders() {
     return binders;
   }
@@ -228,12 +230,23 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
   @Override
   public String toString() {
     return "JerseyServiceBuilder{" + "bindAddr=" + bindAddr + ", listenPort="
-            + listenPort + ", providerPackages=" + providerPackages + ", features="
-            + features + ", binders=" + binders + ", mavenRepos=" + mavenRepos
+            + listenPort + ", providerPackages=" + providerPackages + ", serviceProviders="
+            + serviceProviders + ", binders=" + binders + ", mavenRepos=" + mavenRepos
             + ", jvmServices=" + jvmServices + ", kernelThreadsCoreSize=" + kernelThreadsCoreSize
             + ", kernelThreadsMaxSize=" + kernelThreadsMaxSize + ", workerThreadsCoreSize="
             + workerThreadsCoreSize + ", workerThreadsMaxSize=" + workerThreadsMaxSize
             + ", sslConfig=" + sslConfig + '}';
+  }
+
+  @Override
+  public Set<Class<? extends Feature>> getFeatures() {
+    Set<Class<? extends Feature>> res = new THashSet<>(serviceProviders.size());
+    for (Class<?> clasz : serviceProviders) {
+      if (Feature.class.isAssignableFrom(clasz)) {
+        res.add((Class<? extends Feature>) clasz);
+      }
+    }
+    return res;
   }
 
   private  class JerseyServiceImpl implements JerseyService {
@@ -281,7 +294,7 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
       resourceConfig.setApplicationName(jerseyAppName);
       //resourceConfig.packages(true, providerPackages.toArray(new String[providerPackages.size()]));
       resourceConfig.registerInstances(binders.toArray(new Object[binders.size()]));
-      resourceConfig.registerClasses((Set) features);
+      resourceConfig.registerClasses((Set) serviceProviders);
       resourceConfig.property(JaxRsConfiguration.class.getName(), config);
       resourceConfig.property("hostName", hostName);
       resourceConfig.property("servlet.bindAddr", bindAddr);
@@ -313,6 +326,7 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
             .build()).withHedgePolicy(HedgePolicy.NONE);
       resourceConfig.register(new Spf4jBinder(schemaClient, restClient, (x) -> true));
       resourceConfig.register(avroFeature);
+      resourceConfig.register(ImmediateFeature.class);
       ServletContainer servletContainer = new ServletContainer(resourceConfig);
       resourceConfig.property(ServletContainer.class.getName(), servletContainer);
       ServletRegistration servletRegistration = webappContext.addServlet("jersey", servletContainer);
