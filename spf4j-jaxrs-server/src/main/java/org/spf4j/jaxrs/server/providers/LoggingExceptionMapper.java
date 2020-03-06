@@ -114,11 +114,13 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
       contextAndValue.getContext().accumulate(ContextTags.LOG_LEVEL, Level.ERROR);
     }
     ctx.accumulateComponent(ContextTags.LOG_ATTRIBUTES, exception);
+    String reqProfileOnError = reqCtx.getHeaderString("X-Req-Profile-On-Error");
+    boolean isReqProfileOnError = "true".equalsIgnoreCase(reqProfileOnError);
     return Response.status(status)
             .entity(new ServiceError(status, exception.getClass().getName(),
                     message, payload,
                     allowClientDebug.test(reqCtx.getSecurityContext())
-                            ? ctx.getDebugDetail(host, exception)
+                            ? ctx.getDebugDetail(host, exception, isReqProfileOnError)
                             : null))
             .type(getMediaType())
             .build();
