@@ -17,6 +17,9 @@ package org.spf4j.jaxrs.client;
 
 import java.util.List;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.slf4j.LoggerFactory;
 import org.spf4j.base.ExecutionContext;
@@ -28,6 +31,7 @@ import org.spf4j.base.avro.ServiceError;
 import org.spf4j.base.avro.StackSampleElement;
 import org.spf4j.base.avro.StackSamples;
 import org.spf4j.http.Headers;
+import static org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol.CONTENT_TYPE_AVRO_SCHEMA_PARAM;
 import org.spf4j.log.ExecContextLogger;
 import org.spf4j.log.Level;
 import org.spf4j.ssdump2.Converter;
@@ -44,6 +48,7 @@ public final class DefaultClientExceptionMapper implements ClientExceptionMapper
   public static final ClientExceptionMapper INSTANCE = new DefaultClientExceptionMapper();
 
 
+
   public Exception handleServiceError(final Exception e,
           final ExecutionContext current) {
     Throwable rex = com.google.common.base.Throwables.getRootCause(e);
@@ -52,7 +57,20 @@ public final class DefaultClientExceptionMapper implements ClientExceptionMapper
     }
     final WebApplicationException ex = (WebApplicationException) rex;
     Response response = ex.getResponse();
-    if (response.getHeaders().getFirst(Headers.CONTENT_SCHEMA) == null) {
+    String schemaStr = null;
+    MultivaluedMap<String, Object> headers = response.getHeaders();
+    Object mto = headers.getFirst(HttpHeaders.CONTENT_TYPE);
+    if (mto != null) {
+      MediaType mediaType = MediaType.valueOf(mto.toString());
+      schemaStr = mediaType.getParameters().get(CONTENT_TYPE_AVRO_SCHEMA_PARAM);
+    }
+    if (schemaStr == null) { // for backward compattibility.
+      Object so = headers.getFirst(Headers.CONTENT_SCHEMA);
+      if (so != null) {
+        schemaStr = so.toString();
+      }
+    }
+    if (schemaStr == null) {
       return e;
     }
     ServiceError se;
