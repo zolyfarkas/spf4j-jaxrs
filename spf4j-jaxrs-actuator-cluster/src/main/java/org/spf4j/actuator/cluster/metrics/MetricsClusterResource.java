@@ -212,11 +212,12 @@ public class MetricsClusterResource {
       URI uri;
       try {
         uri = new URI(protocol, null,
-                addr.getHostAddress(), port, "/metrics/local/{metricName}", null, null);
+                addr.getHostAddress(), port, "/metrics/local", null, null);
       } catch (URISyntaxException ex) {
         throw new RuntimeException(ex);
       }
       Spf4jWebTarget peerTarget = httpClient.target(uri)
+              .path("{metricName}")
               .resolveTemplate("metricName", metricName)
               .queryParam("from", from)
               .queryParam("to", to);
@@ -229,7 +230,7 @@ public class MetricsClusterResource {
         });
         closeables.add(AvroCloseableIterable.from(
                 Iterables.transform(pm,
-                        (x) -> addNodeToRecord(nSchema, x, localAddress.getHostAddress())),
+                        (x) -> addNodeToRecord(nSchema, x, addr.getHostAddress())),
                 pm, nSchema));
       } catch (WebApplicationException ex) {
         if (ex.getResponse().getStatus() != 404) {
