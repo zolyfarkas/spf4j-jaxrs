@@ -94,21 +94,7 @@ public class LogsClusterResource {
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
           @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
-    getClusterLogs(limit, filter, resOrder, new AsyncResponseWrapper(ar) {
-      @Override
-      public boolean resume(final Object response) {
-        return super.resume(new StreamingOutput() {
-          @Override
-          public void write(final OutputStream output) throws IOException, WebApplicationException {
-            LogPrinter printer = new LogPrinter(StandardCharsets.UTF_8);
-            for (LogRecord record : (Iterable<LogRecord>) response) {
-              printer.print(record, output);
-            }
-          }
-        });
-      }
-
-    });
+    getClusterLogs(limit, filter, resOrder, new AsyncResponseToTextWrapper(ar));
   }
 
   @Operation(
@@ -207,6 +193,26 @@ public class LogsClusterResource {
   @Override
   public String toString() {
     return "LogsClusterResource{" + "cluster=" + cluster + ", httpClient=" + httpClient + '}';
+  }
+
+  private class AsyncResponseToTextWrapper extends AsyncResponseWrapper {
+
+    AsyncResponseToTextWrapper(final AsyncResponse ar) {
+      super(ar);
+    }
+
+    @Override
+    public boolean resume(final Object response) {
+      return super.resume(new StreamingOutput() {
+        @Override
+        public void write(final OutputStream output) throws IOException, WebApplicationException {
+          LogPrinter printer = new LogPrinter(StandardCharsets.UTF_8);
+          for (LogRecord record : (Iterable<LogRecord>) response) {
+            printer.print(record, output);
+          }
+        }
+      });
+    }
   }
 
 }
