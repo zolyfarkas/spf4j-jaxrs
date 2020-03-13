@@ -15,6 +15,7 @@
  */
 package org.spf4j.grizzly;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.function.Function;
 import org.spf4j.base.Env;
 import java.util.logging.Level;
@@ -26,6 +27,7 @@ import org.spf4j.base.SysExits;
 import org.spf4j.base.ThreadLocalContextAttacher;
 import org.spf4j.base.Throwables;
 import org.spf4j.io.Csv;
+import org.spf4j.jaxrs.server.JAXRSAvroSerializers;
 import org.spf4j.log.LogbackService;
 import org.spf4j.os.OperatingSystem;
 import org.spf4j.perf.ProcessVitals;
@@ -41,7 +43,7 @@ import org.spf4j.stackmonitor.TracingExecutionContexSampler;
  */
 public final class JvmServicesBuilder {
 
-  private static volatile JvmServices services;
+  private static JvmServices services;
 
   private String hostName;
 
@@ -185,22 +187,24 @@ public final class JvmServicesBuilder {
     return sampler;
   }
 
+  @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
   public JvmServices build() {
-    JvmServices svc = services;
-    if (svc != null) {
-      throw new IllegalStateException();
+    synchronized (JvmServicesBuilder.class) {
+      if (services != null) {
+        throw new IllegalStateException();
+      }
+      initDefaults();
+      initMetricsStorage();
+      initUncaughtExceptionHandler();
+      initRequestAttributedProfiler();
+      JAXRSAvroSerializers.registerJaxRsObjectSerializers(); // does not belong here...
+      Sampler sampler = createSampler();
+      services = new JvmServicesImpl(sampler, new ProcessVitals(openFilesSampleTimeMillis,
+              memoryUseSampleTimeMillis, gcUseSampleTimeMillis, threadUseSampleTimeMillis, cpuUseSampleTimeMillis),
+              new LogbackService(applicationName, logFolder, hostName),
+              this);
     }
-    initDefaults();
-    initMetricsStorage();
-    initUncaughtExceptionHandler();
-    initRequestAttributedProfiler();
-    Sampler sampler = createSampler();
-    svc = new JvmServicesImpl(sampler, new ProcessVitals(openFilesSampleTimeMillis,
-            memoryUseSampleTimeMillis, gcUseSampleTimeMillis, threadUseSampleTimeMillis, cpuUseSampleTimeMillis),
-            new LogbackService(applicationName, logFolder, hostName),
-            this);
-    services = svc;
-    return svc;
+    return services;
   }
 
   @Override
