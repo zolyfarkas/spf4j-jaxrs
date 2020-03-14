@@ -126,8 +126,8 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
     this.workerThreadsMaxSize = 256;
     this.sslConfig = null;
     this.maxHeaderSizeBytes = 256 * 1024;
-    this.defaultTimeoutNanos = TimeUnit.SECONDS.toNanos(25);
-    this.maximumAllowedTimeoutNanos = TimeUnit.MINUTES.toNanos(5);
+    this.defaultTimeoutNanos = TimeUnit.SECONDS.toNanos(10);
+    this.maximumAllowedTimeoutNanos = TimeUnit.SECONDS.toNanos(25);
   }
 
   public JerseyServiceBuilder removeDefaults() {

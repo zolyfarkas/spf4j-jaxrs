@@ -366,7 +366,13 @@ public final class ExecutionContextFilter implements Filter {
         log.log(java.util.logging.Level.FINE, "Unable to obtain remote address", ex2);
         addr = "Unknown.direct";
       }
-      String fwdFor = req.getHeader("x-forwarded-for");
+      String fwdFor;
+      try {
+        fwdFor = req.getHeader("x-forwarded-for");
+      } catch (RuntimeException ex2) { // java.lang.IllegalStateException:Null request object
+        log.log(java.util.logging.Level.FINE, "Unable to obtain header x-forwarded-for", ex2);
+        return addr;
+      }
       if (fwdFor == null) {
         return addr;
       } else {
