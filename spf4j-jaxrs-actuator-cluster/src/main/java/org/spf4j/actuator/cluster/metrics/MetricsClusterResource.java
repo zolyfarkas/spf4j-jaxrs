@@ -259,6 +259,9 @@ public class MetricsClusterResource {
           @Nullable @QueryParam("aggDuration") final Duration agg) throws URISyntaxException, IOException {
     org.apache.avro.Schema metricSchema = getMetricSchema(metricName);
     org.apache.avro.Schema.Field afield = metricSchema.getField(field);
+    if (afield == null) {
+      throw new NotFoundException("Metric field not found: " + field);
+    }
     SortedMap<Instant, List<BigDecimal>> join = new TreeMap<>();
     Map<String, Integer> node2ColIdx = new LinkedHashMap<>();
     try (AvroCloseableIterable<GenericRecord> stream = getClusterMetricsData(metricName, pfrom, pto, agg)) {
