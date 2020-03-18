@@ -7,6 +7,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import javax.inject.Inject;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
@@ -114,7 +115,14 @@ public abstract class AvroStreamingMessageBodyWriter implements MessageBodyWrite
 
     @Override
     public void accept(final Object t) {
-      wrapped.accept(Schemas.project(to, from, t));
+      Object projected;
+      try {
+        projected = Schemas.project(to, from, t);
+      } catch (RuntimeException ex) {
+        throw new ClientErrorException("Requested schema cannot be served: "
+                + to + "; object=" + t, 400, ex);
+      }
+      wrapped.accept(projected);
     }
 
     @Override

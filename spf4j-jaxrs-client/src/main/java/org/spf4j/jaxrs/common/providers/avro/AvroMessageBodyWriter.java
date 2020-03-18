@@ -7,6 +7,7 @@ import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import javax.inject.Inject;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
@@ -62,7 +63,11 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
       resp =  t;
     } else {
       responseSchema = acceptedSchema;
-      resp = Schemas.project(actualSchema, responseSchema, t);
+      try {
+        resp = Schemas.project(actualSchema, responseSchema, t);
+      } catch (RuntimeException ex) {
+        throw new ClientErrorException("Requested schema cannot be served: " + acceptedSchema, 400, ex);
+      }
     }
     protocol.serialize(mediaType, httpHeaders::putSingle, responseSchema);
     try {
@@ -71,7 +76,9 @@ public abstract class AvroMessageBodyWriter implements MessageBodyWriter<Object>
       writer.write(resp, encoder);
       encoder.flush();
     } catch (IOException | RuntimeException e) {
-      throw new RuntimeException("Serialization failed for " + responseSchema.getName(), e);
+      String name = responseSchema.getName();
+      throw new RuntimeException("Serialization failed for " + (name != null
+              ? name : responseSchema), e);
     }
   }
 

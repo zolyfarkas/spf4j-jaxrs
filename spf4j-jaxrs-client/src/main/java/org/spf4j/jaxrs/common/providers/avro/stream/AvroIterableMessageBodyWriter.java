@@ -8,6 +8,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import javax.inject.Inject;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
@@ -152,7 +153,14 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
       }
       try (AvroArrayWriter arrWriter = new AvroArrayWriter(encoder, writer, bufferSize)) {
         for (Object o : t) {
-          arrWriter.write(Schemas.project(respElemSchema, elemSchema, o));
+          Object projected;
+          try {
+            projected = Schemas.project(respElemSchema, elemSchema, o);
+          } catch (RuntimeException ex) {
+            throw new ClientErrorException("Requested schema cannot be served: "
+                    + acceptedSchema + "; object=" + o, 400, ex);
+          }
+          arrWriter.write(projected);
         }
       }
     } catch (IOException | RuntimeException e) {
