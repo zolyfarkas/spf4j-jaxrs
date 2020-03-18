@@ -28,6 +28,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import org.apache.avro.AvroNamesRefResolver;
@@ -96,7 +97,11 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
     }
     Schema.Parser parser = new Schema.Parser(new AvroNamesRefResolver(client));
     parser.setValidate(false);
-    return parser.parse(schemaStr);
+    try {
+      return parser.parse(schemaStr);
+    } catch (RuntimeException ex) {
+      throw new ClientErrorException("Unable to parse schema: " + schemaStr, 400, ex);
+    }
   }
 
   @Override
