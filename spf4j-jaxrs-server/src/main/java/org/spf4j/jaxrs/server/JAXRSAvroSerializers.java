@@ -27,6 +27,7 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.StreamingOutput;
 import org.apache.avro.Schema;
 
 /**
@@ -48,6 +49,7 @@ public final class JAXRSAvroSerializers {
     module.addSerializer(new ToStringSerializer(ContainerRequestContext.class));
     module.addSerializer(new ToStringSerializer(ContainerResponseContext.class));
     module.addSerializer(new ToStringSerializer(SecurityContext.class));
+    module.addSerializer(new ToStringSerializer(StreamingOutput.class));
     Schema.MAPPER.registerModules(module);
   }
 
