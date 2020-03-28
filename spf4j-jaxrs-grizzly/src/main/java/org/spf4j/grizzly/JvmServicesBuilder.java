@@ -276,7 +276,7 @@ public final class JvmServicesBuilder {
 
     @Override
     public void uncaughtException(final Thread t, final Throwable e) {
-      if (Throwables.containsNonRecoverable(e)) {
+      if (e instanceof java.net.BindException || Throwables.containsNonRecoverable(e)) {
         org.spf4j.base.Runtime.goDownWithError(e, SysExits.EX_SOFTWARE);
       } else {
         Logger logger = Logger.getLogger("UNCAUGHT");
