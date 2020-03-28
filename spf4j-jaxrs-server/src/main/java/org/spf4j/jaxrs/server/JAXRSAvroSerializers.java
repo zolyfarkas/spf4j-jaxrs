@@ -23,12 +23,14 @@ import java.io.Reader;
 import java.io.Writer;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.ws.rs.client.Client;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.avro.Schema;
+import org.glassfish.jersey.client.ClientConfig;
 
 /**
  * @author Zoltan Farkas
@@ -50,6 +52,8 @@ public final class JAXRSAvroSerializers {
     module.addSerializer(new ToStringSerializer(ContainerResponseContext.class));
     module.addSerializer(new ToStringSerializer(SecurityContext.class));
     module.addSerializer(new ToStringSerializer(StreamingOutput.class));
+    module.addSerializer(new ToStringSerializer(Client.class));
+    module.addSerializer(new ToStringSerializer(ClientConfig.class));
     Schema.MAPPER.registerModules(module);
   }
 
