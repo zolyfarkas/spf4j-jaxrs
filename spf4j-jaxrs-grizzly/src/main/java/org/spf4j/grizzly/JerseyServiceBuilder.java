@@ -361,6 +361,13 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
       final NetworkListener listener
               = new NetworkListener("http", pbindAddr, port);
       listener.setMaxHttpHeaderSize(maxHeaderSizeBytes);
+      // Create default HTTP/2 configuration and provide it to the AddOn
+      //Http2Configuration configuration = Http2Configuration.builder().build();
+      //Http2AddOn http2Addon = new Http2AddOn(configuration);
+
+      // Register the Addon.
+      //listener.registerAddOn(http2Addon);
+
       CompressionConfig compressionConfig = listener.getCompressionConfig();
       compressionConfig.setCompressionMode(CompressionConfig.CompressionMode.ON); // the mode
       compressionConfig.setCompressionMinSize(4096); // the min amount of bytes to compress
