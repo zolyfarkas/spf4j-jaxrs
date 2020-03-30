@@ -24,6 +24,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * Annotation to allow providing a timeout value at method or class level.
  * Annotation processors will use this value in the ExecutionContext.
+ * If this timeout value is larger than the execution context value, the execution context value will be used.
+ * (lowest value wins)
+ * 
  * @author Zoltan Farkas
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
