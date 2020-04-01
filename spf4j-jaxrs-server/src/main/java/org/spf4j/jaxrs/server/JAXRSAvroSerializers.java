@@ -60,7 +60,6 @@ public final class JAXRSAvroSerializers {
     module.addSerializer(new ToStringSerializer(WebTarget.class));
     module.addSerializer(new ToStringSerializer(Response.class));
     module.addSerializer(new ToStringSerializer(Request.class));
-
     Schema.MAPPER.registerModules(module);
   }
 
