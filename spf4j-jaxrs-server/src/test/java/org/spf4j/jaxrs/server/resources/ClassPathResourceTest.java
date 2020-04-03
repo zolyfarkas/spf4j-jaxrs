@@ -15,7 +15,11 @@
  */
 package org.spf4j.jaxrs.server.resources;
 
+import java.io.IOException;
+import java.util.Arrays;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,6 +33,25 @@ public class ClassPathResourceTest {
   public void testExtDetect() {
     MediaType pathMediaType = ClassPathResource.getPathMediaType("index.html");
     Assert.assertEquals(MediaType.TEXT_HTML_TYPE, pathMediaType);
+  }
+
+  @Test
+  public void testPathValidation() throws IOException {
+    ClassPathResource res = new ClassPathResource("static", Arrays.asList("index.html", "index.htm"));
+    Response resp = res.staticResources("/");
+    Assert.assertNotNull(resp.getEntity());
+    try {
+      res.staticResources("../stuff.txt");
+      Assert.fail();
+    } catch (ForbiddenException ex) {
+
+    }
+    try {
+      Response staticResources = res.staticResources("%2e%2e%2fstuff.txt");
+      Assert.assertEquals(404, staticResources.getStatus());
+    } catch (ForbiddenException ex) {
+
+    }
   }
 
 }

@@ -80,7 +80,7 @@ public class ClassPathResource {
 
   static final String validateNoBackRef(final String path) {
     if (path.contains("/../") || path.startsWith("../") || path.endsWith("/..") || "..".equals(path)) {
-      throw new ClientErrorException("Path " + path + " contains backreferences", 400);
+      throw new ForbiddenException("Path " + path + " contains backreferences");
     }
     return path;
   }
