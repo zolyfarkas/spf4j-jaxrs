@@ -298,14 +298,14 @@ public final class ExecutionContextFilter implements Filter {
         args[i++] = obj;
       }
     }
-    try {
-      if (!clientWarning && level.getIntValue() >= Level.WARN.getIntValue()) {
-        logContextLogs(log, ctx, req);
+    if (!clientWarning && level.getIntValue() >= Level.WARN.getIntValue()) {
+      try {
+        logContextLogs(log, ctx, req, level);
+      } catch (Exception ex) {
+        log.log(Level.ERROR.getJulLevel(), "Exception while dumping context detail", ex);
+      } finally {
+        log.log(level.getJulLevel(), "Done {0}", args);
       }
-    } catch (Exception ex) {
-      log.log(Level.ERROR.getJulLevel(), "Exception while dumping context detail", ex);
-    } finally {
-      log.log(level.getJulLevel(), "Done {0}", args);
     }
   }
 
@@ -381,7 +381,7 @@ public final class ExecutionContextFilter implements Filter {
   }
 
   private static void logContextLogs(final Logger logger, final ExecutionContext ctx,
-          final HttpServletRequest req) {
+          final HttpServletRequest req, final Level level) {
     List<Slf4jLogRecord> ctxLogs = new ArrayList<>();
     ctx.streamLogs((log) -> {
       if (!log.isLogged()) {
@@ -391,7 +391,7 @@ public final class ExecutionContextFilter implements Filter {
     Collections.sort(ctxLogs, Slf4jLogRecord::compareByTimestamp);
     LogAttribute<CharSequence> traceId = LogAttribute.traceId(ctx.getId());
     for (Slf4jLogRecord log : ctxLogs) {
-      LogUtils.logUpgrade(logger, org.spf4j.log.Level.INFO, "Detail on Error",
+      LogUtils.logUpgrade(logger, org.spf4j.log.Level.INFO, "Detail on {}", level,
               traceId, log.toLogRecord("", ""));
     }
     logRequestHeaders(req, logger, traceId);
