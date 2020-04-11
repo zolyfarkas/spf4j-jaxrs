@@ -391,7 +391,7 @@ public final class ExecutionContextFilter implements Filter {
     Collections.sort(ctxLogs, Slf4jLogRecord::compareByTimestamp);
     LogAttribute<CharSequence> traceId = LogAttribute.traceId(ctx.getId());
     for (Slf4jLogRecord log : ctxLogs) {
-      LogUtils.logUpgrade(logger, org.spf4j.log.Level.INFO, "Detail on {}", level,
+      LogUtils.logUpgrade(logger, org.spf4j.log.Level.INFO, "Detail on {0}", level,
               traceId, log.toLogRecord("", ""));
     }
     logRequestHeaders(req, logger, traceId);
