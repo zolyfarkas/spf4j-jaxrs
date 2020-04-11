@@ -298,14 +298,14 @@ public final class ExecutionContextFilter implements Filter {
         args[i++] = obj;
       }
     }
-    if (!clientWarning && level.getIntValue() >= Level.WARN.getIntValue()) {
-      try {
+    try {
+      if (!clientWarning && level.getIntValue() >= Level.WARN.getIntValue()) {
         logContextLogs(log, ctx, req, level);
-      } catch (Exception ex) {
-        log.log(Level.ERROR.getJulLevel(), "Exception while dumping context detail", ex);
-      } finally {
-        log.log(level.getJulLevel(), "Done {0}", args);
       }
+    } catch (Exception ex) {
+      log.log(Level.ERROR.getJulLevel(), "Exception while dumping context detail", ex);
+    } finally {
+      log.log(level.getJulLevel(), "Done {0}", args);
     }
   }
 
