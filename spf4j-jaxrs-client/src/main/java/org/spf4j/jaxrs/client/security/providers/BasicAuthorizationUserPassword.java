@@ -60,8 +60,7 @@ public final class BasicAuthorizationUserPassword {
 
   @Override
   public int hashCode() {
-    int hash = 53 + Objects.hashCode(this.user);
-    return 53 * hash + Objects.hashCode(this.password);
+    return 53 * Objects.hashCode(this.user) + Objects.hashCode(this.password);
   }
 
   @Override
