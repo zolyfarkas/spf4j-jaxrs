@@ -20,6 +20,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import org.spf4j.base.Arrays;
 import org.spf4j.base.Base64;
 
 /**
@@ -81,25 +82,6 @@ public final class BasicAuthorizationUserPassword {
     return Objects.equals(this.password, other.password);
   }
 
-  // when upgrading to latests spf4j remove to use variant from Arrays.
-  private static byte[] concat(final byte[]... arrays) {
-    if (arrays.length < 2) {
-      throw new IllegalArgumentException("You should concatenate at least 2 arrays: "
-              + arrays.length);
-    }
-    int newLength = 0;
-    for (byte[] arr : arrays) {
-      newLength += arr.length;
-    }
-    byte[] result = new byte[newLength];
-    int destIdx = 0;
-    for (byte[] arr : arrays) {
-      System.arraycopy(arr, 0, result, destIdx, arr.length);
-      destIdx += arr.length;
-    }
-    return result;
-  }
-
   public String toString() {
     return toString(StandardCharsets.US_ASCII);
   }
@@ -123,7 +105,7 @@ public final class BasicAuthorizationUserPassword {
     byte[] userBytes = user.getBytes(charset);
     byte[] sclBytes = ":".getBytes(charset);
     byte[] pwdBytes = password.getBytes(charset);
-    byte[] concat = concat(userBytes, sclBytes, pwdBytes);
+    byte[] concat = Arrays.concat(userBytes, sclBytes, pwdBytes);
     Base64.encodeBase64(concat, 0, concat.length, result);
   }
 
