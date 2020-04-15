@@ -52,7 +52,7 @@ public final class BasicAuthorizationUserPassword {
     String usrPwd = new String(Base64.decodeBase64(headerValue, skip, headerValue.length() - skip), charset);
     int cIdx = usrPwd.indexOf(':');
     if (cIdx < 0) {
-      throw new IllegalArgumentException("Invalid Vasic Auth header " + headerValue + ", charset " + charset);
+      throw new IllegalArgumentException("Invalid Basic Auth header " + headerValue + ", charset " + charset);
     }
     this.user = usrPwd.substring(0, cIdx);
     this.password = usrPwd.substring(cIdx + 1);
