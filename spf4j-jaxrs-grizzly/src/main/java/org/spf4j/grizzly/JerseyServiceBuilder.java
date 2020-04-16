@@ -55,7 +55,7 @@ import org.spf4j.avro.NoSnapshotRefsResolver;
 import org.spf4j.avro.SchemaClient;
 import org.spf4j.concurrent.LifoThreadPoolBuilder;
 import org.spf4j.failsafe.HedgePolicy;
-import org.spf4j.hk2.Spf4jBinder;
+import org.spf4j.jaxrs.Spf4jBinder;
 import org.spf4j.http.DefaultDeadlineProtocol;
 import org.spf4j.http.multi.MultiURLs;
 import org.spf4j.http.multi.Spf4jURLStreamHandlerFactory;

@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.hk2;
+package org.spf4j.jaxrs;
 
+import org.spf4j.jaxrs.config.HK2ConfigurationInjector;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.inject.Inject;
 import javax.inject.Singleton;

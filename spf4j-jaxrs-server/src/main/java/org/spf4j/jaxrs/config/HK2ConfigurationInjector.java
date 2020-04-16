@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.hk2;
+package org.spf4j.jaxrs.config;
 
 import com.google.common.reflect.TypeToken;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -30,29 +30,29 @@ import javax.inject.Provider;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Context;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.glassfish.jersey.internal.inject.Injectee;
-import org.glassfish.jersey.internal.inject.InjectionResolver;
+import org.glassfish.hk2.api.Injectee;
+import org.glassfish.hk2.api.InjectionResolver;
+import org.glassfish.hk2.api.ServiceHandle;
 import org.spf4j.jaxrs.SystemConfiguration;
 
 /**
- * A configuration injector for Jersey.
+ * a configuration injector for HK2.
  * @author Zoltan Farkas
  */
-public final class JerseyConfigurationInjector implements InjectionResolver<ConfigProperty> {
+public final class HK2ConfigurationInjector implements InjectionResolver<ConfigProperty> {
 
   private final ConfigurationResolver resolver;
 
+
   @Inject
-  public JerseyConfigurationInjector(@Context final Configuration configuration) {
+  public HK2ConfigurationInjector(@Context final Configuration configuration) {
     this.resolver = new ConfigurationResolver(new SystemConfiguration(configuration));
   }
-
-
 
   @Override
   @Nullable
   @SuppressFBWarnings("URV_INHERITED_METHOD_WITH_RELATED_TYPES")
-  public Object resolve(final Injectee injectee) {
+  public Object resolve(final Injectee injectee,  final ServiceHandle<?> root) {
     ConfigurationParam cfgParam = getConfigAnnotation(injectee);
     if (cfgParam == null) {
       throw new IllegalStateException("Config annotations not present in " + injectee);
@@ -62,7 +62,8 @@ public final class JerseyConfigurationInjector implements InjectionResolver<Conf
       ParameterizedType ptype = (ParameterizedType) requiredType;
       TypeToken<?> tt = TypeToken.of(ptype);
       if (tt.isSubtypeOf(Provider.class) || tt.isSubtypeOf(Supplier.class)) {
-        Function<ConfigurationParam, Object> typeConv = resolver.get(ptype.getActualTypeArguments()[0]);
+        Function<ConfigurationParam, Object> typeConv
+                = resolver.get(ptype.getActualTypeArguments()[0]);
         return new ConfigSupplier(typeConv, cfgParam);
       } else {
         throw new IllegalArgumentException("Unable to inject " + injectee);
@@ -114,12 +115,7 @@ public final class JerseyConfigurationInjector implements InjectionResolver<Conf
 
   @Override
   public String toString() {
-    return "JerseyConfigurationInjector{" + "resolver=" + resolver + '}';
-  }
-
-  @Override
-  public Class<ConfigProperty> getAnnotation() {
-    return ConfigProperty.class;
+    return "HK2ConfigurationInjector{" + "resolver=" + resolver + '}';
   }
 
   private static class ConfigSupplier implements Supplier, Provider {
