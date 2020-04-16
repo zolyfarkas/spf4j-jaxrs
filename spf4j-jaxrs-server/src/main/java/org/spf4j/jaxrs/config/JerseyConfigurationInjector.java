@@ -32,7 +32,6 @@ import javax.ws.rs.core.Context;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.jersey.internal.inject.Injectee;
 import org.glassfish.jersey.internal.inject.InjectionResolver;
-import org.spf4j.jaxrs.SystemConfiguration;
 
 /**
  * A configuration injector for Jersey.

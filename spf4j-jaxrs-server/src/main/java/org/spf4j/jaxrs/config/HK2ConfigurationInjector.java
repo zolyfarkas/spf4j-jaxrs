@@ -33,7 +33,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.hk2.api.Injectee;
 import org.glassfish.hk2.api.InjectionResolver;
 import org.glassfish.hk2.api.ServiceHandle;
-import org.spf4j.jaxrs.SystemConfiguration;
 
 /**
  * a configuration injector for HK2.

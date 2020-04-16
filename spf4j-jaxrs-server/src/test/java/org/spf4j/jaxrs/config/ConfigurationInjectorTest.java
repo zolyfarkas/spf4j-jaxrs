@@ -21,6 +21,8 @@ import org.spf4j.jaxrs.NoConfiguration;
 import javax.inject.Singleton;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.core.Configuration;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.hk2.api.InjectionResolver;
 import org.glassfish.hk2.api.ServiceLocator;
@@ -31,7 +33,6 @@ import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.junit.Assert;
 import org.junit.Test;
 import org.jvnet.hk2.annotations.Service;
-import org.spf4j.jaxrs.SystemConfiguration;
 
 
 /**
@@ -87,6 +88,15 @@ public class ConfigurationInjectorTest {
    System.setProperty("myProp2", "boooo");
    Assert.assertEquals("boooo", service.getValue2());
    loc.shutdown();
+  }
+
+
+  @Test
+  public void testConfig() {
+   Config config = ConfigProvider.getConfig();
+   System.setProperty("testCfg", "val");
+   String value = config.getValue("testCfg", String.class);
+   Assert.assertEquals("val", value);
   }
 
 }
