@@ -11,7 +11,7 @@ import org.spf4j.base.Wrapper;
 
 /**
  * A wrapper that by default delegates to the wrapped AsyncResponse.
- * this is a useful utility for simply expending this and intercept certain calls.
+ * this is a useful utility for simply extendings this and intercept certain calls.
  * @author Zoltan Farkas
  */
 @SuppressWarnings("checkstyle:DesignForExtension")
