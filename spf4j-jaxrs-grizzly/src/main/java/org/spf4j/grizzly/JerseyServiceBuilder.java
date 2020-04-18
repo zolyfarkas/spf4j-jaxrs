@@ -64,6 +64,7 @@ import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
+import org.spf4j.jaxrs.config.MicroprofileConfigFeature;
 import org.spf4j.jaxrs.features.AvroFeature;
 import org.spf4j.jaxrs.features.GeneralPurposeFeatures;
 import org.spf4j.jaxrs.server.features.ImmediateFeature;
@@ -118,6 +119,7 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
     this.jvmServices = jvmServices;
     this.mavenRepos = new LinkedHashSet<>(4);
     mavenRepos.add("https://repo1.maven.org/maven2");
+    serviceProviders.add(MicroprofileConfigFeature.class);
     serviceProviders.add(GeneralPurposeFeatures.class);
     serviceProviders.add(DefaultServerProvidersFeatures.class);
     this.kernelThreadsCoreSize = 1;

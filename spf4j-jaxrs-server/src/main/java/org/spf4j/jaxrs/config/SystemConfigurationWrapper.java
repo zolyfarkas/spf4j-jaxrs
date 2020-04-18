@@ -29,12 +29,14 @@ import javax.ws.rs.core.Feature;
  * A configuration that will retrieve the wrapped config and fallback
  * to system properties and environment variables.
  * @author Zoltan Farkas
+ * @deprecated see sources package for implementation of micro-profile sysprop retriever.
  */
-public final class SystemConfiguration implements Configuration {
+@Deprecated
+public final class SystemConfigurationWrapper implements Configuration {
 
   private Configuration cfg;
 
-  public SystemConfiguration(final Configuration cfg) {
+  public SystemConfigurationWrapper(final Configuration cfg) {
     this.cfg = cfg;
   }
 

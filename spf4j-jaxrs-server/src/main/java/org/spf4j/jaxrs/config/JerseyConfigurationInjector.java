@@ -22,7 +22,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -32,6 +32,7 @@ import javax.ws.rs.core.Context;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.jersey.internal.inject.Injectee;
 import org.glassfish.jersey.internal.inject.InjectionResolver;
+import org.spf4j.jaxrs.config.HK2ConfigurationInjector.ConfigSupplier;
 
 /**
  * A configuration injector for Jersey.
@@ -39,14 +40,16 @@ import org.glassfish.jersey.internal.inject.InjectionResolver;
  */
 public final class JerseyConfigurationInjector implements InjectionResolver<ConfigProperty> {
 
-  private final ConfigurationResolver resolver;
+  private final Configuration configuration;
+
+  private final ObjectConverters resolver;
 
   @Inject
-  public JerseyConfigurationInjector(@Context final Configuration configuration) {
-    this.resolver = new ConfigurationResolver(new SystemConfiguration(configuration));
+  public JerseyConfigurationInjector(@Context final Configuration configuration,
+           final JerseyMicroprofileConfigurationProvider prov) {
+    this.configuration = configuration;
+    this.resolver = prov.getConverters();
   }
-
-
 
   @Override
   @Nullable
@@ -61,14 +64,25 @@ public final class JerseyConfigurationInjector implements InjectionResolver<Conf
       ParameterizedType ptype = (ParameterizedType) requiredType;
       TypeToken<?> tt = TypeToken.of(ptype);
       if (tt.isSubtypeOf(Provider.class) || tt.isSubtypeOf(Supplier.class)) {
-        Function<ConfigurationParam, Object> typeConv = resolver.get(ptype.getActualTypeArguments()[0]);
-        return new ConfigSupplier(typeConv, cfgParam);
+        BiFunction<Object, Type, Object> typeConv = resolver.get(ptype.getActualTypeArguments()[0]);
+        return new ConfigSupplier(configuration, typeConv, cfgParam, requiredType);
       } else {
         throw new IllegalArgumentException("Unable to inject " + injectee);
       }
     }
-    Function<ConfigurationParam, Object> exact = resolver.get(requiredType);
-    return exact.apply(cfgParam);
+    Object val = configuration.getProperty(cfgParam.getPropertyName());
+    if (val != null) {
+      BiFunction<Object, Type, Object> exact = resolver.get(requiredType);
+      return exact.apply(val, requiredType);
+    } else {
+      String dVal = cfgParam.getDefaultValue();
+      if (dVal != null) {
+        BiFunction<Object, Type, Object> exact = resolver.get(requiredType);
+        return exact.apply(dVal, requiredType);
+      } else {
+        return null;
+      }
+    }
   }
 
   @Nullable
@@ -119,22 +133,6 @@ public final class JerseyConfigurationInjector implements InjectionResolver<Conf
   @Override
   public Class<ConfigProperty> getAnnotation() {
     return ConfigProperty.class;
-  }
-
-  private static class ConfigSupplier implements Supplier, Provider {
-
-    private final Function<ConfigurationParam, Object> typeConv;
-    private final ConfigurationParam cfgParam;
-
-    ConfigSupplier(final Function<ConfigurationParam, Object> typeConv, final ConfigurationParam cfgParam) {
-      this.typeConv = typeConv;
-      this.cfgParam = cfgParam;
-    }
-
-    @Override
-    public Object get() {
-      return typeConv.apply(cfgParam);
-    }
   }
 
 }

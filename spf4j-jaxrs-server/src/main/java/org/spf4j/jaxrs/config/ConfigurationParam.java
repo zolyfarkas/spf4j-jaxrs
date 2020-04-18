@@ -23,14 +23,14 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * @author Zoltan Farkas
  */
 @ParametersAreNonnullByDefault
-public final class ConfigurationParam {
+final class ConfigurationParam {
 
   private final String propertyName;
 
 
   private final String defaultValue;
 
-  public ConfigurationParam(final String propertyName, @Nullable final String defaultValue) {
+  ConfigurationParam(final String propertyName, @Nullable final String defaultValue) {
     this.propertyName = propertyName;
     this.defaultValue = ConfigProperty.UNCONFIGURED_VALUE.equals(defaultValue) ? null : defaultValue;
   }

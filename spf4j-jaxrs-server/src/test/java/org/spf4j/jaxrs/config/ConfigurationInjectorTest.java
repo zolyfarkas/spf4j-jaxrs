@@ -15,15 +15,15 @@
  */
 package org.spf4j.jaxrs.config;
 
+import java.time.Duration;
 import javax.inject.Inject;
 import javax.inject.Provider;
-import org.spf4j.jaxrs.NoConfiguration;
 import javax.inject.Singleton;
-import javax.ws.rs.RuntimeType;
 import javax.ws.rs.core.Configuration;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.glassfish.hk2.api.InjectionResolver;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.hk2.api.ServiceLocatorFactory;
@@ -34,22 +34,25 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.jvnet.hk2.annotations.Service;
 
-
 /**
  *
  * @author Zoltan Farkas
  */
 public class ConfigurationInjectorTest {
 
+  static {
+    ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl());
+  }
 
- @Service
- public static final class TestClass {
-   private final String value;
+  @Service
+  public static final class TestClass {
 
-   private final Provider<String> providedValue;
+    private final String value;
+
+    private final Provider<String> providedValue;
 
     @Inject
-    public TestClass(@ConfigProperty(name = "myProp", defaultValue = "bubu") final  String value,
+    public TestClass(@ConfigProperty(name = "myProp", defaultValue = "bubu") final String value,
             @ConfigProperty(name = "myProp2") final Provider<String> providedValue) {
       this.value = value;
       this.providedValue = providedValue;
@@ -63,9 +66,7 @@ public class ConfigurationInjectorTest {
       return providedValue.get();
     }
 
-
- }
-
+  }
 
   @Test
   public void testConfigInjection() {
@@ -75,28 +76,36 @@ public class ConfigurationInjectorTest {
       protected void configure() {
         bindAsContract(TestClass.class);
         bind(HK2ConfigurationInjector.class)
-            .to(new TypeLiteral<InjectionResolver<ConfigProperty>>() { })
-            .in(Singleton.class);
-        bind(new SystemConfiguration(new NoConfiguration(RuntimeType.SERVER))).to(Configuration.class);
+                .to(new TypeLiteral<InjectionResolver<ConfigProperty>>() { })
+                .in(Singleton.class);
+        bind(new JerseyMicroprofileConfigurationModel(
+                (ConfigImpl) ConfigProvider.getConfig())).to(Configuration.class);
+        bind(new JerseyMicroprofileConfigurationProvider()).to(JerseyMicroprofileConfigurationProvider.class);
       }
 
     });
 
-   TestClass service = loc.getService(TestClass.class);
-   Assert.assertEquals("bubu", service.getValue());
-   Assert.assertNull(service.getValue2());
-   System.setProperty("myProp2", "boooo");
-   Assert.assertEquals("boooo", service.getValue2());
-   loc.shutdown();
+    TestClass service = loc.getService(TestClass.class);
+    Assert.assertEquals("bubu", service.getValue());
+    Assert.assertNull(service.getValue2());
+    System.setProperty("myProp2", "boooo");
+    Assert.assertEquals("boooo", service.getValue2());
+    loc.shutdown();
   }
-
 
   @Test
   public void testConfig() {
-   Config config = ConfigProvider.getConfig();
-   System.setProperty("testCfg", "val");
-   String value = config.getValue("testCfg", String.class);
-   Assert.assertEquals("val", value);
+    Config config = ConfigProvider.getConfig();
+    System.setProperty("testCfg", "val");
+    String value = config.getValue("testCfg", String.class);
+    Assert.assertEquals("val", value);
+    String value2 = config.getValue("testCfgNonEx", String.class);
+    Assert.assertNull(value2);
+    System.setProperty("testIntList", "1,2,3");
+    Assert.assertArrayEquals(new int[]{1, 2, 3}, config.getValue("testIntList", int[].class));
+    System.setProperty("testDurationList", "P1D,P2D");
+    Assert.assertArrayEquals(new Duration[]{Duration.parse("P1D"), Duration.parse("P2D")},
+            config.getValue("testDurationList", Duration[].class));
   }
 
 }

@@ -15,15 +15,11 @@
  */
 package org.spf4j.jaxrs;
 
-import org.spf4j.jaxrs.config.HK2ConfigurationInjector;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.core.GenericType;
 import org.apache.avro.SchemaResolver;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.glassfish.hk2.api.InjectionResolver;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.server.DebugDetailEntitlement;
@@ -59,9 +55,6 @@ public final class Spf4jBinder extends AbstractBinder {
     bind(ddEnt).to(DebugDetailEntitlement.class);
     bind(Spf4jInterceptionService.class)
             .to(org.glassfish.hk2.api.InterceptionService.class)
-            .in(Singleton.class);
-    bind(HK2ConfigurationInjector.class)
-       .to(new GenericType<InjectionResolver<ConfigProperty>>() { })
             .in(Singleton.class);
   }
 
