@@ -27,12 +27,15 @@ final class ConfigurationParam {
 
   private final String propertyName;
 
-
   private final String defaultValue;
 
-  ConfigurationParam(final String propertyName, @Nullable final String defaultValue) {
+  private final boolean nullable;
+
+  ConfigurationParam(final String propertyName, @Nullable final String defaultValue,
+          final boolean nullable) {
     this.propertyName = propertyName;
     this.defaultValue = ConfigProperty.UNCONFIGURED_VALUE.equals(defaultValue) ? null : defaultValue;
+    this.nullable = nullable;
   }
 
   public String getPropertyName() {
@@ -43,6 +46,12 @@ final class ConfigurationParam {
   public String getDefaultValue() {
     return defaultValue;
   }
+
+  public boolean isNullable() {
+    return nullable;
+  }
+
+
 
   @Override
   public String toString() {

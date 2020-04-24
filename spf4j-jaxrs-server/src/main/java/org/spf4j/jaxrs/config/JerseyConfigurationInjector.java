@@ -80,7 +80,11 @@ public final class JerseyConfigurationInjector implements InjectionResolver<Conf
         BiFunction<Object, Type, Object> exact = resolver.get(requiredType);
         return exact.apply(dVal, requiredType);
       } else {
-        return null;
+        if (cfgParam.isNullable()) {
+          return null;
+        } else {
+          throw new IllegalArgumentException("Unable to inject " + injectee + ", not nullable");
+        }
       }
     }
   }
@@ -94,22 +98,25 @@ public final class JerseyConfigurationInjector implements InjectionResolver<Conf
       Annotation[] parameterAnnotation = ctor.getParameterAnnotations()[injectee.getPosition()];
       String paramName = null;
       String paramDefaultValue = null;
+      boolean nullable = false;
       for (Annotation ann : parameterAnnotation) {
         Class<? extends Annotation> annotationType = ann.annotationType();
         if (annotationType == ConfigProperty.class) {
           ConfigProperty cfgAnn = (ConfigProperty) ann;
           paramName = cfgAnn.name();
           paramDefaultValue =  cfgAnn.defaultValue();
-          break;
+        } else if (annotationType == Nullable.class) {
+          nullable = true;
         }
       }
       if (paramName != null) {
-        result = new ConfigurationParam(paramName, paramDefaultValue);
+        result = new ConfigurationParam(paramName, paramDefaultValue, nullable);
       }
     } else {
       ConfigProperty cfg = elem.getAnnotation(ConfigProperty.class);
       if (cfg != null) {
-        result = new ConfigurationParam(cfg.name(), cfg.defaultValue());
+        result = new ConfigurationParam(cfg.name(), cfg.defaultValue(),
+                elem.getAnnotation(Nullable.class) != null);
       }
     }
     return result;
