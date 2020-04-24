@@ -88,6 +88,8 @@ public final class JvmServicesBuilder {
                           return "GET";
                         } else if (name.startsWith("POST")) {
                           return "POST";
+                        } else if (name.startsWith("INIT")) {
+                          return "INIT";
                         } else {
                           return "OTHER";
                         }
