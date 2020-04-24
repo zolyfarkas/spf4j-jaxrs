@@ -216,7 +216,7 @@ public class MetricsResource {
         }
         TextFormat.write004(bw, Collections.enumeration(Collections.singletonList(
                 new Collector.MetricFamilySamples("process_start_time_seconds",
-                        Collector.Type.COUNTER, "Seconds since process start",
+                        Collector.Type.COUNTER, "Seconds since unix EPOCH when the process started",
                         Collections.singletonList(new Collector.MetricFamilySamples.Sample("process_start_time_seconds",
                                 Collections.emptyList(), Collections.emptyList(),
                                 ((double) ManagementFactory.getRuntimeMXBean().getStartTime()) / 1000))))));
