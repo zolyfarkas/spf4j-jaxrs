@@ -86,7 +86,7 @@ public final class JvmServicesBuilder {
                         String name = ctx.getName();
                         if (name.startsWith("GET")) {
                           return "GET";
-                        } else if (ctx.getName().startsWith("POST")) {
+                        } else if (name.startsWith("POST")) {
                           return "POST";
                         } else {
                           return "OTHER";
