@@ -22,10 +22,13 @@ import javax.inject.Inject;
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
 import org.glassfish.hk2.api.ActiveDescriptor;
+import org.glassfish.hk2.api.ImmediateController;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.hk2.utilities.ImmediateErrorHandler;
 import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
+import org.spf4j.concurrent.ContextPropagatingExecutorService;
+import org.spf4j.concurrent.DefaultExecutor;
 
 /**
  * @author Zoltan Farkas
@@ -34,7 +37,9 @@ public final class ImmediateFeature implements Feature {
 
   @Inject
   public ImmediateFeature(final ServiceLocator locator) {
-    ServiceLocatorUtilities.enableImmediateScope(locator);
+    ImmediateController controller = ServiceLocatorUtilities.enableImmediateScopeSuspended(locator);
+    controller.setExecutor(new ContextPropagatingExecutorService(DefaultExecutor.instance()));
+    controller.setImmediateState(ImmediateController.ImmediateServiceState.RUNNING);
   }
 
   @Override
