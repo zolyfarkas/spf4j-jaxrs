@@ -25,6 +25,7 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.glassfish.hk2.api.InjectionResolver;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.spi.ExternalConfigurationProvider;
 
 /**
  * @author Zoltan Farkas
@@ -38,14 +39,14 @@ public final class MicroprofileConfigFeature implements Feature {
   @Override
   public boolean configure(final FeatureContext context) {
     JerseyMicroprofileConfigurationProvider provider = new JerseyMicroprofileConfigurationProvider();
-    context.register(provider);
+//    context.register(provider);
     context.register(new RegisterAnnotInjector(provider));
     return true;
   }
-  
+
   public boolean configure(final ResourceConfig context) {
     JerseyMicroprofileConfigurationProvider provider = new JerseyMicroprofileConfigurationProvider();
-    context.register(provider);
+//    context.register(JerseyMicroprofileConfigurationProvider.class);
     context.register(new RegisterAnnotInjector(provider));
     return true;
   }
@@ -62,6 +63,7 @@ public final class MicroprofileConfigFeature implements Feature {
     @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
     protected void configure() {
       bind(cfgProvider).to(JerseyMicroprofileConfigurationProvider.class);
+      bind(cfgProvider).to(ExternalConfigurationProvider.class);
       bind(HK2ConfigurationInjector.class)
               .to(new GenericType<InjectionResolver<ConfigProperty>>() { })
               .in(Singleton.class);
