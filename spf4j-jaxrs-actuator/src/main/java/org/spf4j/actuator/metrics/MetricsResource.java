@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.GET;
@@ -61,6 +62,7 @@ public class MetricsResource {
 
   private final Duration defaultFromDuration;
 
+  @Inject
   public MetricsResource(@ConfigProperty(name = "metrics.fromDefaultDuration",
           defaultValue = "PT1M") final Duration defaultFromDuration) {
     this.defaultFromDuration = defaultFromDuration;

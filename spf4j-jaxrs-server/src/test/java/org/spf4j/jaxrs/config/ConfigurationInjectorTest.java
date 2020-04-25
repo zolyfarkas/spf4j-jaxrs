@@ -16,6 +16,7 @@
 package org.spf4j.jaxrs.config;
 
 import java.time.Duration;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -53,7 +54,7 @@ public class ConfigurationInjectorTest {
 
     @Inject
     public TestClass(@ConfigProperty(name = "myProp", defaultValue = "bubu") final String value,
-            @ConfigProperty(name = "myProp2") final Provider<String> providedValue) {
+            @Nullable @ConfigProperty(name = "myProp2") final Provider<String> providedValue) {
       this.value = value;
       this.providedValue = providedValue;
     }

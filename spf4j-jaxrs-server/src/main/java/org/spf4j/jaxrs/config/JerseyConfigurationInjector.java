@@ -47,7 +47,7 @@ public final class JerseyConfigurationInjector implements InjectionResolver<Conf
   @Inject
   public JerseyConfigurationInjector(@Context final Configuration configuration,
            final JerseyMicroprofileConfigurationProvider prov) {
-    this.configuration = configuration;
+    this.configuration = new MergedConfigs(configuration, prov.getConfiguration());
     this.resolver = prov.getConverters();
   }
 

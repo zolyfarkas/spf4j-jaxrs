@@ -47,7 +47,7 @@ public final class HK2ConfigurationInjector implements InjectionResolver<ConfigP
   @Inject
   public HK2ConfigurationInjector(@Context final Configuration configuration,
           final JerseyMicroprofileConfigurationProvider prov) {
-    this.configuration = configuration;
+    this.configuration = new MergedConfigs(configuration, prov.getConfiguration());
     this.resolver = prov.getConverters();
   }
 

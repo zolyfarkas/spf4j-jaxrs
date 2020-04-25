@@ -17,6 +17,7 @@ package org.spf4j.jaxrs.config;
 
 import java.util.Map;
 import javax.annotation.Priority;
+import javax.inject.Singleton;
 import javax.ws.rs.ext.Provider;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.spi.ExternalConfigurationModel;
@@ -27,6 +28,7 @@ import org.glassfish.jersey.spi.ExternalConfigurationProvider;
  */
 @Provider
 @Priority(0)
+@Singleton
 public final class JerseyMicroprofileConfigurationProvider implements ExternalConfigurationProvider {
 
   private JerseyMicroprofileConfigurationModel configModel;

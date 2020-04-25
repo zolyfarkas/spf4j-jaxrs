@@ -17,6 +17,8 @@ package org.spf4j.jaxrs.config;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.inject.Singleton;
+import javax.ws.rs.core.Feature;
+import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.core.GenericType;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -27,12 +29,20 @@ import org.glassfish.jersey.server.ResourceConfig;
 /**
  * @author Zoltan Farkas
  */
-public final class MicroprofileConfigFeature {
+public final class MicroprofileConfigFeature implements Feature {
 
   static {
     ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl());
   }
 
+  @Override
+  public boolean configure(final FeatureContext context) {
+    JerseyMicroprofileConfigurationProvider provider = new JerseyMicroprofileConfigurationProvider();
+    context.register(provider);
+    context.register(new RegisterAnnotInjector(provider));
+    return true;
+  }
+  
   public boolean configure(final ResourceConfig context) {
     JerseyMicroprofileConfigurationProvider provider = new JerseyMicroprofileConfigurationProvider();
     context.register(provider);
@@ -56,9 +66,9 @@ public final class MicroprofileConfigFeature {
               .to(new GenericType<InjectionResolver<ConfigProperty>>() { })
               .in(Singleton.class);
 
-      bind(JerseyConfigurationInjector.class)
-              .to(new GenericType<org.glassfish.jersey.internal.inject.InjectionResolver<ConfigProperty>>() { })
-              .in(Singleton.class);
+//      bind(JerseyConfigurationInjector.class)
+//              .to(new GenericType<org.glassfish.jersey.internal.inject.InjectionResolver<ConfigProperty>>() { })
+//              .in(Singleton.class);
     }
   }
 

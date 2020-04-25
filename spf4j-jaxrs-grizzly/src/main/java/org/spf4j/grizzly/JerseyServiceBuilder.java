@@ -119,7 +119,6 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
     this.jvmServices = jvmServices;
     this.mavenRepos = new LinkedHashSet<>(4);
     mavenRepos.add("https://repo1.maven.org/maven2");
-    serviceProviders.add(MicroprofileConfigFeature.class);
     serviceProviders.add(GeneralPurposeFeatures.class);
     serviceProviders.add(DefaultServerProvidersFeatures.class);
     this.kernelThreadsCoreSize = 1;
@@ -294,6 +293,8 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
       String hostName = jvmServices.getHostName();
       resourceConfig = ResourceConfig.forApplicationClass(Spf4jJaxrsApplication.class);
       resourceConfig.setApplicationName(jerseyAppName);
+      new MicroprofileConfigFeature().configure(resourceConfig);
+      resourceConfig.register(new MicroprofileConfigFeature());
       //resourceConfig.packages(true, providerPackages.toArray(new String[providerPackages.size()]));
       resourceConfig.registerInstances(binders.toArray(new Object[binders.size()]));
       resourceConfig.registerClasses((Set) serviceProviders);
