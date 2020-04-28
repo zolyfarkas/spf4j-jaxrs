@@ -50,7 +50,7 @@ public class LogsResource {
   @ProjectionSupport
   public List<LogRecord> getLocalLogs(
           @QueryParam("tailOffset") @DefaultValue("0") final long tailOffset,
-          @QueryParam("limit") @DefaultValue("100") final int limit,
+          @QueryParam("limit") @DefaultValue("25") final int limit,
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder) throws IOException {
     return getLocalLogs(tailOffset, limit, filter, resOrder, "default");
@@ -63,7 +63,7 @@ public class LogsResource {
   @ProjectionSupport
   public  List<LogRecord> getLocalLogs(
           @QueryParam("tailOffset") @DefaultValue("0") final long tailOffset,
-          @QueryParam("limit") @DefaultValue("100") final int limit,
+          @QueryParam("limit") @DefaultValue("25") final int limit,
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
           @PathParam("appenderName") final String appenderName) throws IOException {
