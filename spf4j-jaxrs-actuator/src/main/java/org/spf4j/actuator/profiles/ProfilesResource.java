@@ -81,7 +81,7 @@ public class ProfilesResource {
     StringBuilder sb = new StringBuilder(traceId.length());
     AppendableUtils.escapeJsonString(traceId, sb);
     List<LogRecord> logs = logsResource.getLocalLogs(0, 10, "log.stackSamples.length != 0 and log.trId == \""
-            + sb + "\"", Order.DESC);
+            + sb + "\"", Order.DESC, null);
     if (logs.isEmpty()) {
       return null;
     }
