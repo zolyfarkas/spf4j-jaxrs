@@ -14,6 +14,7 @@ import java.util.PriorityQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -72,7 +73,7 @@ public class LogsResource {
   @Produces(value = {"application/avro-x+json", "application/json",
     "application/avro+json", "application/avro", "application/octet-stream"})
   @ProjectionSupport
-  public  List<LogRecord> getLocalLogs(
+  public List<LogRecord> getLocalLogs(
           @QueryParam("tailOffset") @DefaultValue("0") final long tailOffset,
           @QueryParam("limit") @DefaultValue("25") final int limit,
           @QueryParam("filter") @Nullable final String filter,
@@ -90,41 +91,33 @@ public class LogsResource {
     if (fa == null) {
       throw new NotFoundException("Resource not available: " + appenderName);
     }
-    if (top == null) {
-      List<LogRecord> result = new ArrayList<>(limit);
-      if (filter != null) {
-        try {
-          fa.getFilteredLogs(hostName, tailOffset, limit, Program.compilePredicate(filter, "log"), result::add);
-        } catch (CompileException ex) {
-          throw new ClientErrorException("Invalid filter " + filter + ", " + ex.getMessage(), 400, ex);
-        }
-      } else {
-         fa.getLogs(hostName, tailOffset, limit, result::add);
-      }
-      if (resOrder == Order.DESC) {
-        Collections.reverse(result);
-      }
-      return result;
+    TopAccumulator acc;
+    if (top != null) {
+      acc = new TopAccumulator(top, resOrder);
     } else {
-      TopAccumulator acc = new TopAccumulator(top, resOrder);
-      if (filter != null) {
-        try {
-          fa.getFilteredLogs(hostName, tailOffset, limit, Program.compilePredicate(filter, "log"), acc);
-        } catch (CompileException ex) {
-          throw new ClientErrorException("Invalid filter " + filter + ", " + ex.getMessage(), 400, ex);
-        }
-      } else {
-         fa.getLogs(hostName, tailOffset, limit, acc);
-      }
-      return acc.getRecords();
+      acc = new TopAccumulator(limit, LogRecord::getTs, resOrder);
     }
+    if (filter != null) {
+      try {
+        fa.getFilteredLogs(hostName, tailOffset, limit, Program.compilePredicate(filter, "log"), acc);
+      } catch (CompileException ex) {
+        throw new ClientErrorException("Invalid filter " + filter + ", " + ex.getMessage(), 400, ex);
+      }
+    } else {
+      fa.getLogs(hostName, tailOffset, limit, acc);
+    }
+    return acc.getRecords();
+  }
+
+  public interface LogAccumulator extends Consumer<LogRecord>, Supplier<List<LogRecord>> {
+
   }
 
   public static class TopExpression {
 
     private static final CharSeparatedValues SSV = new CharSeparatedValues(' ');
-      private final int topNumber;
-      private final String topField;
+    private final int topNumber;
+    private final String topField;
 
     public TopExpression(final String topExpression) {
       Iterable<CharSequence> row = SSV.singleRow(new StringReader(topExpression));
@@ -141,6 +134,22 @@ public class LogsResource {
       return topField;
     }
 
+    public Function<LogRecord, Comparable> getFieldExtractor() {
+      Program program;
+      try {
+        program = Program.compile(topField, "log");
+      } catch (CompileException ex) {
+        throw new IllegalArgumentException("Invalid top expression: " + topField, ex);
+      }
+      return (log) -> {
+        try {
+          return (Comparable) program.execute(log);
+        } catch (ExecutionException | InterruptedException ex) {
+          throw new RuntimeException(ex);
+        }
+      };
+    }
+
     @Override
     public String toString() {
       StringWriter writer = new StringWriter();
@@ -154,8 +163,7 @@ public class LogsResource {
 
   }
 
-
-  public static class TopAccumulator implements Consumer<LogRecord> {
+  public static class TopAccumulator implements LogAccumulator {
 
     private final int topNumber;
     private final Function<LogRecord, Comparable> topField;
@@ -164,29 +172,21 @@ public class LogsResource {
     private final Comparator<LogRecord> desiredOrder;
 
     public TopAccumulator(final TopExpression topExpression, final Order order) {
-      this.topNumber = topExpression.getTopNumber();
-      Program program;
-      try {
-        program = Program.compile(topExpression.getTopField(), "log");
-      } catch (CompileException ex) {
-        throw new IllegalArgumentException("Invalid top expression: " + topExpression, ex);
-      }
-      topField = (log) -> {
-        try {
-          return (Comparable) program.execute(log);
-        } catch (ExecutionException | InterruptedException ex) {
-          throw new RuntimeException(ex);
-        }
-      };
+      this(topExpression.getTopNumber(), topExpression.getFieldExtractor(), order);
+    }
+
+    public TopAccumulator(int topNumber, Function<LogRecord, Comparable> topField, Order order) {
+      this.topNumber = topNumber;
+      this.topField = topField;
       this.order = order;
       Comparator<LogRecord> comparator = (LogRecord a, LogRecord b) -> {
         return topField.apply(a).compareTo(topField.apply(b));
       };
       if (order == Order.ASC) {
-        queue = new PriorityQueue<>(topNumber,  comparator.reversed()); // always remove largest
+        queue = new PriorityQueue<>(topNumber, comparator.reversed()); // always remove largest
         desiredOrder = comparator;
       } else { // DESC
-        queue = new PriorityQueue<>(topNumber,  comparator); // remove smallest
+        queue = new PriorityQueue<>(topNumber, comparator); // remove smallest
         desiredOrder = comparator.reversed();
       }
     }
@@ -210,6 +210,11 @@ public class LogsResource {
       List<LogRecord> result = new ArrayList<>(queue);
       result.sort(desiredOrder);
       return result;
+    }
+
+    @Override
+    public List<LogRecord> get() {
+      return getRecords();
     }
 
   }
