@@ -13,7 +13,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.security.RolesAllowed;
@@ -33,10 +32,11 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.spf4j.actuator.logs.LogUtils;
 import org.spf4j.actuator.logs.LogbackResource;
+import org.spf4j.actuator.logs.LogsResource;
 import org.spf4j.base.CloseableIterable;
 import org.spf4j.base.avro.LogRecord;
+import org.spf4j.base.avro.Order;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
@@ -126,11 +126,11 @@ public class LogbackClusterResource {
     if (limit > maxLogRetrieveLimit || limit < 0) {
       throw new ClientErrorException("Invalid limit " + limit, Status.REQUESTED_RANGE_NOT_SATISFIABLE);
     }
-    CompletableFuture<PriorityQueue<LogRecord>> cf
+    CompletableFuture<LogsResource.LogAccumulator> cf
             = ContextPropagatingCompletableFuture.supplyAsync(() -> {
-              PriorityQueue<LogRecord> result = new PriorityQueue(limit, LogUtils.TS_ORDER_ASC);
+             LogsResource.LogAccumulator result = new LogsResource.TopAccumulator(limit, LogRecord::getTs, Order.DESC);
               Collection<LogRecord> ll = localLogback.status(limit);
-              LogUtils.addAll(limit, result, ll);
+              result.acceptAll(ll);
               return result;
             }, DefaultExecutor.INSTANCE);
     ClusterInfo clusterInfo = cluster.getClusterInfo();
@@ -143,9 +143,9 @@ public class LogbackClusterResource {
       cf = cf.thenCombine(
               invTarget.request("application/avro").rx().get(new GenericType<CloseableIterable<LogRecord>>() {
               }),
-              (PriorityQueue<LogRecord> result, CloseableIterable<LogRecord> rl) -> {
+              (LogsResource.LogAccumulator result, CloseableIterable<LogRecord> rl) -> {
                 try (CloseableIterable<LogRecord> r = rl) {
-                  LogUtils.addAll(limit, result, r);
+                  result.acceptAll(r);
                 }
                 return result;
               }

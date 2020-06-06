@@ -80,7 +80,7 @@ public class ProfilesResource {
   public SampleNode getSamples(@PathParam("trId") final String traceId) throws IOException {
     StringBuilder sb = new StringBuilder(traceId.length());
     AppendableUtils.escapeJsonString(traceId, sb);
-    List<LogRecord> logs = logsResource.getLocalLogs(0, 10, "log.stackSamples.length != 0 and log.trId == \""
+    List<LogRecord> logs = logsResource.getLocalLogs(10, "log.stackSamples.length != 0 and log.trId == \""
             + sb + "\"", Order.DESC, null);
     if (logs.isEmpty()) {
       return null;

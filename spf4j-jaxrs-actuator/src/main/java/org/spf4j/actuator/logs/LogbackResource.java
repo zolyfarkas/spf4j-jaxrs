@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.PriorityQueue;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -39,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import org.spf4j.base.avro.Converters;
 import org.spf4j.base.avro.LogLevel;
 import org.spf4j.base.avro.LogRecord;
+import org.spf4j.base.avro.Order;
 import org.spf4j.os.OperatingSystem;
 
 /**
@@ -70,9 +70,9 @@ public class LogbackResource {
     LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
     StatusManager statusManager = lc.getStatusManager();
     List<Status> statuses = statusManager.getCopyOfStatusList();
-    PriorityQueue<LogRecord> result = new PriorityQueue<>(limit, LogUtils.TS_ORDER_ASC);
-    addStatuses(statuses, result, limit);
-    return result;
+    LogsResource.LogAccumulator acc = new LogsResource.TopAccumulator(limit, LogRecord::getTs, Order.DESC);
+    addStatuses(statuses, acc, limit);
+    return acc.get();
   }
 
   @DELETE
@@ -83,11 +83,8 @@ public class LogbackResource {
   }
 
   private void addStatuses(final Iterable<Status> statuses,
-          final PriorityQueue<LogRecord> result, final int limit) {
+          final LogsResource.LogAccumulator result, final int limit) {
     for (Status status : statuses) {
-      if (result.size() >= limit) {
-        result.poll();
-      }
       Throwable t = status.getThrowable();
       LogLevel level;
       switch (status.getLevel()) {
@@ -104,7 +101,7 @@ public class LogbackResource {
           level = LogLevel.UNKNOWN;
           break;
       }
-      result.add(new LogRecord(Objects.toString(hostName + ':' + status.getOrigin()),
+      result.accept(new LogRecord(Objects.toString(hostName + ':' + status.getOrigin()),
               "", level, Instant.ofEpochMilli(status.getDate()), "status",
               Thread.currentThread().getName(),
               status.getMessage(), Collections.EMPTY_LIST, Collections.EMPTY_MAP,
@@ -120,5 +117,5 @@ public class LogbackResource {
   public String toString() {
     return "LogbackResource{" + "hostName=" + hostName + '}';
   }
-  
+
 }

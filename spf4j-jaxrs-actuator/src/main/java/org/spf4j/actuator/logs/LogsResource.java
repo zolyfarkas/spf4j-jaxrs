@@ -1,13 +1,9 @@
 package org.spf4j.actuator.logs;
 
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -30,7 +26,6 @@ import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.base.avro.LogRecord;
 import org.spf4j.base.avro.Order;
-import org.spf4j.io.csv.CharSeparatedValues;
 import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.log.AvroDataFileAppender;
 import org.spf4j.log.LogbackUtils;
@@ -60,12 +55,11 @@ public class LogsResource {
     "application/avro+json", "application/avro", "application/octet-stream"})
   @ProjectionSupport
   public List<LogRecord> getLocalLogs(
-          @QueryParam("tailOffset") @DefaultValue("0") final long tailOffset,
           @QueryParam("limit") @DefaultValue("25") final int limit,
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
-          @QueryParam("top") @Nullable final TopExpression top) throws IOException {
-    return getLocalLogs(tailOffset, limit, filter, resOrder, top, "default");
+          @QueryParam("sort") @Nullable final String sort) throws IOException {
+    return getLocalLogs(limit, filter, resOrder, sort, "default");
   }
 
   @Path("{appenderName}")
@@ -74,11 +68,10 @@ public class LogsResource {
     "application/avro+json", "application/avro", "application/octet-stream"})
   @ProjectionSupport
   public List<LogRecord> getLocalLogs(
-          @QueryParam("tailOffset") @DefaultValue("0") final long tailOffset,
           @QueryParam("limit") @DefaultValue("25") final int limit,
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
-          @QueryParam("top") @Nullable final TopExpression top,
+          @QueryParam("sort") @Nullable final String sort,
           @PathParam("appenderName") final String appenderName) throws IOException {
     if (limit == 0) {
       return Collections.emptyList();
@@ -92,49 +85,32 @@ public class LogsResource {
       throw new NotFoundException("Resource not available: " + appenderName);
     }
     TopAccumulator acc;
-    if (top != null) {
-      acc = new TopAccumulator(top, resOrder);
+    if (sort != null) {
+       acc = new TopAccumulator(sort, resOrder, limit);
     } else {
-      acc = new TopAccumulator(limit, LogRecord::getTs, resOrder);
+       acc = new TopAccumulator(limit, LogRecord::getTs, resOrder);
     }
     if (filter != null) {
       try {
-        fa.getFilteredLogs(hostName, tailOffset, limit, Program.compilePredicate(filter, "log"), acc);
+        fa.getFilteredLogs(hostName, 0, Long.MAX_VALUE, Program.compilePredicate(filter, "log"), acc);
       } catch (CompileException ex) {
         throw new ClientErrorException("Invalid filter " + filter + ", " + ex.getMessage(), 400, ex);
       }
     } else {
-      fa.getLogs(hostName, tailOffset, limit, acc);
+      fa.getLogs(hostName, 0, Long.MAX_VALUE, acc);
     }
     return acc.getRecords();
   }
 
   public interface LogAccumulator extends Consumer<LogRecord>, Supplier<List<LogRecord>> {
-
+    default void acceptAll(final Iterable<LogRecord> t) {
+      for (LogRecord r : t) {
+        this.accept(r);
+      }
+    }
   }
 
-  public static class TopExpression {
-
-    private static final CharSeparatedValues SSV = new CharSeparatedValues(' ');
-    private final int topNumber;
-    private final String topField;
-
-    public TopExpression(final String topExpression) {
-      Iterable<CharSequence> row = SSV.singleRow(new StringReader(topExpression));
-      Iterator<CharSequence> it = row.iterator();
-      topNumber = Integer.parseUnsignedInt(it.next().toString());
-      topField = it.next().toString();
-    }
-
-    public int getTopNumber() {
-      return topNumber;
-    }
-
-    public String getTopField() {
-      return topField;
-    }
-
-    public Function<LogRecord, Comparable> getFieldExtractor() {
+  public static Function<LogRecord, Comparable> getFieldExtractor(final String topField) {
       Program program;
       try {
         program = Program.compile(topField, "log");
@@ -150,19 +126,6 @@ public class LogsResource {
       };
     }
 
-    @Override
-    public String toString() {
-      StringWriter writer = new StringWriter();
-      try {
-        SSV.writeCsvRow(writer, topNumber, topField);
-      } catch (IOException ex) {
-        throw new UncheckedIOException(ex);
-      }
-      return writer.toString();
-    }
-
-  }
-
   public static class TopAccumulator implements LogAccumulator {
 
     private final int topNumber;
@@ -171,11 +134,12 @@ public class LogsResource {
     private final PriorityQueue<LogRecord> queue;
     private final Comparator<LogRecord> desiredOrder;
 
-    public TopAccumulator(final TopExpression topExpression, final Order order) {
-      this(topExpression.getTopNumber(), topExpression.getFieldExtractor(), order);
+    public TopAccumulator(final String sortExpression, final Order order, final int limit) {
+      this(limit, getFieldExtractor(sortExpression), order);
     }
 
-    public TopAccumulator(int topNumber, Function<LogRecord, Comparable> topField, Order order) {
+    public TopAccumulator(final int topNumber, final Function<LogRecord, Comparable> topField,
+            final Order order) {
       this.topNumber = topNumber;
       this.topField = topField;
       this.order = order;

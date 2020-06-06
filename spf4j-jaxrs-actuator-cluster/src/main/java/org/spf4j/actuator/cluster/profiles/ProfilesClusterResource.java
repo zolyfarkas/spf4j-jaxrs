@@ -101,7 +101,7 @@ public class ProfilesClusterResource {
     StringBuilder sb = new StringBuilder(traceId.length());
     AppendableUtils.escapeJsonString(traceId, sb);
     logsResource.getClusterLogs(10, "log.stackSamples.length != 0 and log.trId == \""
-            + sb + "\"", Order.DESC, new AsyncResponseWrapper(ar) {
+            + sb + "\"", Order.DESC, null, new AsyncResponseWrapper(ar) {
       @Override
       public boolean resume(final Object response) {
         List<LogRecord> logs = (List<LogRecord>) response;

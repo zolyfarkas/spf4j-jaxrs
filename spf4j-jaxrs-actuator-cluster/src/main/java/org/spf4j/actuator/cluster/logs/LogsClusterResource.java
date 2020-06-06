@@ -13,11 +13,9 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
@@ -38,7 +36,6 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.spf4j.actuator.logs.LogUtils;
 import org.spf4j.actuator.logs.LogsResource;
 import org.spf4j.base.avro.LogRecord;
 import org.spf4j.base.avro.Order;
@@ -92,9 +89,10 @@ public class LogsClusterResource {
   public void getClusterLogsText(@QueryParam("limit") @DefaultValue("25") final int limit,
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
+          @QueryParam("sort") @Nullable final String sort,
           @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
-    getClusterLogs(limit, filter, resOrder, new AsyncResponseToTextWrapper(ar));
+    getClusterLogs(limit, filter, resOrder, sort, new AsyncResponseToTextWrapper(ar));
   }
 
   @Operation(
@@ -112,9 +110,10 @@ public class LogsClusterResource {
   public void getClusterLogs(@QueryParam("limit") @DefaultValue("25") final int limit,
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
+          @QueryParam("sort") @Nullable final String sort,
           @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
-    getClusterLogs(limit, filter, resOrder, "default", ar);
+    getClusterLogs(limit, filter, resOrder, sort, "default", ar);
   }
 
 
@@ -134,6 +133,7 @@ public class LogsClusterResource {
   public void getClusterLogs(@QueryParam("limit") @DefaultValue("25") final int limit,
           @QueryParam("filter") @Nullable final String filter,
            @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
+          @QueryParam("sort") @Nullable final String sort,
           @PathParam("appenderName") final String appender, @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
     if (limit == 0) {
@@ -148,16 +148,21 @@ public class LogsClusterResource {
       throw new ClientErrorException("Limit too large " + limit + " maximum allowed is " + maxLogRetrieveLimit,
               Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE);
     }
-    CompletableFuture<PriorityQueue<LogRecord>> cf
+    CompletableFuture<LogsResource.LogAccumulator> cf
             = ContextPropagatingCompletableFuture.supplyAsync(() -> {
-              PriorityQueue<LogRecord> result = new PriorityQueue(limit, LogUtils.TS_ORDER_ASC);
+             LogsResource.LogAccumulator result;
+              if (sort != null) {
+                result = new LogsResource.TopAccumulator(sort, resOrder, limit);
+              } else {
+                result = new LogsResource.TopAccumulator(limit, LogRecord::getTs, resOrder);
+              }
               Collection<LogRecord> ll;
               try {
-                ll = localLogs.getLocalLogs(0, limit, filter, resOrder, appender);
+                ll = localLogs.getLocalLogs(limit, filter, resOrder, sort, appender);
               } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
               }
-              LogUtils.addAll(limit, result, ll);
+              result.acceptAll(ll);
               return result;
             }, DefaultExecutor.INSTANCE);
     ClusterInfo clusterInfo = cluster.getClusterInfo();
@@ -172,8 +177,8 @@ public class LogsClusterResource {
       }
       cf = cf.thenCombine(
               invTarget.request("application/avro").rx().get(new GenericType<List<LogRecord>>() { }),
-              (PriorityQueue<LogRecord> result, List<LogRecord> rl) -> {
-                LogUtils.addAll(limit, result, rl);
+              (LogsResource.LogAccumulator result, List<LogRecord> rl) -> {
+                result.acceptAll(rl);
                 return result;
               }
       );
@@ -182,10 +187,7 @@ public class LogsClusterResource {
       if (t != null) {
         ar.resume(t);
       } else {
-        ArrayList<LogRecord> result = new ArrayList(limit);
-        result.addAll(records);
-        Collections.sort(result, (resOrder == Order.DESC) ? LogUtils.TS_ORDER_DESC : LogUtils.TS_ORDER_ASC);
-        ar.resume(result);
+        ar.resume(records.get());
       }
     });
   }
