@@ -175,6 +175,9 @@ public class LogsClusterResource {
       if (filter != null) {
         invTarget = invTarget.queryParam("filter", filter);
       }
+      if (sort != null) {
+        invTarget = invTarget.queryParam("sort", sort);
+      }
       cf = cf.thenCombine(
               invTarget.request("application/avro").rx().get(new GenericType<List<LogRecord>>() { }),
               (LogsResource.LogAccumulator result, List<LogRecord> rl) -> {
