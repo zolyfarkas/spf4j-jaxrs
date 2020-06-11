@@ -120,7 +120,10 @@ public class LogsResource {
       return (log) -> {
         try {
           return (Comparable) program.execute(log);
-        } catch (ExecutionException | InterruptedException ex) {
+        } catch (ExecutionException ex) {
+          throw new IllegalArgumentException("Problematic top expression: " + topField, ex);
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
           throw new RuntimeException(ex);
         }
       };
