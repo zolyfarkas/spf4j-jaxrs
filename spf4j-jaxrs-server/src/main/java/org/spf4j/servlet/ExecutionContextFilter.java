@@ -53,6 +53,9 @@ import org.spf4j.log.Level;
 import org.spf4j.log.LogAttribute;
 import org.spf4j.log.LogUtils;
 import org.spf4j.log.Slf4jLogRecord;
+import org.spf4j.perf.MeasurementRecorder;
+import org.spf4j.perf.MeasurementRecorderSource;
+import org.spf4j.perf.impl.RecorderFactory;
 
 /**
  * A Filter for REST services.
@@ -78,6 +81,17 @@ public final class ExecutionContextFilter implements Filter {
   public static final String CFG_CTX_LOG_LEVEL_HEADER_NAME = "spf4j.jaxrs.ctxLogLevelHeaderName";
 
   public static final String CFG_HEADER_OVERWRITE_QP_PREFIX = "spf4j.jaxrs.headerOverwriteQueryParamPrefix";
+
+  private static final MeasurementRecorderSource EXEC_TIME_STATS
+                    = RecorderFactory.createScalableQuantizedRecorderSource("reqestExecTime", "microSecond",
+                      60000, 1000, 0, 6, 10);
+
+
+  private static final MeasurementRecorder BYTES_IN
+                     = RecorderFactory.createScalableMinMaxAvgRecorder("BytesIn", "Bytes", 60000);
+
+  private static final MeasurementRecorder BYTES_OUT
+                     = RecorderFactory.createScalableMinMaxAvgRecorder("BytesOut", "Bytes", 60000);
 
   private DeadlineProtocol deadlineProtocol;
 
@@ -191,8 +205,14 @@ public final class ExecutionContextFilter implements Filter {
         asyncContext.addListener(new AsyncListener() {
           @Override
           public void onComplete(final AsyncEvent event) {
-            logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp);
-            ctx.close();
+            try {
+              httpResp.flushBuffer();
+            } catch (IOException ex) {
+              throw new UncheckedIOException(ex);
+            } finally {
+              logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp);
+              ctx.close();
+            }
           }
 
           @Override
@@ -275,24 +295,32 @@ public final class ExecutionContextFilter implements Filter {
         clientWarning = true;
       }
     }
+    long execTimeMicros = TimeUnit.NANOSECONDS.toMicros(execTimeNanos);
+    String remoteHost = getRemoteHost(req);
+    int status = resp.getStatus();
+    long bytesRead = req.getBytesRead();
+    long bytesWritten = resp.getBytesWritten();
+    EXEC_TIME_STATS.getRecorder(req.getMethod()).record(execTimeMicros);
+    BYTES_IN.record(bytesRead);
+    BYTES_OUT.record(bytesWritten);
     if (logAttrs == null) {
       args = new Object[]{ctx.getName(),
         LogAttribute.traceId(ctx.getId()),
-        LogAttribute.of("clientHost", getRemoteHost(req)),
-        LogAttribute.value("httpStatus", resp.getStatus()),
-        LogAttribute.execTimeMicros(execTimeNanos, TimeUnit.NANOSECONDS),
-        LogAttribute.value("inBytes", req.getBytesRead()),
-        LogAttribute.value("outBytes", resp.getBytesWritten())
+        LogAttribute.of("clientHost", remoteHost),
+        LogAttribute.value("httpStatus", status),
+        LogAttribute.execTimeMicros(execTimeMicros, TimeUnit.MICROSECONDS),
+        LogAttribute.value("inBytes", bytesRead),
+        LogAttribute.value("outBytes", bytesWritten)
       };
     } else {
       args = new Object[7 + logAttrs.size()];
       args[0] = ctx.getName();
       args[1] = LogAttribute.traceId(ctx.getId());
-      args[2] = LogAttribute.of("clientHost", getRemoteHost(req));
-      args[3] = LogAttribute.value("httpStatus", resp.getStatus());
-      args[4] = LogAttribute.execTimeMicros(execTimeNanos, TimeUnit.NANOSECONDS);
-      args[5] = LogAttribute.value("inBytes", req.getBytesRead());
-      args[6] = LogAttribute.value("outBytes", resp.getBytesWritten());
+      args[2] = LogAttribute.of("clientHost", remoteHost);
+      args[3] = LogAttribute.value("httpStatus", status);
+      args[4] = LogAttribute.execTimeMicros(execTimeMicros, TimeUnit.MICROSECONDS);
+      args[5] = LogAttribute.value("inBytes", bytesRead);
+      args[6] = LogAttribute.value("outBytes", bytesWritten);
       int i = 7;
       for (Object obj : logAttrs) {
         args[i++] = obj;
@@ -327,7 +355,8 @@ public final class ExecutionContextFilter implements Filter {
 
 
   private void errorResponse(final HttpServletResponse resp,
-          final int status, final String reasonPhrase, final String description, final Throwable exception) {
+          final int status, final String reasonPhrase, final String description, final Throwable exception)
+          throws IOException {
     resp.setStatus(status);
     ServiceError err = ServiceError.newBuilder()
             .setCode(status)
@@ -355,6 +384,8 @@ public final class ExecutionContextFilter implements Filter {
       }
       log.log(java.util.logging.Level.SEVERE, "Exception while writing detail", ex);
       throw new UncheckedIOException(ex);
+    } finally {
+      resp.flushBuffer();
     }
   }
 
