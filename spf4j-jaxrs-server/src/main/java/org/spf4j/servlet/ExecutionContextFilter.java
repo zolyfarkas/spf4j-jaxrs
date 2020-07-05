@@ -83,7 +83,7 @@ public final class ExecutionContextFilter implements Filter {
   public static final String CFG_HEADER_OVERWRITE_QP_PREFIX = "spf4j.jaxrs.headerOverwriteQueryParamPrefix";
 
   private static final MeasurementRecorderSource EXEC_TIME_STATS
-                    = RecorderFactory.createScalableQuantizedRecorderSource("reqestExecTime", "microSecond",
+                    = RecorderFactory.createScalableQuantizedRecorderSource("requestExecTime", "microSecond",
                       60000, 1000, 0, 6, 10);
 
 
