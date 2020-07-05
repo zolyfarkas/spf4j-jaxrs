@@ -111,10 +111,11 @@ public final class PrometheusUtils {
     for (TimeSeriesRecord rec : recs) {
       long ts = rec.getTimeStamp().toEpochMilli();
       for (Pair<String, String> le : les) {
-        List<String> l = new ArrayList<>(2);
+        int lsize = labels.size() + 1;
+        List<String> l = new ArrayList<>(lsize);
         l.addAll(labels);
         l.add("le");
-        List<String> lv = new ArrayList<>(2);
+        List<String> lv = new ArrayList<>(lsize);
         l.addAll(labelValues);
         lv.add(le.getSecond());
         samples.add(new Collector.MetricFamilySamples.Sample(metricName + '_' + "count", l,
