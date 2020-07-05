@@ -117,7 +117,7 @@ public class MetricsResource {
     MeasurementStoreQuery query = RecorderFactory.MEASUREMENT_STORE.query();
     Collection<Schema> measurements = query.getMeasurements((x) -> x.equals(metricName));
     if (measurements.isEmpty()) {
-      throw new NotFoundException("Metric nod found: " + metricName);
+      throw new NotFoundException("Metric not found: " + metricName);
     } else if (measurements.size() > 1) {
       throw new IllegalStateException("Multiple metrics found, this is a bug " + measurements);
     }
