@@ -11,6 +11,16 @@ public final class Filters {
 
   private Filters() { }
 
+  public static int getIntParameter(final FilterConfig filterConfig, final String configKey,
+          final int defaultValue) {
+    String value = filterConfig.getInitParameter(configKey);
+    if (value == null) {
+      return defaultValue;
+    } else {
+      return Integer.parseInt(value);
+    }
+  }
+
   public static long getLongParameter(final FilterConfig filterConfig, final String configKey,
           final long defaultValue) {
     String value = filterConfig.getInitParameter(configKey);
