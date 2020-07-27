@@ -17,9 +17,14 @@ package org.spf4j.jaxrs.server.providers;
 
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
+import org.glassfish.jersey.internal.inject.AbstractBinder;
+import org.glassfish.jersey.process.internal.RequestScoped;
+import org.spf4j.base.ExecutionContext;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
+import org.spf4j.jaxrs.server.security.providers.AnnotationAuthorizationFilter;
+import org.spf4j.jaxrs.server.security.providers.SecurityContextRequestFilter;
 
 /**
- *
  * @author Zoltan Farkas
  */
 public final class DefaultServerProvidersFeatures implements Feature {
@@ -27,12 +32,25 @@ public final class DefaultServerProvidersFeatures implements Feature {
   @Override
   public boolean configure(final FeatureContext fc) {
     fc.register(DataDeprecationsJaxRsFilter.class);
-    fc.register(ExecutionContextResolver.class);
     fc.register(LoggingExceptionMapper.class);
     fc.register(ProjectionJaxRsFilter.class);
     fc.register(ServerCustomExecutorServiceProvider.class);
     fc.register(ServerCustomScheduledExecutionServiceProvider.class);
+    fc.register(SecurityContextRequestFilter.class);
+    fc.register(AnnotationAuthorizationFilter.class);
+    fc.register(new XtraObjectsContextBinder());
     return true;
+  }
+
+  private static class XtraObjectsContextBinder extends AbstractBinder {
+
+    @Override
+    protected void configure() {
+      bindFactory(ExecutionContextResolver.class).to(ExecutionContext.class)
+              .proxy(true).proxyForSameScope(false).in(RequestScoped.class);
+      bindFactory(JaxRsAbacSecurityContextResolver.class).to(JaxRsSecurityContext.class)
+              .proxy(true).proxyForSameScope(false).in(RequestScoped.class);
+    }
   }
 
 }

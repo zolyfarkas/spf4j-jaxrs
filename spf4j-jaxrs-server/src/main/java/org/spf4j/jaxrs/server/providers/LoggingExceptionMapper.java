@@ -25,7 +25,7 @@ import org.spf4j.base.avro.DebugDetail;
 import org.spf4j.base.avro.ServiceError;
 import org.spf4j.log.Level;
 import org.spf4j.http.ContextTags;
-import org.spf4j.jaxrs.server.DebugDetailEntitlement;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.server.MediaTypes;
 import org.spf4j.servlet.CountingHttpServletResponse;
 
@@ -50,22 +50,12 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
 
   private final ContainerRequestContext reqCtx;
 
-  private final DebugDetailEntitlement allowClientDebug;
-
   @Inject
   public LoggingExceptionMapper(
          @ConfigProperty(name = "hostName", defaultValue = "hostName") final String host,
-         @Context final ContainerRequestContext reqCtx,
-         final DebugDetailEntitlement allowClientDebug) {
+         @Context final ContainerRequestContext reqCtx) {
     this.host = host;
     this.reqCtx = reqCtx;
-    if (allowClientDebug == null) {
-      Logger.getLogger(LoggingExceptionMapper.class.getName())
-              .warning("LoggingExceptionMapper will send debug detail to all clients");
-      this.allowClientDebug = ((x) -> true);
-    } else {
-      this.allowClientDebug = allowClientDebug;
-    }
   }
 
   @Override
@@ -93,12 +83,13 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
       payload = null;
     }
     ExecutionContext ctx = ExecutionContexts.current();
+    boolean isOperator = reqCtx.getSecurityContext().isUserInRole(JaxRsSecurityContext.OPERATOR_ROLE);
     if (ctx == null) { // Exception mapper can execute in a timeout thread, where context is not available,
       Logger.getLogger("handling.error")
               .log(java.util.logging.Level.WARNING, "No request context available", exception);
       ServiceError.Builder errBuilder = ServiceError.newBuilder()
               .setCode(status);
-      if (allowClientDebug.test(reqCtx.getSecurityContext())) {
+      if (isOperator) {
               errBuilder.setDetail(new DebugDetail(host,
                       Collections.EMPTY_LIST, Converters.convert(exception), Collections.EMPTY_LIST));
       }
@@ -119,7 +110,7 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
     return Response.status(status)
             .entity(new ServiceError(status, exception.getClass().getName(),
                     message, payload,
-                    allowClientDebug.test(reqCtx.getSecurityContext())
+                    isOperator
                             ? ctx.getDebugDetail(host, exception, isReqProfileOnError)
                             : null))
             .type(getMediaType())

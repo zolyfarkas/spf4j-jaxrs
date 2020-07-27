@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 SPF4J.
+ * Copyright 2020 SPF4J.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,40 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.jaxrs.aql;
+package org.spf4j.jaxrs.server.resources;
 
 import java.security.Principal;
 import java.util.Properties;
+import javax.annotation.Nullable;
 import org.spf4j.jaxrs.JaxRsSecurityContext;
 
 /**
- * Sys admin securirty context.
+ *
  * @author Zoltan Farkas
  */
-final class SaSecurityContext implements JaxRsSecurityContext {
-
-  static final JaxRsSecurityContext INSTANCE = new SaSecurityContext();
-
-  private SaSecurityContext() { }
+public final class TestJaxRsSecurityContext implements JaxRsSecurityContext {
 
   @Override
+  @Nullable
   public Principal getUserPrincipal() {
-    return () -> "sa";
+    return null;
   }
 
   @Override
-  public boolean isUserInRole(final String role) {
-    return "dba".equals(role) || "sa".equals(role);
-  }
-
-  @Override
-  public boolean isSecure() {
+  public boolean isUserInRole(final String arg0) {
     return true;
   }
 
   @Override
+  public boolean isSecure() {
+    return false;
+  }
+
+  @Override
   public String getAuthenticationScheme() {
-    return "INTERNAL";
+    return "TEST";
   }
 
   @Override

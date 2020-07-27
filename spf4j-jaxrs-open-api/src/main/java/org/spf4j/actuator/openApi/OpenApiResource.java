@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.security.PermitAll;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -68,6 +69,7 @@ import org.slf4j.LoggerFactory;
 
 @Path("/")
 @Singleton
+@PermitAll
 public final class OpenApiResource extends BaseOpenApiResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(OpenApiResource.class);

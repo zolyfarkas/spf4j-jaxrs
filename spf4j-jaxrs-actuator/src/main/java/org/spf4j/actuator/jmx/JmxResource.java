@@ -68,6 +68,7 @@ import org.spf4j.base.avro.jmx.OperationInvocation;
 import org.spf4j.http.ContextTags;
 import org.spf4j.http.HttpWarning;
 import org.spf4j.base.ArrayWriter;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.log.ExecContextLogger;
 import org.spf4j.jaxrs.StreamingArrayContent;
 
@@ -77,7 +78,7 @@ import org.spf4j.jaxrs.StreamingArrayContent;
  */
 @Path("jmx/local")
 @Immediate
-@RolesAllowed("operator")
+@RolesAllowed(JaxRsSecurityContext.OPERATOR_ROLE)
 @Produces(value = {"application/avro-x+json", "application/json",
   "application/avro+json", "application/avro", "application/octet-stream"})
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors

@@ -14,6 +14,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import javax.servlet.AsyncContext;
 import javax.servlet.AsyncEvent;
 import javax.servlet.AsyncListener;
@@ -33,6 +35,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.apache.avro.SchemaResolver;
 import org.glassfish.jersey.uri.UriComponent;
 import org.spf4j.base.Arrays;
+import org.spf4j.base.Env;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.StackSamples;
@@ -46,6 +49,8 @@ import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.http.DefaultDeadlineProtocol;
 import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
+import org.spf4j.jaxrs.server.SecurityAuthenticator;
 import org.spf4j.io.LazyOutputStreamWrapper;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
 import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyWriter;
@@ -74,6 +79,7 @@ import org.spf4j.perf.impl.RecorderFactory;
  * </ul>
  */
 @WebFilter(asyncSupported = true)
+@ParametersAreNonnullByDefault
 public final class ExecutionContextFilter implements Filter {
 
   public static final String CFG_ID_HEADER_NAME = "spf4j.jaxrs.idHeaderName";
@@ -88,12 +94,14 @@ public final class ExecutionContextFilter implements Filter {
 
 
   private static final MeasurementRecorder BYTES_IN
-                     = RecorderFactory.createScalableMinMaxAvgRecorder("BytesIn", "Bytes", 60000);
+                     = RecorderFactory.createScalableMinMaxAvgRecorder("ContentBytesIn", "Bytes", 60000);
 
   private static final MeasurementRecorder BYTES_OUT
-                     = RecorderFactory.createScalableMinMaxAvgRecorder("BytesOut", "Bytes", 60000);
+                     = RecorderFactory.createScalableMinMaxAvgRecorder("ContentBytesOut", "Bytes", 60000);
 
-  private DeadlineProtocol deadlineProtocol;
+  private final DeadlineProtocol deadlineProtocol;
+
+  private final SecurityAuthenticator auth;
 
   private String idHeaderName;
 
@@ -107,17 +115,21 @@ public final class ExecutionContextFilter implements Filter {
 
   private String headerOverwriteQueryParamPrefix;
 
-  public ExecutionContextFilter() {
-    this(new DefaultDeadlineProtocol());
+
+  public ExecutionContextFilter(final SecurityAuthenticator auth) {
+    this(new DefaultDeadlineProtocol(), auth);
   }
 
-  public ExecutionContextFilter(final DeadlineProtocol deadlineProtocol) {
-    this(deadlineProtocol, 0.3f, 0.9f);
+  public ExecutionContextFilter(final DeadlineProtocol deadlineProtocol, final SecurityAuthenticator auth) {
+    this(deadlineProtocol, auth, Env.getValue("WARN_TIME_ERROR_THRESHOLD", 0.4f),
+            Env.getValue("EXEC_TIME_ERROR_THRESHOLD", 0.9f));
   }
 
   public ExecutionContextFilter(final DeadlineProtocol deadlineProtocol,
+          final SecurityAuthenticator auth,
           final float warnThreshold, final float errorThreshold) {
     this.deadlineProtocol = deadlineProtocol;
+    this.auth = auth;
     this.warnThreshold = warnThreshold;
     this.errorThreshold = errorThreshold;
     this.headerOverwriteQueryParamPrefix = "_";
@@ -174,24 +186,26 @@ public final class ExecutionContextFilter implements Filter {
     CountingHttpServletResponse httpResp = new CountingHttpServletResponse((HttpServletResponse) response);
     String name = httpReq.getMethod() + '/' + httpReq.getRequestURL();
     String reqId = httpReq.getHeader(idHeaderName);
+    JaxRsSecurityContext secCtx = auth.authenticate(httpReq::getHeader);
     long startTimeNanos = TimeSource.nanoTime();
     long deadlineNanos;
     try {
       deadlineNanos = deadlineProtocol.deserialize(httpReq::getHeader, startTimeNanos);
     } catch (IllegalArgumentException ex) {
-      errorResponse(httpResp, 400, "Invalid deadline/timeout", "", ex);
+      errorResponse(httpResp, 400, "Invalid deadline/timeout", "", ex, secCtx);
       logRequestEnd(org.spf4j.log.Level.WARN, name, reqId, httpReq, httpResp);
       return;
     }
     ExecutionContext ctx = ExecutionContexts.start(name, reqId, null, startTimeNanos, deadlineNanos);
     ctx.put(ContextTags.HTTP_REQ, httpReq);
     ctx.put(ContextTags.HTTP_RESP, httpResp);
+    ctx.put(ContextTags.SECURITY_CONTEXT, secCtx);
     String ctxLoglevel = httpReq.getHeader(ctxLogLevelHeaderName);
     if (ctxLoglevel != null) {
       try {
         ctx.setBackendMinLogLevel(Level.valueOf(ctxLoglevel));
       } catch (IllegalArgumentException ex) {
-        errorResponse(httpResp, 400, "Invalid log level", ctxLoglevel, ex);
+        errorResponse(httpResp, 400, "Invalid log level", ctxLoglevel, ex, secCtx);
         logRequestEnd(org.spf4j.log.Level.WARN, name, reqId, httpReq, httpResp);
         return;
       }
@@ -355,15 +369,18 @@ public final class ExecutionContextFilter implements Filter {
 
 
   private void errorResponse(final HttpServletResponse resp,
-          final int status, final String reasonPhrase, final String description, final Throwable exception)
+          final int status, final String reasonPhrase, final String description,
+          @Nullable final Throwable exception, final JaxRsSecurityContext secCtx)
           throws IOException {
     resp.setStatus(status);
-    ServiceError err = ServiceError.newBuilder()
+    ServiceError.Builder errBuilder = ServiceError.newBuilder()
             .setCode(status)
-            .setMessage(reasonPhrase + "; " + description)
-            .setDetail(new DebugDetail("origin", Collections.EMPTY_LIST,
-                    exception != null ? Converters.convert(exception) : null, Collections.EMPTY_LIST))
-            .build();
+            .setMessage(reasonPhrase + "; " + description);
+    if (secCtx.isUserInRole(JaxRsSecurityContext.OPERATOR_ROLE)) {
+      errBuilder.setDetail(new DebugDetail("origin", Collections.EMPTY_LIST,
+                    exception != null ? Converters.convert(exception) : null, Collections.EMPTY_LIST));
+    }
+    ServiceError err = errBuilder.build();
     XJsonAvroMessageBodyWriter writer = new XJsonAvroMessageBodyWriter(new DefaultSchemaProtocol(
             SchemaResolver.NONE));
     try {

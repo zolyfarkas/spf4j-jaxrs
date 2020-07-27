@@ -33,6 +33,7 @@ import org.spf4j.base.AppendableUtils;
 import org.spf4j.base.avro.LogRecord;
 import org.spf4j.base.avro.Order;
 import org.spf4j.base.avro.StackSampleElement;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.ssdump2.Converter;
 import org.spf4j.stackmonitor.SampleNode;
 import org.spf4j.stackmonitor.Sampler;
@@ -43,7 +44,7 @@ import org.spf4j.stackmonitor.Sampler;
  */
 @Path("profiles")
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
-@RolesAllowed("operator")
+@RolesAllowed(JaxRsSecurityContext.OPERATOR_ROLE)
 @Singleton
 public class ProfilesResource {
 

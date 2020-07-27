@@ -46,6 +46,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.reflect.AvroSchema;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.base.avro.AvroCloseableIterable;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.perf.MeasurementStoreQuery;
 import org.spf4j.perf.TimeSeriesRecord;
@@ -55,7 +56,7 @@ import org.spf4j.perf.impl.RecorderFactory;
  * @author Zoltan Farkas
  */
 @Path("metrics")
-@RolesAllowed("operator")
+@RolesAllowed(JaxRsSecurityContext.OPERATOR_ROLE)
 @Singleton
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 public class MetricsResource {

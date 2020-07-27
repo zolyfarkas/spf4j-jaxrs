@@ -23,22 +23,28 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
+import org.spf4j.jaxrs.server.security.SecuredInternaly;
 import org.spf4j.log.ExecContextLogger;
+import org.spf4j.security.AbacSecurityContext;
 
 /**
  *
  * @author Zoltan Farkas
  */
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
-@SuppressFBWarnings("JAXRS_ENDPOINT")
+@SuppressFBWarnings({ "JAXRS_ENDPOINT", "JXI_INVALID_CONTEXT_PARAMETER_TYPE" })
+@SecuredInternaly
 public class ClassPathResource {
 
   private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(ClassPathResource.class));
@@ -87,12 +93,17 @@ public class ClassPathResource {
 
   @GET
   @Path("{path:.*}")
-  public Response staticResources(@PathParam("path") final String path) throws IOException {
+  public Response staticResources(@PathParam("path") final String path,
+          @Context final JaxRsSecurityContext secCtx) throws IOException {
     String urlStr;
     if (path.startsWith("/")) {
       urlStr = cpBase + validateNoBackRef(path);
     } else {
       urlStr = cpBase + '/' + validateNoBackRef(path);
+    }
+    if (!secCtx.canAccess(AbacSecurityContext.resource("url", urlStr),
+            AbacSecurityContext.action("read"), new Properties())) {
+      return Response.status(403, "Cannot access " + urlStr).build();
     }
     URL resource = null;
     if (urlStr.endsWith("/")) {

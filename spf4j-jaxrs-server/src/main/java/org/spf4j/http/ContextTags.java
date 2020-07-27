@@ -1,6 +1,7 @@
 
 package org.spf4j.http;
 
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import gnu.trove.set.hash.THashSet;
 import java.util.ArrayList;
 import java.util.List;
@@ -99,6 +100,13 @@ public final class ContextTags {
     @Override
     public String toString() {
       return "HRESP";
+    }
+  };
+
+  public static final SimpleTag<JaxRsSecurityContext> SECURITY_CONTEXT = new SimpleTag<JaxRsSecurityContext>() {
+    @Override
+    public String toString() {
+      return "SEC";
     }
   };
 

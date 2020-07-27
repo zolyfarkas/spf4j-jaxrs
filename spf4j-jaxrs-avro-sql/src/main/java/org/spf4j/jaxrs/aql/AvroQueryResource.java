@@ -35,16 +35,16 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 import org.apache.avro.Schema;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.glassfish.jersey.spi.Contract;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 
 /**
  * REST avro sql endpoint.
  * @author Zoltan Farkas
  */
-@SuppressFBWarnings("JAXRS_ENDPOINT")
+@SuppressFBWarnings({"JAXRS_ENDPOINT", "JXI_INVALID_CONTEXT_PARAMETER_TYPE"})
 @Contract
 public interface AvroQueryResource {
 
@@ -73,7 +73,7 @@ public interface AvroQueryResource {
             schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = String.class),
             description = "sql select statement", example = "select a,b,c from t where ...")
           @QueryParam("query") String query,
-          @Context SecurityContext secCtx);
+          @Context JaxRsSecurityContext secCtx);
 
 
   /**
@@ -101,7 +101,7 @@ public interface AvroQueryResource {
   )
   Response query(
           Reader query,
-          @Context SecurityContext secCtx);
+          @Context JaxRsSecurityContext secCtx);
 
 
   /**
@@ -124,7 +124,7 @@ public interface AvroQueryResource {
          }
   )
   // Use Response to hide RelNode from swagger
-  Response plan(@QueryParam("query") String query, @Context SecurityContext secCtx);
+  Response plan(@QueryParam("query") String query, @Context JaxRsSecurityContext secCtx);
 
   /**
    * Retrieve the query plan for the executed query.
@@ -150,7 +150,7 @@ public interface AvroQueryResource {
          }
   )
   // Use Response to hide RelNode from swagger
-  Response plan(Reader query, @Context SecurityContext secCtx);
+  Response plan(Reader query, @Context JaxRsSecurityContext secCtx);
 
 
   /**
@@ -162,7 +162,7 @@ public interface AvroQueryResource {
   @GET
   @Path("schema")
   @Produces({"application/json"})
-  Schema schema(@QueryParam("query") String query, @Context SecurityContext secCtx);
+  Schema schema(@QueryParam("query") String query, @Context JaxRsSecurityContext secCtx);
 
   /**
    * Retrieve the schema of the result-set returned by the query.
@@ -174,7 +174,7 @@ public interface AvroQueryResource {
   @Path("schema")
   @Produces({"application/json"})
   @Consumes("text/plain")
-  Schema schema(Reader query, @Context SecurityContext secCtx);
+  Schema schema(Reader query, @Context JaxRsSecurityContext secCtx);
 
 
   /**
@@ -185,7 +185,7 @@ public interface AvroQueryResource {
   @GET
   @Path("schemas")
   @Produces({"application/json"})
-  Map<String, Schema> schemas(@Context SecurityContext secCtx);
+  Map<String, Schema> schemas(@Context JaxRsSecurityContext secCtx);
 
   /**
    * Get a specific table schema.
@@ -196,7 +196,8 @@ public interface AvroQueryResource {
   @GET
   @Path("schemas/{entityName}")
   @Produces({"application/json"})
-  Schema entitySchema(@PathParam("entityName") String entityName, @Context SecurityContext secCtx);
+  Schema entitySchema(@PathParam("entityName") String entityName,
+          @Context JaxRsSecurityContext secCtx);
 
   FrameworkConfig getConfig();
 

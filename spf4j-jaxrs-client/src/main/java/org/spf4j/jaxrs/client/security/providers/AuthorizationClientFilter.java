@@ -31,6 +31,9 @@ import javax.ws.rs.ext.Provider;
 @Provider
 public class AuthorizationClientFilter implements ClientRequestFilter {
 
+  public static final AuthorizationClientFilter NOP_AUTH_FILTER
+          = new AuthorizationClientFilter(AuthenticationScheme.Bearer, (sb) -> { });
+
   private final Consumer<StringBuilder> tokenWriter;
 
   private final String method;

@@ -38,6 +38,7 @@ import org.glassfish.jersey.client.proxy.WebResourceFactory;
 import org.spf4j.actuator.jmx.JmxRestApi;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.client.Spf4JClient;
 
 /**
@@ -45,7 +46,7 @@ import org.spf4j.jaxrs.client.Spf4JClient;
  */
 @Path("jmx/cluster")
 @Immediate
-@RolesAllowed("operator")
+@RolesAllowed(JaxRsSecurityContext.OPERATOR_ROLE)
 @Produces(value = {"application/avro-x+json", "application/json",
   "application/avro+json", "application/avro", "application/octet-stream"})
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors

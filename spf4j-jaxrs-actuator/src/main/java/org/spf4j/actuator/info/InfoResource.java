@@ -20,6 +20,7 @@ import org.spf4j.base.avro.ApplicationInfo;
 import org.spf4j.base.avro.ProcessInfo;
 import org.spf4j.cluster.Service;
 import org.spf4j.cluster.ServiceInfo;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.log.ExecContextLogger;
 
 /**
@@ -30,7 +31,7 @@ import org.spf4j.log.ExecContextLogger;
 @Produces(value = {"application/avro-x+json", "application/json",
   "application/avro+json", "application/avro", "application/octet-stream"})
 @Immediate
-@RolesAllowed("operator")
+@RolesAllowed(JaxRsSecurityContext.OPERATOR_ROLE)
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 public class InfoResource {
 

@@ -1,23 +1,19 @@
 package org.spf4j.jaxrs.aql;
 
 import com.google.common.collect.Maps;
-import org.spf4j.security.AbacAuthorizer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.Reader;
 import java.io.StringReader;
-import java.security.Principal;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
-import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
+import javax.annotation.security.PermitAll;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.reflect.AvroSchema;
@@ -48,9 +44,10 @@ import org.spf4j.jaxrs.IterableArrayContent;
 import org.spf4j.log.ExecContextLogger;
 import org.spf4j.avro.calcite.AvroDataSetAsProjectableFilterableTable;
 import org.spf4j.aql.AvroDataSetContract;
-import org.spf4j.avro.calcite.PlannerUtils;
+//import org.spf4j.avro.calcite.PlannerUtils;
 import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 
 /**
  * @author Zoltan Farkas
@@ -60,6 +57,7 @@ import org.spf4j.http.HttpWarning;
 @Singleton
 @SuppressWarnings("checkstyle:DesignForExtension")
 @Immediate
+@PermitAll// internal entitlements
 public class AvroQueryResourceImpl implements AvroQueryResource {
 
   private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(AvroQueryResourceImpl.class));
@@ -67,11 +65,9 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
 
   private final FrameworkConfig config;
 
-  private final AbacAuthorizer authorizer;
 
   @Inject
-  public AvroQueryResourceImpl(final Iterable<AvroDataSetContract> resources,
-          @Nullable final AbacAuthorizer authorizer) {
+  public AvroQueryResourceImpl(final Iterable<AvroDataSetContract> resources) {
     SchemaPlus schema = Frameworks.createRootSchema(true);
     for (AvroDataSetContract res : resources) {
       String name = res.getName();
@@ -86,11 +82,6 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
             .parserConfig(cfg)
             .defaultSchema(schema)
             .build();
-    if (authorizer == null)   {
-      this.authorizer = AbacAuthorizer.NO_ACCESS;
-    } else {
-      this.authorizer = authorizer;
-    }
   }
 
   @PostConstruct
@@ -108,20 +99,19 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
 
 
   @Override
-  public Response query(final String query, final SecurityContext secCtx) {
+  public Response query(final String query, final JaxRsSecurityContext secCtx) {
     return query(new StringReader(query), secCtx);
   }
 
   @Override
-  public Response query(final Reader query, final SecurityContext secCtx) {
+  public Response query(final Reader query, final JaxRsSecurityContext secCtx) {
     RelNode relNode = parsePlan(query);
     LOG.debug("exec plan: {}", new ReadablePlan(relNode));
     RelDataType rowType = relNode.getRowType();
     LOG.debug("Return row type: {}", rowType);
     Schema from = Types.from(rowType);
     LOG.debug("Return row schema: {}", from);
-    EmbededDataContext dc = new EmbededDataContext(new JavaTypeFactoryImpl(),
-            new SecurityContextAdapter(secCtx, authorizer));
+    EmbededDataContext dc = new EmbededDataContext(new JavaTypeFactoryImpl(), secCtx);
     Interpreter interpreter = new Interpreter(dc, relNode);
     Response.ResponseBuilder rb = Response.ok(new IterableInterpreter(from, interpreter));
     Map<String, String> deprecations = (Map<String, String>) dc.get(EmbededDataContext.DEPRECATIONS);
@@ -135,12 +125,12 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
   }
 
   @Override
-  public Response plan(final Reader query, final SecurityContext secCtx) {
+  public Response plan(final Reader query, final JaxRsSecurityContext secCtx) {
     return Response.ok(parsePlan(query)).build();
   }
 
   @Override
-  public Response plan(final String query, final SecurityContext secCtx) {
+  public Response plan(final String query, final JaxRsSecurityContext secCtx) {
     return plan(new StringReader(query), secCtx);
   }
 
@@ -164,13 +154,13 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
     } catch (RelConversionException ex) {
       throw new RuntimeException(ex);
     }
-    RelNode relNode = rel.project();
-    return PlannerUtils.pushDownPredicatesAndProjection(relNode);
+    return rel.project();
+    //return PlannerUtils.pushDownPredicatesAndProjection(relNode);
   }
 
   @Override
   @AvroSchema("{ \"type\" : \"map\", \"values\" : { \"type\" : \"string\" , \"logicalType\" : \"avsc\"} } ")
-  public Map<String, Schema> schemas(final SecurityContext secCtx) {
+  public Map<String, Schema> schemas(final JaxRsSecurityContext secCtx) {
     SchemaPlus defaultSchema = config.getDefaultSchema();
     Set<String> tableNames = defaultSchema.getTableNames();
     Map<String, Schema> result = Maps.newHashMapWithExpectedSize(tableNames.size());
@@ -181,7 +171,7 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
   }
 
   @Override
-  public Schema entitySchema(final String entityName, final SecurityContext secCtx) {
+  public Schema entitySchema(final String entityName, final JaxRsSecurityContext secCtx) {
     Table table = config.getDefaultSchema().getTable(entityName);
     return getTableSchema(table);
   }
@@ -196,16 +186,16 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
 
   @Override
   public String toString() {
-    return "AvroQueryResourceImpl{" + "config=" + config + ", authorizer=" + authorizer + '}';
+    return "AvroQueryResourceImpl{" + "config=" + config + '}';
   }
 
   @Override
-  public Schema schema(final String query, final SecurityContext secCtx) {
+  public Schema schema(final String query, final JaxRsSecurityContext secCtx) {
     return schema(new StringReader(query), secCtx);
   }
 
   @Override
-  public Schema schema(final Reader query, final SecurityContext secCtx) {
+  public Schema schema(final Reader query, final JaxRsSecurityContext secCtx) {
     return Types.from(parsePlan(query).getRowType());
   }
 
@@ -267,31 +257,5 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
     }
   }
 
-  private static class SecurityContextAdapter implements org.spf4j.security.SecurityContext {
-
-    private final SecurityContext secCtx;
-
-    private final AbacAuthorizer authorizer;
-
-    SecurityContextAdapter(final SecurityContext secCtx, final AbacAuthorizer authorizer) {
-      this.secCtx = secCtx;
-      this.authorizer = authorizer;
-    }
-
-    @Override
-    public Principal getUserPrincipal() {
-      return secCtx.getUserPrincipal();
-    }
-
-    @Override
-    public boolean isUserInRole(final String role) {
-      return secCtx.isUserInRole(role);
-    }
-
-    @Override
-    public boolean canAccess(final Properties resource, final Properties action, final Properties env) {
-      return authorizer.canAccess(this.getUserPrincipal(), resource, action, env);
-    }
-  }
 
 }

@@ -39,6 +39,7 @@ import org.spf4j.base.avro.Converters;
 import org.spf4j.base.avro.LogLevel;
 import org.spf4j.base.avro.LogRecord;
 import org.spf4j.base.avro.Order;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.os.OperatingSystem;
 
 /**
@@ -46,7 +47,7 @@ import org.spf4j.os.OperatingSystem;
  * @author Zoltan Farkas
  */
 @Path("logback/local/status")
-@RolesAllowed("operator")
+@RolesAllowed(JaxRsSecurityContext.OPERATOR_ROLE)
 @Singleton
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 public class LogbackResource {

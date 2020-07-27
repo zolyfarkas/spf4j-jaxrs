@@ -55,6 +55,7 @@ import org.spf4j.stackmonitor.SampleNode;
 import javax.ws.rs.core.GenericType;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.profiles.FlameGraphParams;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
 
 /**
@@ -63,7 +64,7 @@ import org.spf4j.jaxrs.client.Spf4jWebTarget;
  */
 @Path("profiles")
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
-@RolesAllowed("operator")
+@RolesAllowed(JaxRsSecurityContext.OPERATOR_ROLE)
 @Singleton
 public class ProfilesClusterResource {
 

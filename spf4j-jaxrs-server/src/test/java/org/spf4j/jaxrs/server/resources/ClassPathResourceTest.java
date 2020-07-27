@@ -38,16 +38,17 @@ public class ClassPathResourceTest {
   @Test
   public void testPathValidation() throws IOException {
     ClassPathResource res = new ClassPathResource("static", Arrays.asList("index.html", "index.htm"));
-    Response resp = res.staticResources("/");
+    TestJaxRsSecurityContext testJaxRsSecurityContext = new TestJaxRsSecurityContext();
+    Response resp = res.staticResources("/",  testJaxRsSecurityContext);
     Assert.assertNotNull(resp.getEntity());
     try {
-      res.staticResources("../stuff.txt");
+      res.staticResources("../stuff.txt", testJaxRsSecurityContext);
       Assert.fail();
     } catch (ForbiddenException ex) {
 
     }
     try {
-      Response staticResources = res.staticResources("%2e%2e%2fstuff.txt");
+      Response staticResources = res.staticResources("%2e%2e%2fstuff.txt", testJaxRsSecurityContext);
       Assert.assertEquals(404, staticResources.getStatus());
     } catch (ForbiddenException ex) {
 

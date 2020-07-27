@@ -57,6 +57,7 @@ import org.spf4j.concurrent.LifoThreadPoolBuilder;
 import org.spf4j.failsafe.HedgePolicy;
 import org.spf4j.jaxrs.Spf4jBinder;
 import org.spf4j.http.DefaultDeadlineProtocol;
+import org.spf4j.jaxrs.server.SecurityAuthenticator;
 import org.spf4j.http.multi.MultiURLs;
 import org.spf4j.http.multi.Spf4jURLStreamHandlerFactory;
 import org.spf4j.jaxrs.client.Spf4JClient;
@@ -67,6 +68,7 @@ import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
 import org.spf4j.jaxrs.config.MicroprofileConfigFeature;
 import org.spf4j.jaxrs.features.AvroFeature;
 import org.spf4j.jaxrs.features.GeneralPurposeFeatures;
+import org.spf4j.jaxrs.server.DelegatingAuthenticationClientFilter;
 import org.spf4j.jaxrs.server.features.ImmediateFeature;
 import org.spf4j.jaxrs.server.providers.DefaultServerProvidersFeatures;
 import org.spf4j.servlet.ExecutionContextFilter;
@@ -105,6 +107,8 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
   private long defaultTimeoutNanos;
 
   private long maximumAllowedTimeoutNanos;
+
+  private SecurityAuthenticator auth = SecurityAuthenticator.NOAUTH;
 
   /* see https://github.com/jersey/jersey/blob/master/examples/
   https-clientserver-grizzly/src/main/java/org/glassfish/jersey/examples/httpsclientservergrizzly/Server.java */
@@ -215,6 +219,11 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
     return this;
   }
 
+  public JerseyServiceBuilder withSecurityAuthenticator(final SecurityAuthenticator pauth) {
+    this.auth = pauth;
+    return this;
+  }
+
   public Set<String> getProviderPackages() {
     return providerPackages;
   }
@@ -225,7 +234,7 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
 
 
   public JerseyService build() throws IOException {
-    return new JerseyServiceImpl(this);
+    return new JerseyServiceImpl();
   }
 
   @Override
@@ -257,17 +266,17 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
     private ResourceConfig resourceConfig;
 
 
-    JerseyServiceImpl(final JaxRsConfiguration config) throws IOException {
-      server = createHttpServer(config);
+    JerseyServiceImpl() throws IOException {
+      server = createHttpServer();
     }
 
-    private HttpServer createHttpServer(final JaxRsConfiguration config)
+    private HttpServer createHttpServer()
             throws IOException {
       String jerseyAppName = bindAddr + ':' + listenPort;
       FixedWebappContext webappContext = new FixedWebappContext(jerseyAppName, "");
       DefaultDeadlineProtocol dp = new DefaultDeadlineProtocol(defaultTimeoutNanos, maximumAllowedTimeoutNanos,
               TimeUnit.NANOSECONDS);
-      FilterRegistration fr = webappContext.addFilter("ecFilter", new ExecutionContextFilter(dp));
+      FilterRegistration fr = webappContext.addFilter("ecFilter", new ExecutionContextFilter(dp, auth));
       fr.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "/*");
 
       SchemaResolver schemaClient;
@@ -298,7 +307,7 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
       //resourceConfig.packages(true, providerPackages.toArray(new String[providerPackages.size()]));
       resourceConfig.registerInstances(binders.toArray(new Object[binders.size()]));
       resourceConfig.registerClasses((Set) serviceProviders);
-      resourceConfig.property(JaxRsConfiguration.class.getName(), config);
+      resourceConfig.property(JaxRsConfiguration.class.getName(), JerseyServiceBuilder.this);
       resourceConfig.property("hostName", hostName);
       resourceConfig.property("servlet.bindAddr", bindAddr);
       resourceConfig.property("servlet.port", listenPort);
@@ -325,9 +334,10 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
             .register(new GeneralPurposeFeatures())
             .register(EncodingFilter.class)
             .register(avroFeature)
+            .register(DelegatingAuthenticationClientFilter.class)
             .property(ClientProperties.USE_ENCODING, "gzip")
             .build()).withHedgePolicy(HedgePolicy.NONE);
-      resourceConfig.register(new Spf4jBinder(schemaClient, restClient, (x) -> true));
+      resourceConfig.register(new Spf4jBinder(schemaClient, restClient));
       resourceConfig.register(avroFeature);
       resourceConfig.register(ImmediateFeature.class);
       ServletContainer servletContainer = new ServletContainer(resourceConfig);

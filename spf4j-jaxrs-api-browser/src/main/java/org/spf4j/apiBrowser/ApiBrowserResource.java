@@ -18,6 +18,7 @@ package org.spf4j.apiBrowser;
 import java.net.URI;
 import java.net.URISyntaxException;
 import javax.annotation.Nullable;
+import javax.annotation.security.PermitAll;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -33,6 +34,7 @@ import org.spf4j.jaxrs.server.resources.ClassPathResource;
  */
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 @Path("/")
+@PermitAll
 public class ApiBrowserResource {
 
   private final ClassPathResource res;

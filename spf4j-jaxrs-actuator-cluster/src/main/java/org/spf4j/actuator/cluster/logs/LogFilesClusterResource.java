@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
@@ -44,6 +45,7 @@ import org.spf4j.base.avro.FileEntry;
 import org.spf4j.base.avro.FileType;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.server.StreamedResponseContent;
 
@@ -51,6 +53,7 @@ import org.spf4j.jaxrs.server.StreamedResponseContent;
  * @author Zoltan Farkas
  */
 @Path("logFiles/cluster")
+@RolesAllowed(JaxRsSecurityContext.OPERATOR_ROLE)
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 @Singleton
 public class LogFilesClusterResource {

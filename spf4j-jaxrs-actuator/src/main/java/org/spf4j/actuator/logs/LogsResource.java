@@ -26,6 +26,7 @@ import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.base.avro.LogRecord;
 import org.spf4j.base.avro.Order;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.log.AvroDataFileAppender;
 import org.spf4j.log.LogbackUtils;
@@ -39,7 +40,7 @@ import org.spf4j.zel.vm.Program;
  */
 @Path("logs/local")
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
-@RolesAllowed("operator")
+@RolesAllowed(JaxRsSecurityContext.OPERATOR_ROLE)
 @Singleton
 public class LogsResource {
 

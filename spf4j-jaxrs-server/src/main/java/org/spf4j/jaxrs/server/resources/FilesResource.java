@@ -26,9 +26,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 import javax.annotation.Nullable;
 import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.PathParam;
@@ -41,7 +41,10 @@ import org.spf4j.base.SuppressForbiden;
 import org.spf4j.base.avro.FileEntry;
 import org.spf4j.base.avro.FileType;
 import org.spf4j.http.HttpRange;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.server.StreamedResponseContent;
+import org.spf4j.jaxrs.server.security.SecuredInternaly;
+import org.spf4j.security.AbacSecurityContext;
 
 /**
  * A naive implementation of a file tree REST "browser"
@@ -49,7 +52,8 @@ import org.spf4j.jaxrs.server.StreamedResponseContent;
  * @author Zoltan Farkas
  */
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
-@SuppressFBWarnings("JAXRS_ENDPOINT") // will need to think about this...
+@SuppressFBWarnings({ "JAXRS_ENDPOINT", "JXI_INVALID_CONTEXT_PARAMETER_TYPE" }) // will need to think about this...
+@SecuredInternaly
 public class FilesResource {
 
   private final Path base;
@@ -67,8 +71,9 @@ public class FilesResource {
 
   @GET
   public Response get(@HeaderParam("Range") @Nullable final HttpRange range,
-          @Context final Request request) throws IOException {
-    return get(Collections.emptyList(), range, request);
+          @Context final Request request, @Context final JaxRsSecurityContext secCtx)
+          throws IOException {
+    return get(Collections.emptyList(), range, request, secCtx);
   }
 
   @javax.ws.rs.Path("{path:.*}")
@@ -77,12 +82,18 @@ public class FilesResource {
   @SuppressForbiden // java.util.Date is my only choice.
   public Response get(@PathParam("path") final List<PathSegment> path,
           @HeaderParam("Range") @Nullable final HttpRange range,
-          @Context final Request request) throws IOException {
+          @Context final Request request, @Context final JaxRsSecurityContext secCtx)
+          throws IOException {
     Path ltarget = resolveToPath(path);
     final Path target = ltarget;
+    if (!secCtx
+            .canAccess(AbacSecurityContext.resource("path", target.toString()),
+                    AbacSecurityContext.action("read"), new Properties())) {
+      return Response.status(403, "Denied access to: " + target).build();
+    }
     if (Files.isDirectory(target)) {
       if (!this.listDirectoryContents) {
-        throw new ForbiddenException("Directory listing not allowed for " + path);
+        return Response.status(403, "Directory listing not allowed for " + path).build();
       }
       List<FileEntry> result = new ArrayList<>();
       try (DirectoryStream<Path> stream = Files.newDirectoryStream(target)) {
@@ -97,6 +108,7 @@ public class FilesResource {
       }
       return Response.ok(result, MediaType.APPLICATION_JSON).build();
     } else {
+
         Date lastModifiedTime = new Date(Files.getLastModifiedTime(target).toMillis());
         Response.ResponseBuilder rb = request.evaluatePreconditions(lastModifiedTime);
         if (rb != null) {

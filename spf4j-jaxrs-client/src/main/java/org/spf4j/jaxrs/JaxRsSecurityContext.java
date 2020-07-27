@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 SPF4J.
+ * Copyright 2020 SPF4J.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.jaxrs.server;
+package org.spf4j.jaxrs;
 
-import java.util.function.Predicate;
+import java.util.Properties;
+import java.util.function.BiConsumer;
 import javax.ws.rs.core.SecurityContext;
+import org.spf4j.security.AbacSecurityContext;
 
-/**
- * @author Zoltan Farkas
- */
-public interface DebugDetailEntitlement extends Predicate<SecurityContext> {
+public interface JaxRsSecurityContext extends SecurityContext, AbacSecurityContext {
+
+  /**
+   * Role that allow permission to operate (view logs, profiles, configuration...) a service.
+   */
+  String OPERATOR_ROLE = "operator";
+
+  default boolean canAccess(final Properties resource, final Properties action, final Properties env) {
+      return false;
+  }
+
+  default void initiateAuthentication(final BiConsumer<String, String> headers) {
+  }
 
 }

@@ -22,13 +22,14 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.server.resources.FilesResource;
 
 /**
  * @author Zoltan Farkas
  */
 @Path("logFiles")
-@RolesAllowed("operator")
+@RolesAllowed(JaxRsSecurityContext.OPERATOR_ROLE)
 @Singleton
 public final class LogFilesResource {
 

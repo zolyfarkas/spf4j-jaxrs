@@ -40,6 +40,7 @@ import org.spf4j.base.avro.ProcessInfo;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.client.Spf4JClient;
 
 /**
@@ -49,7 +50,7 @@ import org.spf4j.jaxrs.client.Spf4JClient;
 @Path("info")
 @Produces(value = {"application/avro-x+json", "application/json",
   "application/avro+json", "application/avro", "application/octet-stream"})
-@RolesAllowed("operator")
+@RolesAllowed(JaxRsSecurityContext.OPERATOR_ROLE)
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
 public class InfoResourceCluster {
 

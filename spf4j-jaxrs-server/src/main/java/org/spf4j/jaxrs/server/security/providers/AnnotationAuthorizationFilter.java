@@ -15,8 +15,11 @@
  */
 package org.spf4j.jaxrs.server.security.providers;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import javax.annotation.Priority;
 import javax.annotation.security.DenyAll;
 import javax.annotation.security.PermitAll;
@@ -30,8 +33,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.ext.Provider;
+import org.spf4j.jaxrs.server.security.SecuredInternaly;
 
 /**
+ * A filter that processes security annotations.
  *
  * @author Zoltan Farkas
  */
@@ -43,48 +48,74 @@ public final class AnnotationAuthorizationFilter implements ContainerRequestFilt
 
   private static final Response ACCESS_FORBIDDEN = Response.status(Response.Status.FORBIDDEN).build();
 
-  private final Consumer<ContainerRequestContext> validator;
+  private final Supplier<Consumer<ContainerRequestContext>> validator;
 
   @Inject
-  public AnnotationAuthorizationFilter(@Context final ResourceInfo resourceInfo) {
-    Method method = resourceInfo.getResourceMethod();
-    if (method.isAnnotationPresent(DenyAll.class)) {
-      validator = (rCtx) -> rCtx.abortWith(ACCESS_FORBIDDEN);
-    } else if (method.isAnnotationPresent(PermitAll.class)) {
-      validator = (rCtx) -> { };
-    } else {
-      RolesAllowed annotation = method.getAnnotation(RolesAllowed.class);
-      if (annotation != null) {
-        String[] roles = annotation.value();
-        validator = (rCtx) -> {
-          SecurityContext securityContext = rCtx.getSecurityContext();
-          if (securityContext == null) {
-            rCtx.abortWith(ACCESS_UNAUTHENTICATED);
-          }
-          boolean hasRole = false;
-          for (String role : roles) {
-            if (!securityContext.isUserInRole(role)) {
-              hasRole = true;
-              break;
-            }
-          }
-          if (!hasRole) {
-            rCtx.abortWith(ACCESS_FORBIDDEN);
-          }
+  public AnnotationAuthorizationFilter(@Context final javax.inject.Provider<ResourceInfo> resourceInfoSupp) {
+    validator = () -> {
+      ResourceInfo resourceInfo = resourceInfoSupp.get();
+      Method method = resourceInfo.getResourceMethod();
+      if (isAnnotationPresent(method, DenyAll.class)) {
+        return (rCtx) -> rCtx.abortWith(ACCESS_FORBIDDEN);
+      } else if (isAnnotationPresent(method, PermitAll.class, SecuredInternaly.class)) {
+        return (rCtx) -> {
         };
       } else {
-        if (resourceInfo.getResourceClass().isAnnotationPresent(PermitAll.class)) {
-          validator = (rCtx) -> { };
+        RolesAllowed annotation = getAnnotation(method, RolesAllowed.class);
+        if (annotation != null) {
+          String[] roles = annotation.value();
+          return (rCtx) -> {
+            SecurityContext securityContext = rCtx.getSecurityContext();
+            if (securityContext == null) {
+              rCtx.abortWith(ACCESS_UNAUTHENTICATED);
+            }
+            boolean hasRole = false;
+            for (String role : roles) {
+              if (securityContext.isUserInRole(role)) {
+                hasRole = true;
+                break;
+              }
+            }
+            if (!hasRole) {
+              rCtx.abortWith(ACCESS_FORBIDDEN);
+            }
+          };
         } else {
-          validator = (rCtx) -> rCtx.abortWith(ACCESS_FORBIDDEN);
+            return (rCtx) -> rCtx.abortWith(ACCESS_FORBIDDEN);
         }
       }
+    };
+  }
+
+  private static boolean isAnnotationPresent(final Method m,
+          final Class<? extends Annotation> annotClasz) {
+    return m.isAnnotationPresent(annotClasz) || m.getDeclaringClass().isAnnotationPresent(annotClasz);
+  }
+
+  private static boolean isAnnotationPresent(final Method m,
+          final Class<? extends Annotation>... annotClasses) {
+    for (Class<? extends Annotation> annotClasz : annotClasses) {
+      boolean isa =  m.isAnnotationPresent(annotClasz) || m.getDeclaringClass().isAnnotationPresent(annotClasz);
+      if (isa) {
+        return true;
+      }
     }
+    return false;
+  }
+
+  @Nullable
+  private static <T extends Annotation> T getAnnotation(final Method m,
+          final Class<T> annotClasz) {
+    T annotation = m.getAnnotation(annotClasz);
+    if (annotation != null) {
+      return annotation;
+    }
+    return m.getDeclaringClass().getAnnotation(annotClasz);
   }
 
   @Override
   public void filter(final ContainerRequestContext requestContext) {
-     validator.accept(requestContext);
+    validator.get().accept(requestContext);
   }
 
   @Override

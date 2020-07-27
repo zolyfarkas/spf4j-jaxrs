@@ -17,6 +17,8 @@ package org.spf4j.actuator;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
+import java.security.Principal;
+import java.util.function.Function;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.spf4j.grizzly.JerseyService;
@@ -24,8 +26,10 @@ import org.spf4j.grizzly.JerseyServiceBuilder;
 import org.spf4j.grizzly.JvmServices;
 import org.spf4j.grizzly.JvmServicesBuilder;
 import org.spf4j.grizzly.SingleNodeClusterFeature;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
+import org.spf4j.jaxrs.server.SecurityAuthenticator;
 
 /**
  * @author Zoltan Farkas
@@ -34,13 +38,12 @@ import org.spf4j.jaxrs.client.Spf4jWebTarget;
 public abstract class ServiceIntegrationBase {
 
   private static final JvmServices JVM = new JvmServicesBuilder()
-            .withApplicationName("actuatorTest")
-            .withLogFolder("./target")
-            .build().start().closeOnShutdown();
+          .withApplicationName("actuatorTest")
+          .withLogFolder("./target")
+          .build().start().closeOnShutdown();
   private static JerseyService jerseyService;
   private static Spf4jWebTarget target;
   private static Spf4JClient client;
-
 
   @BeforeClass
   public static void setUp() throws IOException {
@@ -49,6 +52,32 @@ public abstract class ServiceIntegrationBase {
             .withFeature(ActuatorFeature.class)
             .withFeature(SingleNodeClusterFeature.class)
             .withPort(9090)
+            .withSecurityAuthenticator(new SecurityAuthenticator() {
+              @Override
+              public JaxRsSecurityContext authenticate(final Function<String, String> headers) {
+                return new JaxRsSecurityContext() {
+                  @Override
+                  public Principal getUserPrincipal() {
+                    return () -> "Test";
+                  }
+
+                  @Override
+                  public boolean isUserInRole(final String role) {
+                    return JaxRsSecurityContext.OPERATOR_ROLE.equals(role);
+                  }
+
+                  @Override
+                  public boolean isSecure() {
+                    return false;
+                  }
+
+                  @Override
+                  public String getAuthenticationScheme() {
+                    return "TEST";
+                  }
+                };
+              }
+            })
             .build();
     jerseyService.start();
     client = jerseyService.getApplication().getRestClient();

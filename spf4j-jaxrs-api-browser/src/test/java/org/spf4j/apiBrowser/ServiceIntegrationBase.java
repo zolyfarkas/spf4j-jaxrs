@@ -18,6 +18,9 @@ package org.spf4j.apiBrowser;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.security.Principal;
+import java.util.Properties;
+import java.util.function.Function;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.spf4j.grizzly.JerseyService;
@@ -25,8 +28,10 @@ import org.spf4j.grizzly.JerseyServiceBuilder;
 import org.spf4j.grizzly.JvmServices;
 import org.spf4j.grizzly.JvmServicesBuilder;
 import org.spf4j.grizzly.SingleNodeClusterFeature;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
+import org.spf4j.jaxrs.server.SecurityAuthenticator;
 
 /**
  * @author Zoltan Farkas
@@ -52,6 +57,40 @@ public abstract class ServiceIntegrationBase {
             .withFeature(ApiBrowserFeature.class)
             .withFeature(SingleNodeClusterFeature.class)
             .withPort(9090)
+            .withSecurityAuthenticator(new SecurityAuthenticator() {
+              @Override
+              public JaxRsSecurityContext authenticate(final Function<String, String> headers) {
+                return new JaxRsSecurityContext() {
+                  @Override
+                  public Principal getUserPrincipal() {
+                    return () -> "Test";
+                  }
+
+                  @Override
+                  public boolean isUserInRole(final String role) {
+                    return JaxRsSecurityContext.OPERATOR_ROLE.equals(role);
+                  }
+
+                  @Override
+                  public boolean isSecure() {
+                    return false;
+                  }
+
+                  @Override
+                  public String getAuthenticationScheme() {
+                    return "TEST";
+                  }
+
+                  @Override
+                  public boolean canAccess(final Properties resource,
+                          final Properties action, final Properties env) {
+                    return true;
+                  }
+
+
+                };
+              }
+            })
             .build();
     jerseyService.start();
     client = jerseyService.getApplication().getRestClient();

@@ -43,6 +43,7 @@ import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
 import org.spf4j.concurrent.DefaultExecutor;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.jaxrs.client.Spf4JClient;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
@@ -53,7 +54,7 @@ import org.spf4j.log.LogPrinter;
  */
 @Path("logs/cluster")
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
-@RolesAllowed("operator")
+@RolesAllowed(JaxRsSecurityContext.OPERATOR_ROLE)
 @Singleton
 public class LogsClusterResource {
 

@@ -29,7 +29,8 @@ import org.spf4j.base.avro.HealthCheckInfo;
 import org.spf4j.base.avro.HealthRecord;
 import org.spf4j.base.avro.HealthStatus;
 import org.spf4j.base.avro.ServiceError;
-import org.spf4j.jaxrs.server.DebugDetailEntitlement;
+import org.spf4j.jaxrs.JaxRsSecurityContext;
+import org.spf4j.jaxrs.server.security.SecuredInternaly;
 import org.spf4j.log.ExecContextLogger;
 
 /**
@@ -39,6 +40,7 @@ import org.spf4j.log.ExecContextLogger;
 @Produces(value = {"application/avro-x+json", "application/json",
   "application/avro+json", "application/avro", "application/octet-stream"})
 @SuppressWarnings("checkstyle:DesignForExtension")// methods cannot be final due to interceptors
+@SecuredInternaly
 public class HealthResource {
 
   private static final Logger LOG = new ExecContextLogger(LoggerFactory.getLogger(HealthResource.class));
@@ -47,13 +49,9 @@ public class HealthResource {
 
   private final String host;
 
-  private final DebugDetailEntitlement ddEnt;
-
   @Inject
   public HealthResource(final Iterable<HealthCheck.Registration> healthChecks,
-          final DebugDetailEntitlement ddEnt,
           @ConfigProperty(name = "hostName", defaultValue = "hostName") final String host) {
-    this.ddEnt = ddEnt;
     this.host = host;
     checkSupplier = () -> {
       HealthOrgNode checks = HealthOrgNode.newHealthChecks();
@@ -154,7 +152,7 @@ public class HealthResource {
           @Context final SecurityContext secCtx) {
     boolean isDebug = pisDebug;
     boolean isDebugOnError = pisDebugOnError;
-    if (!ddEnt.test(secCtx)) {
+    if (!secCtx.isUserInRole(JaxRsSecurityContext.OPERATOR_ROLE)) {
       isDebug = false;
       isDebugOnError = false;
     }
@@ -174,7 +172,7 @@ public class HealthResource {
 
   @Override
   public String toString() {
-    return "HealthResource{" + "checks=" + checkSupplier + ", host=" + host + ", ddEnt=" + ddEnt + '}';
+    return "HealthResource{" + "checks=" + checkSupplier + ", host=" + host + '}';
   }
 
 }

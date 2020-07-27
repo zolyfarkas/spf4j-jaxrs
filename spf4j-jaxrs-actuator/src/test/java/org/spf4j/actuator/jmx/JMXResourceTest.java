@@ -139,4 +139,5 @@ public class JMXResourceTest extends ServiceIntegrationBase {
      LOG.debug("Jmx {} operation  {} returned", "com.sun.management:type=DiagnosticCommand", "gcClassHistogram", resp);
   }
 
+
 }
