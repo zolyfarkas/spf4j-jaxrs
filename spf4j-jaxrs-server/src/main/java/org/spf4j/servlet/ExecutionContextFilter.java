@@ -181,12 +181,13 @@ public final class ExecutionContextFilter implements Filter {
       chain.doFilter(request, response);
       return;
     }
+    HttpServletRequest httpRequest = (HttpServletRequest) request;
+    JaxRsSecurityContext secCtx = auth.authenticate(httpRequest::getHeader);
     CountingHttpServletRequest httpReq = new CountingHttpServletRequest(
-            overwriteHeadersIfNeeded((HttpServletRequest) request));
+            overwriteHeadersIfNeeded(httpRequest), secCtx);
     CountingHttpServletResponse httpResp = new CountingHttpServletResponse((HttpServletResponse) response);
     String name = httpReq.getMethod() + '/' + httpReq.getRequestURL();
     String reqId = httpReq.getHeader(idHeaderName);
-    JaxRsSecurityContext secCtx = auth.authenticate(httpReq::getHeader);
     long startTimeNanos = TimeSource.nanoTime();
     long deadlineNanos;
     try {

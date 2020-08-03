@@ -32,7 +32,7 @@ public final class DefaultServerProvidersFeatures implements Feature {
   @Override
   public boolean configure(final FeatureContext fc) {
     fc.register(DataDeprecationsJaxRsFilter.class);
-    fc.register(LoggingExceptionMapper.class);
+    fc.register(StdErrorResponseExceptionMapper.class);
     fc.register(ProjectionJaxRsFilter.class);
     fc.register(ServerCustomExecutorServiceProvider.class);
     fc.register(ServerCustomScheduledExecutionServiceProvider.class);

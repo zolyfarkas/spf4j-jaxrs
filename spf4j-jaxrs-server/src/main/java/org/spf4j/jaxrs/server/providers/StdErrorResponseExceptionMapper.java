@@ -33,7 +33,7 @@ import org.spf4j.servlet.CountingHttpServletResponse;
  * @author Zoltan Farkas
  */
 @Provider
-public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>, ResponseErrorMapper {
+public final class StdErrorResponseExceptionMapper implements ExceptionMapper<Throwable>, ResponseErrorMapper {
 
   private static final Set<MediaType> SUPPORTED;
 
@@ -51,7 +51,7 @@ public final class LoggingExceptionMapper implements ExceptionMapper<Throwable>,
   private final ContainerRequestContext reqCtx;
 
   @Inject
-  public LoggingExceptionMapper(
+  public StdErrorResponseExceptionMapper(
          @ConfigProperty(name = "hostName", defaultValue = "hostName") final String host,
          @Context final ContainerRequestContext reqCtx) {
     this.host = host;

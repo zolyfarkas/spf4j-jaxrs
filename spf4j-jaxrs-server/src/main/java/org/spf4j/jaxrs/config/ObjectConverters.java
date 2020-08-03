@@ -78,6 +78,7 @@ public final class ObjectConverters {
   }
 
   @Nullable
+  @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")// when isArray true component type is not null
   private Object resolveAny(final Object val, final Type type) {
     Class<? extends Object> valClass = val.getClass();
     TypeToken<?> tt = TypeToken.of(type);
