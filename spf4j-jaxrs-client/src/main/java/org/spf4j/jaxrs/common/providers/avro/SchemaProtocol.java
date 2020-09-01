@@ -57,6 +57,7 @@ public interface SchemaProtocol {
 
   /**
    * De-serialize the schema transmitted via HTTP headers.
+   * @param mediaType the media type.
    * @param headers the headers.
    * @param type - the type the schema will be converted to.
    * @param genericType - the generic type the schema will be converted to.
@@ -67,11 +68,12 @@ public interface SchemaProtocol {
 
 
   /**
-   * Serialize a deadline to HTTP headers.
-   * @param headers
-   * @param schema the schema to encode.
+   * Serialize the Content type information to HTTP headers.
+   * @param mediaType the media type.
+   * @param headers the http headers to mutate.
+   * @param schema the schema of the content.
    */
-  void serialize(MediaType acceptedMediaType, BiConsumer<String, String> headers, Schema schema);
+  void serialize(MediaType mediaType, BiConsumer<String, String> headers, Schema schema);
 
   /**
    * return the Acceptable schema from the acceptedMediaType.
