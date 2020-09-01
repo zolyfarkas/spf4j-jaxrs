@@ -28,6 +28,7 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Priority;
+import org.apache.avro.SchemaResolver;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -44,16 +45,19 @@ import org.spf4j.jaxrs.config.sources.SysPropConfigSource;
  */
 public final class ConfigBuilderImpl implements ConfigBuilder {
 
+  private final SchemaResolver schemaResolver;
+
   private final List<ConfigSource> sources;
 
   private final Map<Type, SortedMap<Integer, Converter<?>>> converters;
 
   private ClassLoader cl;
 
-  public ConfigBuilderImpl() {
+  public ConfigBuilderImpl(final SchemaResolver schemaResolver) {
     sources = new ArrayList<>(4);
     converters = new HashMap<>();
     cl = Thread.currentThread().getContextClassLoader();
+    this.schemaResolver = schemaResolver;
   }
 
   @Override
@@ -180,7 +184,8 @@ public final class ConfigBuilderImpl implements ConfigBuilder {
   @Override
   public Config build() {
    Collections.sort(sources, (a, b) -> a.getOrdinal() - b.getOrdinal());
-   return new ConfigImpl(new ObjectConverters(converters), sources.toArray(new ConfigSource[sources.size()]));
+   return new ConfigImpl(new ObjectConverters(converters, schemaResolver),
+           sources.toArray(new ConfigSource[sources.size()]));
   }
 
   @Override

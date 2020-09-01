@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.avro.SchemaResolver;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -29,11 +30,15 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
  */
 final class ConfigProviderResolverImpl extends ConfigProviderResolver {
 
+  private final SchemaResolver schemaResolver;
+
   private final ConcurrentMap<ClassLoader, Config> configs = new ConcurrentHashMap<>();
 
-  ConfigProviderResolverImpl() {
+  ConfigProviderResolverImpl(final SchemaResolver schemaResolver) {
+    this.schemaResolver = schemaResolver;
     configs.put(Thread.currentThread().getContextClassLoader(),
-            new ConfigBuilderImpl().addDefaultSources().addDiscoveredSources().addDiscoveredConverters().build());
+            new ConfigBuilderImpl(schemaResolver).addDefaultSources()
+                    .addDiscoveredSources().addDiscoveredConverters().build());
   }
 
   @Override
@@ -53,7 +58,7 @@ final class ConfigProviderResolverImpl extends ConfigProviderResolver {
 
   @Override
   public ConfigBuilder getBuilder() {
-    return new ConfigBuilderImpl();
+    return new ConfigBuilderImpl(schemaResolver);
   }
 
   @Override

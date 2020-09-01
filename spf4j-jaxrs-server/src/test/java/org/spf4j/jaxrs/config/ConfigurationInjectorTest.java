@@ -21,6 +21,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import javax.ws.rs.core.Configuration;
+import org.apache.avro.SchemaResolver;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -42,7 +43,7 @@ import org.jvnet.hk2.annotations.Service;
 public class ConfigurationInjectorTest {
 
   static {
-    ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl());
+    ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl(SchemaResolver.NONE));
   }
 
   @Service

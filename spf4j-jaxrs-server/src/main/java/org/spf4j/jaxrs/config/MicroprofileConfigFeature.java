@@ -20,6 +20,7 @@ import javax.inject.Singleton;
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.core.GenericType;
+import org.apache.avro.SchemaResolvers;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.glassfish.hk2.api.InjectionResolver;
@@ -33,7 +34,7 @@ import org.glassfish.jersey.spi.ExternalConfigurationProvider;
 public final class MicroprofileConfigFeature implements Feature {
 
   static {
-    ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl());
+    ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl(SchemaResolvers.getDefault()));
   }
 
   @Override

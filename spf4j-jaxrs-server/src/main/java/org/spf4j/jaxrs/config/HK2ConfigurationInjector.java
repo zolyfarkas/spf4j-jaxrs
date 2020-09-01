@@ -66,7 +66,7 @@ public final class HK2ConfigurationInjector implements InjectionResolver<ConfigP
       if (tt.isSubtypeOf(Provider.class) || tt.isSubtypeOf(Supplier.class)) {
         BiFunction<Object, Type, Object> typeConv
                 = resolver.get(ptype.getActualTypeArguments()[0]);
-        return new ConfigSupplier(configuration,  typeConv, cfgParam, requiredType);
+        return new ConfigSupplier(configuration,  typeConv, cfgParam, ptype.getActualTypeArguments()[0]);
       } else {
         throw new IllegalArgumentException("Unable to inject " + injectee);
       }
