@@ -44,7 +44,7 @@ import org.spf4j.jaxrs.IterableArrayContent;
 import org.spf4j.log.ExecContextLogger;
 import org.spf4j.avro.calcite.AvroDataSetAsProjectableFilterableTable;
 import org.spf4j.aql.AvroDataSetContract;
-//import org.spf4j.avro.calcite.PlannerUtils;
+import org.spf4j.avro.calcite.PlannerUtils;
 import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
 import org.spf4j.jaxrs.JaxRsSecurityContext;
@@ -154,8 +154,8 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
     } catch (RelConversionException ex) {
       throw new RuntimeException(ex);
     }
-    return rel.project();
-    //return PlannerUtils.pushDownPredicatesAndProjection(relNode);
+    //return rel.project();
+    return PlannerUtils.pushDownPredicatesAndProjection(rel.project());
   }
 
   @Override
