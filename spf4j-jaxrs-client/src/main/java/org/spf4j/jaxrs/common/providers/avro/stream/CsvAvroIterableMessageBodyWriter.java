@@ -18,13 +18,14 @@ package org.spf4j.jaxrs.common.providers.avro.stream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
 import org.apache.avro.io.Encoder;
 import org.spf4j.avro.csv.CsvEncoder;
 import org.spf4j.io.Csv;
+import org.spf4j.jaxrs.common.providers.ProviderUtils;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 
 /**
@@ -40,8 +41,10 @@ public final class CsvAvroIterableMessageBodyWriter  extends AvroIterableMessage
   }
 
   @Override
-  public Encoder getEncoder(final Schema writerSchema, final OutputStream os) throws IOException {
-    CsvEncoder csvEncoder = new CsvEncoder(Csv.CSV.writer(new OutputStreamWriter(os, StandardCharsets.UTF_8)),
+  public Encoder getEncoder(final MediaType mediaType,
+          final Schema writerSchema, final OutputStream os) throws IOException {
+    CsvEncoder csvEncoder = new CsvEncoder(Csv.CSV.writer(new OutputStreamWriter(os,
+            ProviderUtils.getCharset(mediaType))),
             writerSchema);
     csvEncoder.writeHeader();
     return csvEncoder;

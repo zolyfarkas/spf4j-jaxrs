@@ -45,7 +45,7 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
     return Iterable.class.isAssignableFrom(type);
   }
 
-  public abstract Encoder getEncoder(Schema writerSchema, OutputStream os)
+  public abstract Encoder getEncoder(MediaType mediaType, Schema writerSchema, OutputStream os)
           throws IOException;
 
   /**
@@ -110,7 +110,7 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
     protocol.serialize(mediaType, httpHeaders::putSingle, actualSchema);
     try {
       DatumWriter writer = new ExtendedReflectDatumWriter(elemSchema);
-      Encoder encoder = getEncoder(actualSchema, entityStream);
+      Encoder encoder = getEncoder(mediaType, actualSchema, entityStream);
       int bufferSize;
       if (t instanceof Buffered) {
         bufferSize = ((Buffered) t).getElementBufferSize();
@@ -144,7 +144,7 @@ public abstract class AvroIterableMessageBodyWriter implements MessageBodyWriter
     Schema respElemSchema = acceptedSchema.getElementType();
     try {
       DatumWriter writer = new ExtendedReflectDatumWriter(respElemSchema);
-      Encoder encoder = getEncoder(acceptedSchema, entityStream);
+      Encoder encoder = getEncoder(mediaType, acceptedSchema, entityStream);
       int bufferSize;
       if (t instanceof Buffered) {
         bufferSize = ((Buffered) t).getElementBufferSize();

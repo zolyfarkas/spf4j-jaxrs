@@ -3,6 +3,7 @@ package org.spf4j.jaxrs.common.providers.avro;
 import java.io.OutputStream;
 import javax.inject.Inject;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
 import org.apache.avro.io.Encoder;
@@ -21,7 +22,7 @@ public final class BinaryAvroMessageBodyWriter extends  AvroMessageBodyWriter {
   }
 
   @Override
-  public Encoder getEncoder(final Schema writerSchema, final OutputStream os) {
+  public Encoder getEncoder(final MediaType mediaType, final Schema writerSchema, final OutputStream os) {
     return EncoderFactory.get().binaryEncoder(os, null);
   }
 

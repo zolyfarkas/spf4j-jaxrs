@@ -5,7 +5,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 import javax.inject.Inject;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
@@ -14,6 +13,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.io.Encoder;
 import org.spf4j.avro.csv.CsvEncoder;
 import org.spf4j.io.Csv;
+import org.spf4j.jaxrs.common.providers.ProviderUtils;
 
 /**
  * @author Zoltan Farkas
@@ -34,8 +34,10 @@ public final class CsvAvroMessageBodyWriter extends  AvroMessageBodyWriter {
   }
 
   @Override
-  public Encoder getEncoder(final Schema writerSchema, final OutputStream os) throws IOException {
-    CsvEncoder csvEncoder = new CsvEncoder(Csv.CSV.writer(new OutputStreamWriter(os, StandardCharsets.UTF_8)),
+  public Encoder getEncoder(final MediaType mediaType,
+          final Schema writerSchema, final OutputStream os) throws IOException {
+    CsvEncoder csvEncoder = new CsvEncoder(Csv.CSV.writer(new OutputStreamWriter(os,
+            ProviderUtils.getCharset(mediaType))),
             writerSchema);
     csvEncoder.writeHeader();
     return csvEncoder;

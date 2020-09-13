@@ -15,13 +15,19 @@
  */
 package org.spf4j.jaxrs.common.providers.avro.stream;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.Provider;
 import org.apache.avro.Schema;
 import org.apache.avro.io.Encoder;
-import org.apache.avro.io.EncoderFactory;
+import org.spf4j.jaxrs.common.providers.ProviderUtils;
+import org.spf4j.jaxrs.common.providers.avro.JsonAvroMessageBodyWriter;
 import org.spf4j.jaxrs.common.providers.avro.SchemaProtocol;
 
 /**
@@ -37,7 +43,14 @@ public final class JsonAvroIterableMessageBodyWriter  extends AvroIterableMessag
   }
 
   @Override
-  public Encoder getEncoder(final Schema writerSchema, final OutputStream os) throws IOException {
-    return EncoderFactory.get().jsonEncoder(writerSchema, os);
+  public Encoder getEncoder(final MediaType mediaType,
+          final Schema writerSchema, final OutputStream os) throws IOException {
+    Charset cs = ProviderUtils.getCharset(mediaType);
+    if (cs == StandardCharsets.UTF_8) {
+      return JsonAvroMessageBodyWriter.ENC.jsonEncoder(writerSchema, os);
+    } else {
+      BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, cs));
+      return JsonAvroMessageBodyWriter.ENC.jsonEncoder(writerSchema, bw);
+    }
   }
 }

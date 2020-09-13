@@ -70,10 +70,24 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
   @SuppressFBWarnings("EXS_EXCEPTION_SOFTENING_NO_CHECKED")
   public void serialize(final MediaType acceptableMediaType,
           final BiConsumer<String, String> headers, final Schema schema) {
-      String schemaStr = schemaToString(schema);
-      headers.accept(HttpHeaders.CONTENT_TYPE, new MediaType(acceptableMediaType.getType(),
+    String schemaStr = schemaToString(schema);
+    String type = acceptableMediaType.getType();
+    Map<String, String> parameters = acceptableMediaType.getParameters();
+    if ("text".equals(type)
+            && !parameters.containsKey(MediaType.CHARSET_PARAMETER)) {
+      // all texts are defaulted to utf8
+      headers.accept(HttpHeaders.CONTENT_TYPE, new MediaType(type,
               acceptableMediaType.getSubtype(),
-              ImmutableMap.of(CONTENT_TYPE_AVRO_SCHEMA_PARAM, schemaStr)).toString());
+              ImmutableMap.<String, String>builder().putAll(parameters)
+                      .put(CONTENT_TYPE_AVRO_SCHEMA_PARAM, schemaStr)
+                      .put(MediaType.CHARSET_PARAMETER, "utf-8").build()).toString());
+
+    } else {
+      headers.accept(HttpHeaders.CONTENT_TYPE, new MediaType(type,
+              acceptableMediaType.getSubtype(),
+              ImmutableMap.<String, String>builder().putAll(parameters)
+                      .put(CONTENT_TYPE_AVRO_SCHEMA_PARAM, schemaStr).build()).toString());
+    }
   }
 
   private String schemaToString(final Schema schema) {
