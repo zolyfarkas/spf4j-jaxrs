@@ -56,7 +56,7 @@ public interface AvroQueryResource {
    * @return query result-set.
    */
   @GET
-  @Produces({"application/json", "application/avro+json", "application/avro"})
+  @Produces({"application/json", "application/avro+json", "application/avro", "text/csv"})
   @Operation(
          description = "Run a SQL query, for a list of queryable entities please see schemas endpoint",
          responses = {
@@ -83,7 +83,7 @@ public interface AvroQueryResource {
    * @return query result-set.
    */
   @POST
-  @Produces({"application/json", "application/avro+json", "application/avro"})
+  @Produces({"application/json", "application/avro+json", "application/avro", "text/csv"})
   @Consumes("text/plain")
   @Operation(
          description = "Run a SQL query, for a list of queryable entities please see schemas endpoint",
