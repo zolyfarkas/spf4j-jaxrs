@@ -34,6 +34,7 @@ import javax.ws.rs.core.StreamingOutput;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.logs.LogbackResource;
 import org.spf4j.actuator.logs.LogsResource;
+import org.spf4j.actuator.logs.LogsResource.LogAccumulator;
 import org.spf4j.base.CloseableIterable;
 import org.spf4j.base.avro.LogRecord;
 import org.spf4j.base.avro.Order;
@@ -99,7 +100,7 @@ public class LogbackClusterResource {
           @Override
           public void write(final OutputStream output) throws IOException, WebApplicationException {
             LogPrinter printer = new LogPrinter(StandardCharsets.UTF_8);
-            for (LogRecord record : (Iterable<LogRecord>) response) {
+            for (LogRecord record : ((LogAccumulator) response).get()) {
               printer.print(record, output);
             }
           }
