@@ -201,7 +201,7 @@ public final class JvmServicesBuilder {
       initRequestAttributedProfiler();
       JAXRSAvroSerializers.registerJaxRsObjectSerializers(); // does not belong here...
       Sampler sampler = createSampler();
-      services = new JvmServicesImpl(sampler, new ProcessVitals(openFilesSampleTimeMillis,
+      services = new JvmServicesImpl(sampler, ProcessVitals.getOrCreate(openFilesSampleTimeMillis,
               memoryUseSampleTimeMillis, gcUseSampleTimeMillis, threadUseSampleTimeMillis, cpuUseSampleTimeMillis),
               new LogbackService(applicationName, logFolder, hostName),
               this);
