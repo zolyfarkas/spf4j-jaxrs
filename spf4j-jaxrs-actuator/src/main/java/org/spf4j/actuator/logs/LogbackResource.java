@@ -105,7 +105,7 @@ public class LogbackResource {
       result.accept(new LogRecord(Objects.toString(hostName + ':' + status.getOrigin()),
               "", level, Instant.ofEpochMilli(status.getDate()), "status",
               Thread.currentThread().getName(),
-              status.getMessage(), Collections.EMPTY_LIST, Collections.EMPTY_MAP,
+              status.getMessage(), Collections.EMPTY_LIST, Collections.EMPTY_LIST, Collections.EMPTY_MAP,
               t == null ? null : Converters.convert(t),
               Collections.EMPTY_LIST));
       if (status.hasChildren()) {

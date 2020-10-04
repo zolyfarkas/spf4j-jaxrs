@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
@@ -55,7 +56,9 @@ import org.spf4j.stackmonitor.SampleNode;
 import javax.ws.rs.core.GenericType;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.profiles.FlameGraphParams;
+import org.spf4j.base.avro.DebugDetail;
 import org.spf4j.jaxrs.JaxRsSecurityContext;
+import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.jaxrs.client.Spf4jWebTarget;
 
 /**
@@ -92,6 +95,38 @@ public class ProfilesClusterResource {
     this.httpClient = httpClient;
     this.port = port;
     this.protocol = protocol;
+  }
+
+  @Path("cluster/traces")
+  @GET
+  @Produces(value = {"application/avro-x+json", "application/json",
+    "application/avro+json", "application/avro", "application/octet-stream"})
+  @ProjectionSupport
+  public void getActiveRequests(@Suspended final AsyncResponse ar) throws URISyntaxException {
+    CompletableFuture<Map<String, List<DebugDetail>>> cf
+            = ContextPropagatingCompletableFuture.supplyAsync(() -> {
+                return profiles.getActiveRequests();
+            }, DefaultExecutor.INSTANCE);
+
+    ClusterInfo clusterInfo = cluster.getClusterInfo();
+    Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
+    for (InetAddress addr : peerAddresses) {
+      URI uri = new URI(protocol, null,
+                  addr.getHostAddress(), port, "/profiles/local/traces", null, null);
+      cf = cf.thenCombine(httpClient.target(uri).request("application/avro")
+              .rx().get(new GenericType<Map<String, List<DebugDetail>>>() { }),
+              (Map<String, List<DebugDetail>> result, Map<String, List<DebugDetail>> resp) -> {
+                result.putAll(resp);
+                return result;
+              });
+    }
+    cf.whenComplete((result, t) -> {
+      if (t != null) {
+        ar.resume(t);
+      } else {
+        ar.resume(new GenericEntity<Map<String, List<DebugDetail>>>(result) { });
+      }
+    });
   }
 
   @Path("cluster/traces/{trId}")

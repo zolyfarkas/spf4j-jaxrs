@@ -34,7 +34,7 @@ public class LogsResourceTest {
     Function<LogRecord, Comparable> fieldExtractor = LogsResource.getFieldExtractor("log.ts");
     Instant now = Instant.now();
     LogRecord rec = new LogRecord("test", "testId",
-            LogLevel.DEBUG, now, "test", "testThrr", "bla", Collections.EMPTY_LIST,
+            LogLevel.DEBUG, now, "test", "testThrr", "bla", Collections.EMPTY_LIST, Collections.EMPTY_LIST,
             Collections.EMPTY_MAP, null, Collections.EMPTY_LIST);
     Instant ts = (Instant) fieldExtractor.apply(rec);
     Assert.assertEquals(now, ts);

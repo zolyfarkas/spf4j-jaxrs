@@ -11,12 +11,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
@@ -30,11 +34,17 @@ import org.glassfish.jersey.uri.UriComponent;
 import org.spf4j.actuator.logs.LogFilesResource;
 import org.spf4j.actuator.logs.LogsResource;
 import org.spf4j.base.AppendableUtils;
+import org.spf4j.base.ExecutionContext;
+import org.spf4j.base.ExecutionContexts;
+import org.spf4j.base.ThreadLocalContextAttacher;
+import org.spf4j.base.avro.DebugDetail;
 import org.spf4j.base.avro.LogRecord;
 import org.spf4j.base.avro.Order;
 import org.spf4j.base.avro.StackSampleElement;
 import org.spf4j.jaxrs.JaxRsSecurityContext;
+import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.ssdump2.Converter;
+import org.spf4j.stackmonitor.ProfilingTLAttacher;
 import org.spf4j.stackmonitor.SampleNode;
 import org.spf4j.stackmonitor.Sampler;
 
@@ -73,6 +83,34 @@ public class ProfilesResource {
   public FlameGraphTemplate getVisualizePage() {
     return visualizePage;
   }
+
+
+  @Path("local/traces")
+  @GET
+  @Produces(value = {"application/avro-x+json", "application/json",
+    "application/avro+json", "application/avro", "application/octet-stream"})
+  @ProjectionSupport
+  public Map<String, List<DebugDetail>> getActiveRequests() {
+    ThreadLocalContextAttacher threadLocalAttacher = ExecutionContexts.threadLocalAttacher();
+    if (!(threadLocalAttacher instanceof ProfilingTLAttacher)) {
+      throw new ClientErrorException("Request Profiling (ProfilingTLAttacher) not active, "
+              + threadLocalAttacher.getClass() + " is running", 400);
+    }
+    ProfilingTLAttacher ptla = (ProfilingTLAttacher) threadLocalAttacher;
+    Map<String, List<DebugDetail>> result = new HashMap<>();
+    for (Map.Entry<Thread, ExecutionContext> entry : ptla.getCurrentThreadContexts()) {
+      ExecutionContext ec = entry.getValue();
+      String id = ec.getId().toString();
+      List<DebugDetail> dd = result.get(id);
+      if (dd == null) {
+        dd = new ArrayList<>(2);
+        result.put(id, dd);
+      }
+      dd.add(ec.getDebugDetail(hostName, null, true));
+    }
+    return result;
+  }
+
 
   @Path("local/traces/{trId}")
   @GET
