@@ -59,8 +59,10 @@ public class LogsResource {
           @QueryParam("limit") @DefaultValue("25") final int limit,
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
-          @QueryParam("sort") @Nullable final String sort) throws IOException {
-    return getLocalLogs(limit, filter, resOrder, sort, "default");
+          @QueryParam("sort") @Nullable final String sort,
+          @QueryParam("tailOffsetScanStart") @DefaultValue("10000") final long tailOffsetScanStart)
+          throws IOException {
+    return getLocalLogs(limit, filter, resOrder, sort, tailOffsetScanStart, "default");
   }
 
   @Path("{appenderName}")
@@ -73,6 +75,7 @@ public class LogsResource {
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
           @QueryParam("sort") @Nullable final String sort,
+          @QueryParam("tailOffsetScanStart") @DefaultValue("10000") final long tailOffsetScanStart,
           @PathParam("appenderName") final String appenderName) throws IOException {
     if (limit == 0) {
       return Collections.emptyList();
@@ -93,12 +96,13 @@ public class LogsResource {
     }
     if (filter != null) {
       try {
-        fa.getFilteredLogs(hostName, 0, Long.MAX_VALUE, Program.compilePredicate(filter, "log"), acc);
+        fa.getFilteredLogs(hostName, tailOffsetScanStart, Long.MAX_VALUE,
+                Program.compilePredicate(filter, "log"), acc);
       } catch (CompileException ex) {
         throw new ClientErrorException("Invalid filter " + filter + ", " + ex.getMessage(), 400, ex);
       }
     } else {
-      fa.getLogs(hostName, 0, Long.MAX_VALUE, acc);
+      fa.getLogs(hostName, tailOffsetScanStart, Long.MAX_VALUE, acc);
     }
     return acc.getRecords();
   }

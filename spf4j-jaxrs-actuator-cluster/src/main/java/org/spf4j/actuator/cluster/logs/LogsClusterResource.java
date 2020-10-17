@@ -91,9 +91,10 @@ public class LogsClusterResource {
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
           @QueryParam("sort") @Nullable final String sort,
+          @QueryParam("tailOffsetScanStart") @DefaultValue("10000") final long tailOffsetScanStart,
           @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
-    getClusterLogs(limit, filter, resOrder, sort, new AsyncResponseToTextWrapper(ar));
+    getClusterLogs(limit, filter, resOrder, sort, tailOffsetScanStart, new AsyncResponseToTextWrapper(ar));
   }
 
   @Operation(
@@ -112,9 +113,10 @@ public class LogsClusterResource {
           @QueryParam("filter") @Nullable final String filter,
           @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
           @QueryParam("sort") @Nullable final String sort,
+          @QueryParam("tailOffsetScanStart") @DefaultValue("10000") final long tailOffsetScanStart,
           @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
-    getClusterLogs(limit, filter, resOrder, sort, "default", ar);
+    getClusterLogs(limit, filter, resOrder, sort, tailOffsetScanStart, "default", ar);
   }
 
 
@@ -135,6 +137,7 @@ public class LogsClusterResource {
           @QueryParam("filter") @Nullable final String filter,
            @QueryParam("order") @DefaultValue("DESC") final Order resOrder,
           @QueryParam("sort") @Nullable final String sort,
+          @QueryParam("tailOffsetScanStart") @DefaultValue("10000") final long tailOffsetScanStart,
           @PathParam("appenderName") final String appender, @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
     if (limit == 0) {
@@ -159,7 +162,7 @@ public class LogsClusterResource {
               }
               Collection<LogRecord> ll;
               try {
-                ll = localLogs.getLocalLogs(limit, filter, resOrder, sort, appender);
+                ll = localLogs.getLocalLogs(limit, filter, resOrder, sort, tailOffsetScanStart, appender);
               } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
               }
@@ -179,6 +182,7 @@ public class LogsClusterResource {
       if (sort != null) {
         invTarget = invTarget.queryParam("sort", sort);
       }
+      invTarget = invTarget.queryParam("tailOffsetScanStart", tailOffsetScanStart);
       cf = cf.thenCombine(
               invTarget.request("application/avro").rx().get(new GenericType<List<LogRecord>>() { }),
               (LogsResource.LogAccumulator result, List<LogRecord> rl) -> {

@@ -21,6 +21,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
@@ -116,11 +117,12 @@ public class ProfilesResource {
   @GET
   @Produces({"application/stack.samples+json", "application/stack.samples.d3+json"})
   @Nullable
-  public SampleNode getSamples(@PathParam("trId") final String traceId) throws IOException {
+  public SampleNode getSamples(@PathParam("trId") final String traceId,
+          @QueryParam("tailOffsetScanStart") @DefaultValue("10000") final long tailOffsetScanStart) throws IOException {
     StringBuilder sb = new StringBuilder(traceId.length());
     AppendableUtils.escapeJsonString(traceId, sb);
     List<LogRecord> logs = logsResource.getLocalLogs(10, "log.stackSamples.length != 0 and log.trId == \""
-            + sb + "\"", Order.DESC, null);
+            + sb + "\"", Order.DESC, null, tailOffsetScanStart);
     if (logs.isEmpty()) {
       return null;
     }

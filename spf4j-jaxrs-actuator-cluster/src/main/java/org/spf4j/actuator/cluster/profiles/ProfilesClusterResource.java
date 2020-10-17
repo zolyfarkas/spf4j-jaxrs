@@ -28,6 +28,7 @@ import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -132,12 +133,14 @@ public class ProfilesClusterResource {
   @Path("cluster/traces/{trId}")
   @GET
   @Produces(value = {"application/stack.samples+json", "application/stack.samples.d3+json"})
-  public void getSamples(@PathParam("trId") final String traceId, @Suspended final AsyncResponse ar)
+  public void getSamples(@PathParam("trId") final String traceId,
+          @QueryParam("tailOffsetScanStart") @DefaultValue("10000") final long tailOffsetScanStart,
+          @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
     StringBuilder sb = new StringBuilder(traceId.length());
     AppendableUtils.escapeJsonString(traceId, sb);
     logsResource.getClusterLogs(10, "log.stackSamples.length != 0 and log.trId == \""
-            + sb + "\"", Order.DESC, null, new AsyncResponseWrapper(ar) {
+            + sb + "\"", Order.DESC, null, tailOffsetScanStart, new AsyncResponseWrapper(ar) {
       @Override
       public boolean resume(final Object response) {
         List<LogRecord> logs = (List<LogRecord>) response;
