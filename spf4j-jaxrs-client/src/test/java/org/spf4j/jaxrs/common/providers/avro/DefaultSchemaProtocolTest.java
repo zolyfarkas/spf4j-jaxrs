@@ -27,7 +27,6 @@ import org.apache.avro.SchemaResolver;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spf4j.avro.NoSnapshotRefsResolver;
 import org.spf4j.avro.SchemaClient;
 import org.spf4j.base.avro.jmx.MBeanOperationInfo;
 import org.spf4j.demo.avro.DemoRecord;
@@ -82,11 +81,9 @@ public class DefaultSchemaProtocolTest {
 
   @Test
   public void testSchemaProtocol3() throws URISyntaxException {
-    SchemaResolver client =
-            new NoSnapshotRefsResolver(new SchemaClient(new URI("https://dl.bintray.com/zolyfarkas/core")));
-    DefaultSchemaProtocol sprotocol = new DefaultSchemaProtocol(client);
+    DefaultSchemaProtocol sprotocol = new DefaultSchemaProtocol(SchemaResolver.NONE);
     String schema = sprotocol.schemaToString(MBeanOperationInfo.SCHEMA$);
-    Schema decoded = new Schema.Parser(new AvroNamesRefResolver(client)).parse(schema);
+    Schema decoded = new Schema.Parser(new AvroNamesRefResolver(SchemaResolver.NONE)).parse(schema);
     Assert.assertEquals(MBeanOperationInfo.SCHEMA$.getField("parameters").defaultVal(),
             decoded.getField("parameters").defaultVal());
   }
