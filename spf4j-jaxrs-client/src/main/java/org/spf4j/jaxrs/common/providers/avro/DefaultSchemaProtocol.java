@@ -17,6 +17,7 @@ package org.spf4j.jaxrs.common.providers.avro;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.filter.FilteringGeneratorDelegate;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
@@ -35,7 +36,6 @@ import org.apache.avro.AvroNamesRefResolver;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
 import org.glassfish.jersey.internal.guava.Maps;
-import org.spf4j.base.Json;
 
 /**
  * Implements avro schema transmission over HTTP headers.
@@ -87,10 +87,11 @@ public final class DefaultSchemaProtocol implements SchemaProtocol {
 
   }
 
-  private String schemaToString(final Schema schema) {
+  @VisibleForTesting
+  String schemaToString(final Schema schema) {
     try {
       StringWriter sw = new StringWriter();
-      JsonGenerator jgen = Json.FACTORY.createGenerator(sw);
+      JsonGenerator jgen = Schema.FACTORY.createGenerator(sw);
       jgen = new FilteringGeneratorDelegate(jgen, NonSerPropertyFilter.INSTANCE, true, true);
       schema.toJson(new AvroNamesRefResolver(client), jgen);
       jgen.flush();

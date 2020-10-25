@@ -29,6 +29,8 @@ public final class NonSerPropertyFilter extends TokenFilter {
   private NonSerPropertyFilter() {
   }
 
+
+
   @Override
   @Nullable
   public TokenFilter includeProperty(final String name) {
@@ -37,6 +39,8 @@ public final class NonSerPropertyFilter extends TokenFilter {
       case "java-class":
       case "avro.java.string":
         return null;
+      case "default": // for whatever reson without this empty arrays are converted to null.
+        return TokenFilter.INCLUDE_ALL;
       default:
         return this;
     }

@@ -115,8 +115,7 @@ public interface OpenTypeAvroConverter<T extends OpenType, A, C> {
       } else if (className.equals(Date.class.getName())) {
         Schema strType = Schema.create(Schema.Type.STRING);
         strType.addProp(LogicalType.LOGICAL_TYPE_PROP, "instant");
-        LogicalType lt = LogicalTypes.fromSchema(strType);
-        strType.setLogicalType(lt);
+        LogicalTypes.fromSchema(strType).addToSchema(strType);
         return Schema.createUnion(Schema.create(Schema.Type.NULL), strType);
       }
       try {

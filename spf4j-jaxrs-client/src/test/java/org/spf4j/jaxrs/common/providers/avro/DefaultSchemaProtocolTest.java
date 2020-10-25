@@ -21,11 +21,15 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import org.apache.avro.AvroNamesRefResolver;
 import org.apache.avro.Schema;
+import org.apache.avro.SchemaResolver;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
+import org.spf4j.avro.NoSnapshotRefsResolver;
 import org.spf4j.avro.SchemaClient;
+import org.spf4j.base.avro.jmx.MBeanOperationInfo;
 import org.spf4j.demo.avro.DemoRecord;
 
 /**
@@ -74,6 +78,17 @@ public class DefaultSchemaProtocolTest {
             headers::put, Schema.createArray(Schema.create(Schema.Type.STRING)));
     Assert.assertThat(headers, Matchers.hasEntry(HttpHeaders.CONTENT_TYPE,
             "application/avro;avsc=\"{\\\"type\\\":\\\"array\\\",\\\"items\\\":\\\"string\\\"}\""));
+  }
+
+  @Test
+  public void testSchemaProtocol3() throws URISyntaxException {
+    SchemaResolver client =
+            new NoSnapshotRefsResolver(new SchemaClient(new URI("https://dl.bintray.com/zolyfarkas/core")));
+    DefaultSchemaProtocol sprotocol = new DefaultSchemaProtocol(client);
+    String schema = sprotocol.schemaToString(MBeanOperationInfo.SCHEMA$);
+    Schema decoded = new Schema.Parser(new AvroNamesRefResolver(client)).parse(schema);
+    Assert.assertEquals(MBeanOperationInfo.SCHEMA$.getField("parameters").defaultVal(),
+            decoded.getField("parameters").defaultVal());
   }
 
 }
