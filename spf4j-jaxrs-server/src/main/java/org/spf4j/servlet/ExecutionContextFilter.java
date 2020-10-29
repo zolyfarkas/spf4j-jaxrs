@@ -89,15 +89,21 @@ public final class ExecutionContextFilter implements Filter {
   public static final String CFG_HEADER_OVERWRITE_QP_PREFIX = "spf4j.jaxrs.headerOverwriteQueryParamPrefix";
 
   private static final MeasurementRecorderSource EXEC_TIME_STATS
-                    = RecorderFactory.createScalableQuantizedRecorderSource("requestExecTime", "microSecond",
+                    = RecorderFactory.createScalableQuantizedRecorderSource("http.requestExecTime", "microSecond",
                       60000, 1000, 0, 6, 10);
+
+  private static final MeasurementRecorder CLIENT_ERRORS =
+          RecorderFactory.createScalableSimpleCountingRecorder("http.clientErrors", "count", 60000);
+
+  private static final MeasurementRecorder SERVER_ERRORS =
+          RecorderFactory.createScalableSimpleCountingRecorder("http.serverErrors", "count", 60000);
 
 
   private static final MeasurementRecorder BYTES_IN
-                     = RecorderFactory.createScalableMinMaxAvgRecorder("ContentBytesIn", "Bytes", 60000);
+                     = RecorderFactory.createScalableMinMaxAvgRecorder("http.contentBytesIn", "bytes", 60000);
 
   private static final MeasurementRecorder BYTES_OUT
-                     = RecorderFactory.createScalableMinMaxAvgRecorder("ContentBytesOut", "Bytes", 60000);
+                     = RecorderFactory.createScalableMinMaxAvgRecorder("http.contentBytesOut", "bytes", 60000);
 
   private final DeadlineProtocol deadlineProtocol;
 
@@ -181,6 +187,7 @@ public final class ExecutionContextFilter implements Filter {
       chain.doFilter(request, response);
       return;
     }
+    long startTimeNanos = TimeSource.nanoTime();
     HttpServletRequest httpRequest = (HttpServletRequest) request;
     JaxRsSecurityContext secCtx = auth.authenticate(httpRequest::getHeader);
     CountingHttpServletRequest httpReq = new CountingHttpServletRequest(
@@ -188,28 +195,33 @@ public final class ExecutionContextFilter implements Filter {
     CountingHttpServletResponse httpResp = new CountingHttpServletResponse((HttpServletResponse) response);
     String name = httpReq.getMethod() + '/' + httpReq.getRequestURL();
     String reqId = httpReq.getHeader(idHeaderName);
-    long startTimeNanos = TimeSource.nanoTime();
     long deadlineNanos;
     try {
       deadlineNanos = deadlineProtocol.deserialize(httpReq::getHeader, startTimeNanos);
     } catch (IllegalArgumentException ex) {
-      errorResponse(httpResp, 400, "Invalid deadline/timeout", "", ex, secCtx);
-      logRequestEnd(org.spf4j.log.Level.WARN, name, reqId, httpReq, httpResp);
+      errorResponse(httpResp, 400, "Invalid deadline/timeout", ex, secCtx);
+      logRequestEnd(startTimeNanos, org.spf4j.log.Level.WARN, name, reqId, httpReq, httpResp);
       return;
+    }
+    String ctxLoglevel = httpReq.getHeader(ctxLogLevelHeaderName);
+    Level level;
+    if (ctxLoglevel != null) {
+      try {
+        level = Level.valueOf(httpReq.getHeader(ctxLogLevelHeaderName));
+      } catch (IllegalArgumentException ex) {
+        errorResponse(httpResp, 400, "Invalid log level: " + ctxLoglevel, ex, secCtx);
+        logRequestEnd(startTimeNanos, org.spf4j.log.Level.WARN, name, reqId, httpReq, httpResp);
+        return;
+      }
+    } else {
+      level = null;
     }
     ExecutionContext ctx = ExecutionContexts.start(name, reqId, null, startTimeNanos, deadlineNanos);
     ctx.put(ContextTags.HTTP_REQ, httpReq);
     ctx.put(ContextTags.HTTP_RESP, httpResp);
     ctx.put(ContextTags.SECURITY_CONTEXT, secCtx);
-    String ctxLoglevel = httpReq.getHeader(ctxLogLevelHeaderName);
-    if (ctxLoglevel != null) {
-      try {
-        ctx.setBackendMinLogLevel(Level.valueOf(ctxLoglevel));
-      } catch (IllegalArgumentException ex) {
-        errorResponse(httpResp, 400, "Invalid log level", ctxLoglevel, ex, secCtx);
-        logRequestEnd(org.spf4j.log.Level.WARN, name, reqId, httpReq, httpResp);
-        return;
-      }
+    if (level != null) {
+        ctx.setBackendMinLogLevel(level);
     }
     try {
       chain.doFilter(httpReq, httpResp);
@@ -315,6 +327,11 @@ public final class ExecutionContextFilter implements Filter {
     int status = resp.getStatus();
     long bytesRead = req.getBytesRead();
     long bytesWritten = resp.getBytesWritten();
+    if (status >= 500) {
+      SERVER_ERRORS.increment();
+    } else if (status >= 400) {
+      CLIENT_ERRORS.increment();
+    }
     EXEC_TIME_STATS.getRecorder(req.getMethod()).record(execTimeMicros);
     BYTES_IN.record(bytesRead);
     BYTES_OUT.record(bytesWritten);
@@ -354,29 +371,42 @@ public final class ExecutionContextFilter implements Filter {
     }
   }
 
-  private void logRequestEnd(final Level level, final String reqStr,
+  private void logRequestEnd(final long startTimeNanos, final Level level, final String reqStr,
           final String reqId, final CountingHttpServletRequest req,
           final CountingHttpServletResponse resp) {
     Object[] args;
+    int status = resp.getStatus();
+    long bytesRead = req.getBytesRead();
+    long bytesWritten = resp.getBytesWritten();
+    long execTimeMicros = TimeUnit.NANOSECONDS.toMicros(TimeSource.nanoTime() - startTimeNanos);
+    if (status >= 500) {
+      SERVER_ERRORS.increment();
+    } else if (status >= 400) {
+      CLIENT_ERRORS.increment();
+    }
+    EXEC_TIME_STATS.getRecorder(req.getMethod()).record(execTimeMicros);
+    BYTES_IN.record(bytesRead);
+    BYTES_OUT.record(bytesWritten);
     args = new Object[]{reqStr,
       LogAttribute.traceId(reqId),
       LogAttribute.of("clientHost", getRemoteHost(req)),
       LogAttribute.value("httpStatus", resp.getStatus()),
-      LogAttribute.execTimeMicros(0, TimeUnit.NANOSECONDS),
-      LogAttribute.value("inBytes", req.getBytesRead()), LogAttribute.value("outBytes", resp.getBytesWritten())
+      LogAttribute.execTimeMicros(execTimeMicros, TimeUnit.MICROSECONDS),
+      LogAttribute.value("inBytes", bytesRead),
+      LogAttribute.value("outBytes", bytesWritten)
     };
     log.log(level.getJulLevel(), "Done {0}", args);
   }
 
 
   private void errorResponse(final HttpServletResponse resp,
-          final int status, final String reasonPhrase, final String description,
+          final int status, final String message,
           @Nullable final Throwable exception, final JaxRsSecurityContext secCtx)
           throws IOException {
     resp.setStatus(status);
     ServiceError.Builder errBuilder = ServiceError.newBuilder()
             .setCode(status)
-            .setMessage(reasonPhrase + "; " + description);
+            .setMessage(message);
     if (secCtx.isUserInRole(JaxRsSecurityContext.OPERATOR_ROLE)) {
       errBuilder.setDetail(new DebugDetail("origin", Collections.EMPTY_LIST,
                     exception != null ? Converters.convert(exception) : null, Collections.EMPTY_LIST));
