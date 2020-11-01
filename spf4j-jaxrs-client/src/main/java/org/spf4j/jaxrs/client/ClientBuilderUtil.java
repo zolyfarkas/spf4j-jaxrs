@@ -29,6 +29,7 @@ public final class ClientBuilderUtil {
    * runtime compatible with JAX-RS 2.0
    * @return
    */
+  @Deprecated
   public static ClientBuilder setConnectTimeout(final ClientBuilder builder,
           final long value, final TimeUnit unit) {
     try {
@@ -47,6 +48,7 @@ public final class ClientBuilderUtil {
    * runtime compatible with JAX-RS 2.0
    * @return
    */
+  @Deprecated
   public static ClientBuilder setReadTimeout(final ClientBuilder builder,
           final long value, final TimeUnit unit) {
     try {

@@ -54,7 +54,6 @@ import org.spf4j.failsafe.RetryDecision;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.io.Streams;
 import org.spf4j.jaxrs.Utils;
-import org.spf4j.jaxrs.client.ClientBuilderUtil;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
@@ -124,9 +123,7 @@ public final class SchemaClient implements SchemaResolver {
 
   public static Spf4JClient createDefaultClient() {
     ClientBuilder builder = ClientBuilder
-            .newBuilder();
-    ClientBuilderUtil.setConnectTimeout(builder, 2, TimeUnit.SECONDS);
-    ClientBuilderUtil.setReadTimeout(builder, 30, TimeUnit.SECONDS);
+            .newBuilder().connectTimeout(2, TimeUnit.SECONDS).readTimeout(30, TimeUnit.SECONDS);
     return Spf4JClient.create(builder
             .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE,
                     Boolean.parseBoolean(System.getProperty("spf4j.http.client.hideAuthorizationWhenLogging", "true"))))
