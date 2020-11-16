@@ -67,8 +67,8 @@ public final class ExecutionContextClientFilter implements ClientRequestFilter,
     headers.add(Headers.REQ_ID, reqCtx.getId());
     int readTimeoutMs = (int) (timeoutNanos / 1000000);
     requestContext.setProperty(ClientProperties.READ_TIMEOUT, readTimeoutMs);
-    LOG.debug("Invoking {}", new Object[]{requestContext.getUri(),
-      LogAttribute.of("headers", hideAuthorizationWhenLogging ? authorizationFilter(headers) : headers)});
+    LOG.debug("Invoking {}", requestContext.getUri(),
+      LogAttribute.of("headers", hideAuthorizationWhenLogging ? authorizationFilter(headers) : headers));
   }
 
   private static Map<String, Object> authorizationFilter(final MultivaluedMap<String, Object> headers) {
