@@ -141,7 +141,7 @@ public final class JvmServicesBuilder {
 
   private void initDefaults() {
     if (this.hostName == null) {
-      this.hostName = Env.getValue("KUBE_POD_NAME", () -> OperatingSystem.getHostName());
+      this.hostName = Env.getValue("KUBE_POD_NAME", OperatingSystem::getHostName);
     }
     if (this.logFolder == null) {
       this.logFolder = Env.getValue("LOG_FOLDER", "/var/log");
@@ -176,12 +176,12 @@ public final class JvmServicesBuilder {
       Logger.getLogger(JvmServicesBuilder.class.getName()).log(Level.WARNING, "ProfilingTLAttacher is NOT active,"
               + " alternate profiling config already set up: {}", threadLocalAttacher);
       sampler = new Sampler(profilerSampleTimeMillis, profilerDumpTimeMillis,
-              (t) -> new FastStackCollector(false, true, new Thread[]{t}), logFolder, applicationName);
+              (t) -> new FastStackCollector(false, true, new Thread[]{t}), logFolder, hostName);
     } else {
       ProfilingTLAttacher contextFactory = (ProfilingTLAttacher) threadLocalAttacher;
       sampler = new Sampler(profilerSampleTimeMillis, profilerDumpTimeMillis,
               (t) -> new TracingExecutionContexSampler(contextFactory::getCurrentThreadContexts, aggregationGroups),
-              logFolder, applicationName);
+              logFolder, hostName);
     }
     if (profilerJmx) {
       sampler.registerJmx();
