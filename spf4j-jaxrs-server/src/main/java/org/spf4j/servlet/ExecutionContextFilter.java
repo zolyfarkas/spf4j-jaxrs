@@ -237,8 +237,11 @@ public final class ExecutionContextFilter implements Filter {
             } catch (IOException ex) {
               throw new UncheckedIOException(ex);
             } finally {
-              logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp);
-              ctx.close();
+              try {
+                logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp);
+              } finally {
+                ctx.close();
+              }
             }
           }
 
@@ -259,15 +262,22 @@ public final class ExecutionContextFilter implements Filter {
           }
         }, request, response);
       } else {
-        logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp);
-        ctx.close();
+        try {
+          logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp);
+        } finally {
+          ctx.close();
+        }
       }
     } catch (Throwable t) {
-      if (Throwables.isNonRecoverable(t)) {
-        org.spf4j.base.Runtime.goDownWithError(t, SysExits.EX_SOFTWARE);
+      try {
+        if (Throwables.isNonRecoverable(t)) {
+          org.spf4j.base.Runtime.goDownWithError(t, SysExits.EX_SOFTWARE);
+        }
+        ctx.accumulateComponent(ContextTags.LOG_ATTRIBUTES, t);
+        logRequestEnd(org.spf4j.log.Level.ERROR, ctx, httpReq, httpResp);
+      } finally {
+        ctx.close();
       }
-      ctx.accumulateComponent(ContextTags.LOG_ATTRIBUTES, t);
-      logRequestEnd(org.spf4j.log.Level.ERROR, ctx, httpReq, httpResp);
     }
   }
 
