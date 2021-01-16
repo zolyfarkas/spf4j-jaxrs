@@ -21,9 +21,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import javax.annotation.Nullable;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -65,13 +64,13 @@ public final class Spf4JClient implements Client {
 
   private final Client cl;
 
-  private final Supplier<RetryPolicy> retryPolicy;
+  private final Function<HttpCallable<?>, RetryPolicy<Object, HttpCallable<?>>> retryPolicy;
 
-  private final Supplier<HedgePolicy> hedgePolicy;
+  private final Function<HttpCallable<?>, HedgePolicy> hedgePolicy;
 
   private final FailSafeExecutor fsExec;
 
-  private final AsyncRetryExecutor<Object, Callable<? extends Object>> executor;
+  private final AsyncRetryExecutor<Object, HttpCallable<?>> executor;
 
   private final ClientExceptionMapper exceptionMapper;
 
@@ -87,12 +86,13 @@ public final class Spf4JClient implements Client {
 
   public Spf4JClient(final  Client cl, final RetryPolicy retryPolicy, final HedgePolicy hedgePolicy,
           final FailSafeExecutor fsExec, final ClientExceptionMapper exceptionMapper) {
-    this(cl, () -> retryPolicy, () -> hedgePolicy, fsExec, exceptionMapper);
+    this(cl, c -> retryPolicy, c -> hedgePolicy, fsExec, exceptionMapper);
   }
 
   @SuppressWarnings("unchecked")
-  public Spf4JClient(final  Client cl, final Supplier<RetryPolicy> retryPolicy,
-          final Supplier<HedgePolicy> hedgePolicy,
+  public Spf4JClient(final  Client cl,
+          final Function<HttpCallable<?>, RetryPolicy<Object, HttpCallable<?>>> retryPolicy,
+          final Function<HttpCallable<?>, HedgePolicy> hedgePolicy,
           final FailSafeExecutor fsExec, final ClientExceptionMapper exceptionMapper) {
     this.cl = cl;
     ClientConfig configuration = (ClientConfig) cl.getConfiguration();
@@ -102,7 +102,7 @@ public final class Spf4JClient implements Client {
     this.retryPolicy = retryPolicy;
     this.hedgePolicy = hedgePolicy;
     this.fsExec = fsExec;
-    this.executor = RetryPolicy.async((Supplier) retryPolicy, hedgePolicy, fsExec);
+    this.executor = RetryPolicy.async(retryPolicy, hedgePolicy, fsExec);
     this.exceptionMapper = exceptionMapper;
   }
 
@@ -115,14 +115,6 @@ public final class Spf4JClient implements Client {
 
   public ClientExceptionMapper getExceptionMapper() {
     return exceptionMapper;
-  }
-
-  public RetryPolicy getRetryPolicy() {
-    return retryPolicy.get();
-  }
-
-  public HedgePolicy getHedgePolicy() {
-    return hedgePolicy.get();
   }
 
   public static List<ParamConverterProvider> getParamConverters(final Configuration pconfig) {
@@ -233,18 +225,18 @@ public final class Spf4JClient implements Client {
 
 
   public Spf4JClient withHedgePolicy(final HedgePolicy hp) {
-    return new Spf4JClient(cl, retryPolicy, () -> hp, fsExec, exceptionMapper);
+    return new Spf4JClient(cl, retryPolicy, c -> hp, fsExec, exceptionMapper);
   }
 
-  public Spf4JClient withHedgePolicy(final Supplier<HedgePolicy> hp) {
+  public Spf4JClient withHedgePolicy(final Function<HttpCallable<?>, HedgePolicy> hp) {
     return new Spf4JClient(cl, retryPolicy, hp, fsExec, exceptionMapper);
   }
 
   public Spf4JClient withRetryPolicy(final RetryPolicy rp) {
-    return new Spf4JClient(cl, () -> rp, hedgePolicy, fsExec, exceptionMapper);
+    return new Spf4JClient(cl, c -> rp, hedgePolicy, fsExec, exceptionMapper);
   }
 
-  public Spf4JClient withRetryPolicy(final Supplier<RetryPolicy> rp) {
+  public Spf4JClient withRetryPolicy(final Function<HttpCallable<?>, RetryPolicy<Object, HttpCallable<?>>> rp) {
     return new Spf4JClient(cl, rp, hedgePolicy, fsExec, exceptionMapper);
   }
 

@@ -2,7 +2,6 @@ package org.spf4j.jaxrs.client;
 
 import java.net.URI;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.MediaType;
@@ -14,7 +13,7 @@ import org.spf4j.failsafe.AsyncRetryExecutor;
  */
 public final class Spf4jWebTarget implements WebTarget {
 
-  private AsyncRetryExecutor<Object, Callable<? extends Object>> executor;
+  private AsyncRetryExecutor<Object, HttpCallable<?>> executor;
 
   private final WebTarget tg;
 
@@ -23,7 +22,7 @@ public final class Spf4jWebTarget implements WebTarget {
   private final Spf4jWebTarget fromTemplate;
 
   public Spf4jWebTarget(final Spf4JClient client,
-          final WebTarget tg, final AsyncRetryExecutor<Object, Callable<? extends Object>> executor,
+          final WebTarget tg, final AsyncRetryExecutor<Object, HttpCallable<?>> executor,
           final Spf4jWebTarget fromTemplate) {
     this.tg = tg;
     this.client = client;
@@ -39,7 +38,7 @@ public final class Spf4jWebTarget implements WebTarget {
     return fromTemplate;
   }
 
-  public Spf4jWebTarget withRetryRexecutor(final AsyncRetryExecutor<Object, Callable<? extends Object>> exec) {
+  public Spf4jWebTarget withRetryRexecutor(final AsyncRetryExecutor<Object, HttpCallable<?>> exec) {
     this.executor = exec;
     return this;
   }

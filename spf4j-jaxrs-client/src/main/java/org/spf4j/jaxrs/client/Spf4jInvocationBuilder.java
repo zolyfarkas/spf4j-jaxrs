@@ -5,7 +5,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.CompletionStageRxInvoker;
@@ -31,13 +30,13 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   private final Invocation.Builder ib;
   private final Spf4jWebTarget target;
 
-  private AsyncRetryExecutor<Object, Callable<? extends Object>> executor;
+  private AsyncRetryExecutor<Object, HttpCallable<?>> executor;
   private long timeoutNanos;
 
   private long httpReqTimeoutNanos;
 
   public Spf4jInvocationBuilder(final Spf4JClient client, final Invocation.Builder ib,
-          final AsyncRetryExecutor<Object, Callable<? extends Object>> executor,
+          final AsyncRetryExecutor<Object, HttpCallable<?>> executor,
           final Spf4jWebTarget target) {
     this.client = client;
     this.ib = ib;
@@ -56,6 +55,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
     return target;
   }
 
+
   public long getTimeoutNanos() {
     return timeoutNanos;
   }
@@ -64,7 +64,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
     return httpReqTimeoutNanos;
   }
 
-  public Spf4jInvocationBuilder withRetryRexecutor(final AsyncRetryExecutor<Object, Callable<? extends Object>> exec) {
+  public Spf4jInvocationBuilder withRetryRexecutor(final AsyncRetryExecutor<Object, HttpCallable<?>> exec) {
     this.executor = exec;
     return this;
   }

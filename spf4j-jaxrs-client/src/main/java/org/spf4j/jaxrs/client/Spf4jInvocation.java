@@ -7,8 +7,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Nullable;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.core.GenericType;
@@ -16,29 +14,28 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.internal.util.ReflectionHelper;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
-import static org.spf4j.base.ExecutionContexts.start;
 import org.spf4j.base.TimeSource;
 import org.spf4j.base.UncheckedTimeoutException;
 import org.spf4j.base.Wrapper;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
 import org.spf4j.failsafe.AsyncRetryExecutor;
-import org.spf4j.http.RequestContextTags;
 
 /**
  * @author Zoltan Farkas
  */
+@SuppressFBWarnings("FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY")
 public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
 
 
   private final Invocation invocation;
-  private final AsyncRetryExecutor<Object, Callable<? extends Object>> executor;
+  private final AsyncRetryExecutor<Object, HttpCallable<?>> executor;
   private final Spf4jWebTarget target;
   private final long timeoutNanos;
   private final long httpReqTimeoutNanos;
   private final String method;
 
   public Spf4jInvocation(final Invocation invocation, final long timeoutNanos, final long httpReqTimeoutNanos,
-          final AsyncRetryExecutor<Object, Callable<? extends Object>> policy,
+          final AsyncRetryExecutor<Object, HttpCallable<?>> policy,
           final Spf4jWebTarget target, final String method) {
     this.invocation = invocation;
     this.executor = policy;
@@ -82,8 +79,11 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
     long deadlineNanos = ExecutionContexts.computeDeadline(current, timeoutNanos, TimeUnit.NANOSECONDS);
     try {
       return executor.call(
-              invocationHandler(current, what, getName(),
-                      deadlineNanos, httpReqTimeoutNanos, this.target.getClient()),
+              HttpCallable.invocationHandler(current, what, getName(),
+                      this.target.getUri(),
+                      this.method,
+                      this.target.getClient().getExceptionMapper(),
+                      deadlineNanos, httpReqTimeoutNanos),
                RuntimeException.class, nanoTime, deadlineNanos);
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
@@ -97,76 +97,13 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
     long nanoTime = TimeSource.nanoTime();
     ExecutionContext current = ExecutionContexts.current();
     long deadlineNanos = ExecutionContexts.computeDeadline(current, timeoutNanos, TimeUnit.NANOSECONDS);
-    Callable<T> pc = invocationHandler(current, what, getName(),
-            deadlineNanos, httpReqTimeoutNanos, this.target.getClient());
+    HttpCallable pc = HttpCallable.invocationHandler(current, what, getName(),
+            this.target.getUri(),
+            this.method,
+            this.target.getClient().getExceptionMapper(),
+            deadlineNanos, httpReqTimeoutNanos);
     return executor.submitRx(pc, nanoTime, deadlineNanos,
             () -> new ContextPropagatingCompletableFuture<>(current, deadlineNanos));
-  }
-
-  static <T> Callable<T> invocationHandler(
-          final ExecutionContext ctx,
-          final Callable<T> callable, @Nullable final String name, final long deadlineNanos,
-          final long callableTimeoutNanos, final Spf4JClient client) {
-    return new InvocationHandler(callable, ctx, name, deadlineNanos, callableTimeoutNanos, client);
-  }
-
-  private static final class InvocationHandler<T> implements Callable<T>, Wrapper<Callable<T>> {
-
-    private final Callable<T> task;
-    private final ExecutionContext current;
-
-    private final String name;
-
-    private final long deadlineNanos;
-
-    private final long callableTimeoutNanos;
-
-    private final AtomicInteger tryCount;
-
-    private final Spf4JClient client;
-
-    InvocationHandler(final Callable<T> task, final ExecutionContext current,
-            @Nullable final String name, final long deadlineNanos, final long callableTimeoutNanos,
-            final Spf4JClient client) {
-      this.task = task;
-      this.current = current;
-      this.name = name;
-      this.deadlineNanos = deadlineNanos;
-      this.callableTimeoutNanos = callableTimeoutNanos;
-      this.tryCount = new AtomicInteger(1);
-      this.client = client;
-    }
-
-    @Override
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
-    public T call() throws Exception {
-      long aDeadlineNanos;
-      if (callableTimeoutNanos < 0) {
-        aDeadlineNanos = deadlineNanos;
-      } else {
-        aDeadlineNanos = TimeSource.getDeadlineNanos(callableTimeoutNanos, TimeUnit.NANOSECONDS);
-        if (aDeadlineNanos > deadlineNanos) {
-          aDeadlineNanos = deadlineNanos;
-        }
-      }
-      try (ExecutionContext ctx = start(toString(), current, aDeadlineNanos)) {
-        ctx.put(RequestContextTags.TRY_COUNT, tryCount.getAndIncrement());
-        return task.call();
-      } catch (Exception ex) {
-        throw client.getExceptionMapper().handleServiceError(ex, current);
-      }
-    }
-
-    @Override
-    public String toString() {
-      return name == null ? task.toString() : name;
-    }
-
-    @Override
-    public Callable<T> getWrapped() {
-      return task;
-    }
-
   }
 
   @Override
