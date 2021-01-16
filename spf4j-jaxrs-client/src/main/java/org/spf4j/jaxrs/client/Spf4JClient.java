@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -64,9 +65,9 @@ public final class Spf4JClient implements Client {
 
   private final Client cl;
 
-  private final RetryPolicy retryPolicy;
+  private final Supplier<RetryPolicy> retryPolicy;
 
-  private final HedgePolicy hedgePolicy;
+  private final Supplier<HedgePolicy> hedgePolicy;
 
   private final FailSafeExecutor fsExec;
 
@@ -86,6 +87,13 @@ public final class Spf4JClient implements Client {
 
   public Spf4JClient(final  Client cl, final RetryPolicy retryPolicy, final HedgePolicy hedgePolicy,
           final FailSafeExecutor fsExec, final ClientExceptionMapper exceptionMapper) {
+    this(cl, () -> retryPolicy, () -> hedgePolicy, fsExec, exceptionMapper);
+  }
+
+  @SuppressWarnings("unchecked")
+  public Spf4JClient(final  Client cl, final Supplier<RetryPolicy> retryPolicy,
+          final Supplier<HedgePolicy> hedgePolicy,
+          final FailSafeExecutor fsExec, final ClientExceptionMapper exceptionMapper) {
     this.cl = cl;
     ClientConfig configuration = (ClientConfig) cl.getConfiguration();
     HttpUrlConnectorProvider httpUrlConnectorProvider = new HttpUrlConnectorProvider();
@@ -94,7 +102,7 @@ public final class Spf4JClient implements Client {
     this.retryPolicy = retryPolicy;
     this.hedgePolicy = hedgePolicy;
     this.fsExec = fsExec;
-    this.executor = retryPolicy.async(hedgePolicy, fsExec);
+    this.executor = RetryPolicy.async((Supplier) retryPolicy, hedgePolicy, fsExec);
     this.exceptionMapper = exceptionMapper;
   }
 
@@ -110,11 +118,11 @@ public final class Spf4JClient implements Client {
   }
 
   public RetryPolicy getRetryPolicy() {
-    return retryPolicy;
+    return retryPolicy.get();
   }
 
   public HedgePolicy getHedgePolicy() {
-    return hedgePolicy;
+    return hedgePolicy.get();
   }
 
   public static List<ParamConverterProvider> getParamConverters(final Configuration pconfig) {
@@ -225,10 +233,18 @@ public final class Spf4JClient implements Client {
 
 
   public Spf4JClient withHedgePolicy(final HedgePolicy hp) {
+    return new Spf4JClient(cl, retryPolicy, () -> hp, fsExec, exceptionMapper);
+  }
+
+  public Spf4JClient withHedgePolicy(final Supplier<HedgePolicy> hp) {
     return new Spf4JClient(cl, retryPolicy, hp, fsExec, exceptionMapper);
   }
 
   public Spf4JClient withRetryPolicy(final RetryPolicy rp) {
+    return new Spf4JClient(cl, () -> rp, hedgePolicy, fsExec, exceptionMapper);
+  }
+
+  public Spf4JClient withRetryPolicy(final Supplier<RetryPolicy> rp) {
     return new Spf4JClient(cl, rp, hedgePolicy, fsExec, exceptionMapper);
   }
 
