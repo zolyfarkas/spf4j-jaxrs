@@ -34,56 +34,10 @@ public final class Utils {
     if (predicate != null) {
       builder.withExceptionPartialPredicate(WebApplicationException.class, predicate, retryCount);
     }
-    return builder.withExceptionPartialPredicate(WebApplicationException.class,
-            new PartialTypedExceptionRetryPredicate<Object, Callable<? extends Object>, WebApplicationException>() {
-      @Override
-      @SuppressFBWarnings("PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS")
-      public RetryDecision<Object, Callable<? extends Object>> getExceptionDecision(
-              final WebApplicationException ex, final Callable<? extends Object> c) {
-        Response response = ex.getResponse();
-        String retryAfter = response.getHeaderString("Retry-After");
-        if (retryAfter != null && !retryAfter.isEmpty()) {
-          if (Character.isDigit(retryAfter.charAt(0))) {
-            return RetryDecision.retry(Long.parseLong(retryAfter), TimeUnit.SECONDS, c);
-          } else {
-            return RetryDecision.retry(Duration.between(Instant.now(),
-                    DateTimeFormatter.RFC_1123_DATE_TIME.parse(retryAfter,
-                            Instant::from)).toNanos(),
-                    TimeUnit.NANOSECONDS, c);
-          }
-        }
-        String noRetry = response.getHeaderString("No-Retry");
-        // Not standard,
-        // but a way for the server to tell the client there is no point for the client to retry.
-        if (noRetry != null) {
-          return RetryDecision.abort();
-        }
-        int status = response.getStatus();
-        switch (status) {
-          case 408:
-          case 409:
-          case 419:
-          case 420:
-          case 423:
-          case 429:
-          case 440:
-          case 449:
-          case 503:
-          case 504:
-          case 509:
-          case 522:
-          case 524:
-          case 599:
-            return RetryDecision.retryDefault(c);
-          default:
-            if (status >= 400 && status < 500) {
-              return RetryDecision.abort();
-            }
-        }
-        return null;
-      }
-    })
-    .withExceptionPartialPredicate(ProcessingException.class,
+    return builder
+      .withExceptionPartialPredicate(WebApplicationException.class, new HttpRetryAfter())
+      .withExceptionPartialPredicate(WebApplicationException.class, new HttpDefaultRetryableStatusses())
+      .withExceptionPartialPredicate(ProcessingException.class,
             (ProcessingException value, Callable<? extends Object> what) -> {
       Throwable cause = Throwables.getRootCause(value);
       if (org.spf4j.base.Throwables.isRetryable(cause)) {
@@ -117,6 +71,70 @@ public final class Utils {
       return System.getProperty(cfgKey, defaultValue);
     } else {
       return val;
+    }
+  }
+
+  private static class HttpRetryAfter
+          implements PartialTypedExceptionRetryPredicate<Object, Callable<? extends Object>, WebApplicationException> {
+
+    @Override
+    @SuppressFBWarnings("PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS")
+    public RetryDecision<Object, Callable<? extends Object>> getExceptionDecision(
+            final WebApplicationException ex, final Callable<? extends Object> c) {
+      Response response = ex.getResponse();
+      String retryAfter = response.getHeaderString("Retry-After");
+      if (retryAfter != null && !retryAfter.isEmpty()) {
+        if (Character.isDigit(retryAfter.charAt(0))) {
+          return RetryDecision.retry(Long.parseLong(retryAfter), TimeUnit.SECONDS, c);
+        } else {
+          return RetryDecision.retry(Duration.between(Instant.now(),
+                  DateTimeFormatter.RFC_1123_DATE_TIME.parse(retryAfter,
+                          Instant::from)).toNanos(),
+                  TimeUnit.NANOSECONDS, c);
+        }
+      }
+      String noRetry = response.getHeaderString("No-Retry");
+      // Not standard,
+      // but a way for the server to tell the client there is no point for the client to retry.
+      if (noRetry != null) {
+        return RetryDecision.abort();
+      }
+      return null;
+    }
+  }
+
+
+ private static class HttpDefaultRetryableStatusses
+          implements PartialTypedExceptionRetryPredicate<Object, Callable<? extends Object>, WebApplicationException> {
+
+    @Override
+    @SuppressFBWarnings("PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS")
+    public RetryDecision<Object, Callable<? extends Object>> getExceptionDecision(
+            final WebApplicationException ex, final Callable<? extends Object> c) {
+      Response response = ex.getResponse();
+      int status = response.getStatus();
+      switch (status) {
+        case 408:
+        case 409:
+        case 419:
+        case 420:
+        case 423:
+        case 429:
+        case 440:
+        case 449:
+        case 503:
+        case 504:
+        case 509:
+        case 522:
+        case 524:
+        case 599:
+          return RetryDecision.retryDefault(c);
+        default:
+          if (status >= 400 && status < 500) {
+            return RetryDecision.abort();
+          }
+      }
+      return null;
     }
   }
 
