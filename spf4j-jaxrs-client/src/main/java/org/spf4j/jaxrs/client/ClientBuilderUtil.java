@@ -27,6 +27,7 @@ public final class ClientBuilderUtil {
   /**
    * Utility to set the default connect timeout, for JAX-RS 2.1
    * runtime compatible with JAX-RS 2.0
+   * @deprecated use ClientBuilder.connectTimeout from newer JAX-RS
    * @return
    */
   @Deprecated
@@ -46,6 +47,7 @@ public final class ClientBuilderUtil {
   /**
    * Utility to set the default read timeout, for JAX-RS 2.1
    * runtime compatible with JAX-RS 2.0
+   * @deprecated use ClientBuilder.connectTimeout from newer JAX-RS
    * @return
    */
   @Deprecated
