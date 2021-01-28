@@ -11,9 +11,9 @@ import java.util.function.BiConsumer;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.spf4j.base.Pair;
-import org.spf4j.base.avro.HealthCheckInfo;
-import org.spf4j.base.avro.HealthRecord;
-import org.spf4j.base.avro.HealthStatus;
+import org.spf4j.service.avro.HealthCheckInfo;
+import org.spf4j.service.avro.HealthRecord;
+import org.spf4j.service.avro.HealthStatus;
 
 /**
  *

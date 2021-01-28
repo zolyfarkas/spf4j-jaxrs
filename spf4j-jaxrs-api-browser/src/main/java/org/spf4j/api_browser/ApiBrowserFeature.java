@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.apiBrowser;
+package org.spf4j.api_browser;
 
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
-import org.spf4j.actuator.openApi.OpenApiFeature;
+import org.spf4j.actuator.open_api.OpenApiFeature;
 
 /**
  *

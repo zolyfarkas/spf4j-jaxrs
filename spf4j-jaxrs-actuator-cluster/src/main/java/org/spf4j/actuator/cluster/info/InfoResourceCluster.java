@@ -36,7 +36,7 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.actuator.info.InfoResource;
-import org.spf4j.base.avro.ProcessInfo;
+import org.spf4j.service.avro.ProcessInfo;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
@@ -106,7 +106,7 @@ public class InfoResourceCluster {
       if (t != null) {
         ar.resume(t);
       } else {
-        ar.resume(new org.spf4j.base.avro.ClusterInfo(resource.getApplicationInfo(), res));
+        ar.resume(new org.spf4j.service.avro.ClusterInfo(resource.getApplicationInfo(), res));
       }
     });
   }

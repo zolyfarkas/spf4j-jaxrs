@@ -27,7 +27,7 @@ import org.spf4j.base.Throwables;
 import org.spf4j.base.avro.Converters;
 import org.spf4j.base.avro.DebugDetail;
 import org.spf4j.base.avro.LogRecord;
-import org.spf4j.base.avro.ServiceError;
+import org.spf4j.service.avro.ServiceError;
 import org.spf4j.base.avro.StackSampleElement;
 import org.spf4j.base.avro.StackSamples;
 import org.spf4j.http.Headers;

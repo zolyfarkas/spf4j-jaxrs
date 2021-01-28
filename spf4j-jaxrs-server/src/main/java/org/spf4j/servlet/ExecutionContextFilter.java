@@ -44,7 +44,7 @@ import org.spf4j.base.Throwables;
 import org.spf4j.base.TimeSource;
 import org.spf4j.base.avro.Converters;
 import org.spf4j.base.avro.DebugDetail;
-import org.spf4j.base.avro.ServiceError;
+import org.spf4j.service.avro.ServiceError;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.http.DefaultDeadlineProtocol;
 import org.spf4j.http.Headers;

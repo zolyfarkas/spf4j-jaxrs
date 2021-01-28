@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.actuator.openApi;
+package org.spf4j.actuator.open_api;
 
 import javax.ws.rs.core.MediaType;
 import org.hamcrest.Matchers;

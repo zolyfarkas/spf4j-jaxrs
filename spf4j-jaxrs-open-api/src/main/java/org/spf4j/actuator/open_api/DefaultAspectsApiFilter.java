@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.spf4j.actuator.openApi;
+package org.spf4j.actuator.open_api;
 
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.filter.AbstractSpecFilter;
@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.spf4j.base.avro.ServiceError;
+import org.spf4j.service.avro.ServiceError;
 import org.spf4j.http.Headers;
 import org.spf4j.log.Level;
 

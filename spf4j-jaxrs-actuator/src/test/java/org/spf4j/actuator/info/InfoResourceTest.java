@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.ServiceIntegrationBase;
 import org.spf4j.base.avro.ApplicationInfo;
-import org.spf4j.base.avro.ProcessInfo;
+import org.spf4j.service.avro.ProcessInfo;
 
 /**
  * @author Zoltan Farkas

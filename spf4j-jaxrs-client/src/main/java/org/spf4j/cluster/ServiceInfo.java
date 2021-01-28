@@ -18,7 +18,7 @@ package org.spf4j.cluster;
 import java.net.InetAddress;
 import java.util.Set;
 import javax.annotation.Nullable;
-import org.spf4j.base.avro.NetworkService;
+import org.spf4j.service.avro.NetworkService;
 
 /**
  *

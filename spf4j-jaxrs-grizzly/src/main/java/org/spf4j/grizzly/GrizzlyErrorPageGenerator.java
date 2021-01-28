@@ -15,7 +15,7 @@ import org.spf4j.base.Arrays;
 import org.spf4j.base.Throwables;
 import org.spf4j.base.avro.Converters;
 import org.spf4j.base.avro.DebugDetail;
-import org.spf4j.base.avro.ServiceError;
+import org.spf4j.service.avro.ServiceError;
 import org.spf4j.io.ByteArrayBuilder;
 import org.spf4j.jaxrs.common.providers.avro.DefaultSchemaProtocol;
 import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyWriter;
@@ -69,5 +69,5 @@ public final class GrizzlyErrorPageGenerator implements ErrorPageGenerator {
   public String toString() {
     return "GrizzlyErrorPageGenerator{" + "schemaClient=" + schemaClient + '}';
   }
-  
+
 }

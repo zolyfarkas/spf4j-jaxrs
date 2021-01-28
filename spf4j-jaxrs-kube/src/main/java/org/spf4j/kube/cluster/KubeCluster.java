@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.spf4j.base.TimeSource;
-import org.spf4j.base.avro.NetworkService;
+import org.spf4j.service.avro.NetworkService;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.cluster.ClusterInfoBean;

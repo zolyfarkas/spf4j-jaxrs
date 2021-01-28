@@ -17,7 +17,7 @@ package org.spf4j.kube.client;
 
 import java.util.List;
 import org.apache.avro.reflect.AvroDefault;
-import org.spf4j.base.avro.NetworkProtocol;
+import org.spf4j.service.avro.NetworkProtocol;
 
 /**
  * kubernetes endpoints:

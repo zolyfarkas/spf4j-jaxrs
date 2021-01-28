@@ -6,8 +6,8 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
-import org.spf4j.base.avro.HealthRecord;
-import org.spf4j.base.avro.HealthStatus;
+import org.spf4j.service.avro.HealthRecord;
+import org.spf4j.service.avro.HealthStatus;
 
 /**
  * @author Zoltan Farkas

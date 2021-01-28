@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.spf4j.base.PackageInfo;
 import org.spf4j.base.Reflections;
 import org.spf4j.base.avro.ApplicationInfo;
-import org.spf4j.base.avro.ProcessInfo;
+import org.spf4j.service.avro.ProcessInfo;
 import org.spf4j.cluster.Service;
 import org.spf4j.cluster.ServiceInfo;
 import org.spf4j.jaxrs.JaxRsSecurityContext;
