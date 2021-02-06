@@ -37,19 +37,7 @@ public final class Utils {
     return builder
       .withExceptionPartialPredicate(WebApplicationException.class, new HttpRetryAfter())
       .withExceptionPartialPredicate(WebApplicationException.class, new HttpDefaultRetryableStatusses())
-      .withExceptionPartialPredicate(ProcessingException.class,
-            (ProcessingException value, Callable<? extends Object> what) -> {
-      Function<Throwable, Boolean> pred = org.spf4j.base.Throwables.getIsRetryablePredicate();
-      Boolean result = pred.apply(value);
-      if (result == null) {
-        return null; // no decision.
-      }
-      if (result) {
-        return RetryDecision.retryDefault(what);
-      } else {
-        return RetryDecision.abort();
-      }
-    })
+      .withExceptionPartialPredicate(ProcessingException.class, new DefaultThrowablePredicate())
     .withRetryOnException(Exception.class, 2) // will retry any other exception twice.
     .withInitialImmediateRetries(2)
     .withInitialDelay(10, TimeUnit.MILLISECONDS)
@@ -139,6 +127,24 @@ public final class Utils {
           }
       }
       return null;
+    }
+  }
+
+  private static class DefaultThrowablePredicate
+          implements PartialTypedExceptionRetryPredicate<Object, Callable<? extends Object>, ProcessingException> {
+
+    @Override
+    public RetryDecision<Object, Callable<? extends Object>> getExceptionDecision(ProcessingException value, Callable<? extends Object> what) {
+      Function<Throwable, Boolean> pred = org.spf4j.base.Throwables.getIsRetryablePredicate();
+      Boolean result = pred.apply(value);
+      if (result == null) {
+        return null; // no decision.
+      }
+      if (result) {
+        return RetryDecision.retryDefault(what);
+      } else {
+        return RetryDecision.abort();
+      }
     }
   }
 
