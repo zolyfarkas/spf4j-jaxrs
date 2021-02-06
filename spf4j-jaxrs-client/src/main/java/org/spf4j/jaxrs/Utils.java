@@ -1,12 +1,12 @@
 package org.spf4j.jaxrs;
 
-import com.google.common.base.Throwables;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import javax.annotation.Nullable;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
@@ -39,8 +39,12 @@ public final class Utils {
       .withExceptionPartialPredicate(WebApplicationException.class, new HttpDefaultRetryableStatusses())
       .withExceptionPartialPredicate(ProcessingException.class,
             (ProcessingException value, Callable<? extends Object> what) -> {
-      Throwable cause = Throwables.getRootCause(value);
-      if (org.spf4j.base.Throwables.isRetryable(cause)) {
+      Function<Throwable, Boolean> pred = org.spf4j.base.Throwables.getIsRetryablePredicate();
+      Boolean result = pred.apply(value);
+      if (result == null) {
+        return null; // no decision.
+      }
+      if (result) {
         return RetryDecision.retryDefault(what);
       } else {
         return RetryDecision.abort();
