@@ -1,6 +1,7 @@
 package org.spf4j.servlet;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.io.EOFException;
 import org.spf4j.http.ContextTags;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -274,12 +275,22 @@ public final class ExecutionContextFilter implements Filter {
           org.spf4j.base.Runtime.goDownWithError(t, SysExits.EX_SOFTWARE);
         }
         ctx.accumulateComponent(ContextTags.LOG_ATTRIBUTES, t);
-        logRequestEnd(org.spf4j.log.Level.ERROR, ctx, httpReq, httpResp);
+        Level logLevel = isCommunicationError(t) ? org.spf4j.log.Level.WARN: org.spf4j.log.Level.ERROR;
+        logRequestEnd(logLevel, ctx, httpReq, httpResp);
       } finally {
         ctx.close();
       }
     }
   }
+
+  /**
+   * Clients disconnecting prematurely, of sending invalid payloads.
+   * @return
+   */
+  private static boolean isCommunicationError(final Throwable t) {
+    return Throwables.firstCause(t, x -> EOFException.class.isAssignableFrom(x.getClass())) != null;
+  }
+
 
   @SuppressFBWarnings("UCC_UNRELATED_COLLECTION_CONTENTS")
   private void logRequestEnd(final Level plevel,
