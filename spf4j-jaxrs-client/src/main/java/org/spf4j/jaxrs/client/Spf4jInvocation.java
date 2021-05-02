@@ -30,19 +30,20 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
   private final Invocation invocation;
   private final AsyncRetryExecutor<Object, HttpCallable<?>> executor;
   private final Spf4jWebTarget target;
-  private final long timeoutNanos;
-  private final long httpReqTimeoutNanos;
+  private final long invocationTimeoutNanos;
+  private final long httpAttemptTimeoutNanos;
   private final String method;
 
-  public Spf4jInvocation(final Invocation invocation, final long timeoutNanos, final long httpReqTimeoutNanos,
+  public Spf4jInvocation(final Invocation invocation, final long timeoutNanos,
+          final long httpAttemptTimeoutNanos,
           final AsyncRetryExecutor<Object, HttpCallable<?>> policy,
           final Spf4jWebTarget target, final String method) {
     this.invocation = invocation;
     this.executor = policy;
-    this.timeoutNanos = timeoutNanos;
+    this.invocationTimeoutNanos = timeoutNanos;
     this.target = target;
     this.method = method;
-    this.httpReqTimeoutNanos = httpReqTimeoutNanos;
+    this.httpAttemptTimeoutNanos = httpAttemptTimeoutNanos;
   }
 
 
@@ -51,7 +52,7 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
   }
 
   public long getTimeoutNanos() {
-    return timeoutNanos;
+    return invocationTimeoutNanos;
   }
 
   public Spf4jWebTarget getTarget() {
@@ -69,21 +70,20 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
     if (invc == invocation) {
       return this;
     } else {
-      return new Spf4jInvocation(invc, timeoutNanos, httpReqTimeoutNanos, executor, target, method);
+      return new Spf4jInvocation(invc, invocationTimeoutNanos, httpAttemptTimeoutNanos, executor, target, method);
     }
   }
 
   private <T> T invoke(final Callable<T> what) {
     long nanoTime = TimeSource.nanoTime();
     ExecutionContext current = ExecutionContexts.current();
-    long deadlineNanos = ExecutionContexts.computeDeadline(current, timeoutNanos, TimeUnit.NANOSECONDS);
+    long deadlineNanos = ExecutionContexts.computeDeadline(current, invocationTimeoutNanos, TimeUnit.NANOSECONDS);
     try {
-      return executor.call(
-              HttpCallable.invocationHandler(current, what, getName(),
+      return executor.call(HttpCallable.invocationHandler(current, what, getName(),
                       this.target.getUri(),
                       this.method,
                       this.target.getClient().getExceptionMapper(),
-                      deadlineNanos, httpReqTimeoutNanos),
+                      deadlineNanos, httpAttemptTimeoutNanos),
                RuntimeException.class, nanoTime, deadlineNanos);
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
@@ -96,12 +96,12 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
   private <T> Future<T> submit(final Callable<T> what) {
     long nanoTime = TimeSource.nanoTime();
     ExecutionContext current = ExecutionContexts.current();
-    long deadlineNanos = ExecutionContexts.computeDeadline(current, timeoutNanos, TimeUnit.NANOSECONDS);
+    long deadlineNanos = ExecutionContexts.computeDeadline(current, invocationTimeoutNanos, TimeUnit.NANOSECONDS);
     HttpCallable pc = HttpCallable.invocationHandler(current, what, getName(),
             this.target.getUri(),
             this.method,
             this.target.getClient().getExceptionMapper(),
-            deadlineNanos, httpReqTimeoutNanos);
+            deadlineNanos, httpAttemptTimeoutNanos);
     return executor.submitRx(pc, nanoTime, deadlineNanos,
             () -> new ContextPropagatingCompletableFuture<>(current, deadlineNanos));
   }
@@ -183,8 +183,8 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
   @Override
   public String toString() {
     return "Spf4jInvocation{" + "invocation=" + invocation + ", executor="
-            + executor + ", target=" + target + ", timeoutNanos=" + timeoutNanos
-            + ", httpReqTimeoutNanos=" + httpReqTimeoutNanos + ", method=" + method + '}';
+            + executor + ", target=" + target + ", invocationTimeoutNanos=" + invocationTimeoutNanos
+            + ", httpAttemptTimeoutNanos=" + httpAttemptTimeoutNanos + ", method=" + method + '}';
   }
 
 }
