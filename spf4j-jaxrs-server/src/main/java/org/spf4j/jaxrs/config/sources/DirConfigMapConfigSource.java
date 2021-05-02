@@ -15,8 +15,10 @@
  */
 package org.spf4j.jaxrs.config.sources;
 
+import com.sun.nio.file.SensitivityWatchEventModifier;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import gnu.trove.set.hash.THashSet;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -26,29 +28,52 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchEvent.Kind;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
-import org.eclipse.microprofile.config.spi.ConfigSource;
+import javax.annotation.Nullable;
 import org.spf4j.base.Env;
+import org.spf4j.jaxrs.config.ConfigEvent;
+import org.spf4j.jaxrs.config.ConfigWatcher;
+import org.spf4j.jaxrs.config.ObservableConfigSource;
+import org.spf4j.jaxrs.config.PropertyWatcher;
 
 /**
  * appropriate for loading kubernetes config maps:
+ *
  * @see https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#add-configmap-data-to-a-volume
  * @author Zoltan Farkas
  */
-public final class DirConfigMapConfigSource implements ConfigSource {
+@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+public final class DirConfigMapConfigSource implements ObservableConfigSource, Closeable, Runnable {
 
   private final Charset charset;
 
   private final Path folder;
 
+  private WatchService watchService;
+
+  private final List<ConfigWatcher> watchers;
+
+  private Thread watchThread;
+
   public DirConfigMapConfigSource(final Path folder, final Charset charset) {
     this.folder = folder;
     this.charset = charset;
+    this.watchers = new CopyOnWriteArrayList<>();
   }
 
   @SuppressFBWarnings("PATH_TRAVERSAL_IN") //comming from trusted config.
@@ -56,11 +81,115 @@ public final class DirConfigMapConfigSource implements ConfigSource {
     this(Paths.get(Env.getValue("APP_CONFIG_MAP_DIR", "/etc/config")), StandardCharsets.UTF_8);
   }
 
+  private synchronized void initWatcher() {
+    if (watchService == null) {
+      try {
+        watchService = folder.getFileSystem().newWatchService();
+        folder.register(watchService, new WatchEvent.Kind[]{StandardWatchEventKinds.ENTRY_MODIFY,
+          StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE,
+          StandardWatchEventKinds.OVERFLOW
+        }, SensitivityWatchEventModifier.HIGH);
+        watchThread = new Thread(this, "config-watcher");
+        watchThread.setDaemon(true);
+        watchThread.start();
+      } catch (IOException ex) {
+        throw new UncheckedIOException(ex);
+      }
+    }
+  }
+
   @Override
-  @SuppressFBWarnings({ "PATH_TRAVERSAL_IN", "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" }) //intentional
+  public synchronized void close() throws IOException {
+    if (watchService != null) {
+      watchThread.interrupt();
+      try {
+        watchThread.join(5000);
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+        throw new IOException(ex);
+      } finally {
+        watchService.close();
+      }
+    }
+  }
+
+  private synchronized WatchService getWatchService() {
+    return watchService;
+  }
+
+  @Override
+  public void run() {
+    boolean alive = true;
+    try {
+      while (alive) {
+        try {
+          WatchKey key = getWatchService().poll(5, TimeUnit.SECONDS);
+          if (key == null) {
+            continue;
+          }
+          if (!key.isValid()) {
+            key.cancel();
+            break;
+          }
+          List<WatchEvent<?>> events = key.pollEvents();
+          for (WatchEvent<?> event : events) {
+            Kind<?> kind = event.kind();
+            if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
+              String fileName = ((WatchEvent<Path>) event).context().getFileName().toString();
+              notify(fileName, ConfigEvent.ADDED);
+            } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
+              String fileName = ((WatchEvent<Path>) event).context().getFileName().toString();
+              notify(fileName, ConfigEvent.DELETED);
+            } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+              String fileName = ((WatchEvent<Path>) event).context().getFileName().toString();
+              notify(fileName, ConfigEvent.MODIFIED);
+            } else { // overflow, etc...
+              notifyUnknown();
+            }
+          }
+          if (!key.reset()) {
+            key.cancel();
+            break;
+          }
+        } catch (InterruptedException ex) {
+          alive = false;
+        }
+      }
+    } catch (RuntimeException ex) {
+      Logger.getLogger(DirConfigMapConfigSource.class.getName())
+              .log(Level.SEVERE, "Failure in log watcher", ex);
+    }
+  }
+
+  private void notifyUnknown() {
+    for (ConfigWatcher watcher : watchers) {
+      watcher.unknownEvents();
+    }
+  }
+
+  private void notify(final String propertyName, final ConfigEvent event) {
+    for (ConfigWatcher watcher : watchers) {
+      watcher.accept(propertyName, event);
+    }
+  }
+
+  @Override
+  public void addWatcher(final ConfigWatcher consumer) {
+    initWatcher();
+    watchers.add(consumer);
+  }
+
+  @Override
+  public void addWatcher(final String name, final PropertyWatcher consumer) {
+    // Temp inefifient dispatch.
+    addWatcher(new ConfigWatcherAdapter(name, consumer));
+  }
+
+  @Override
+  @SuppressFBWarnings({"PATH_TRAVERSAL_IN"}) //intentional
   public Map<String, String> getProperties() {
     if (!Files.exists(folder)) {
-      return Collections.EMPTY_MAP;
+      return Collections.emptyMap();
     }
     Map<String, String> result = new HashMap<>();
     try (Stream<Path> list = Files.list(folder)) {
@@ -75,7 +204,7 @@ public final class DirConfigMapConfigSource implements ConfigSource {
         }
       }
     } catch (NoSuchFileException ex) {
-      return Collections.EMPTY_MAP;
+      return Collections.emptyMap();
     } catch (IOException ex) {
       throw new UncheckedIOException(ex);
     }
@@ -83,10 +212,9 @@ public final class DirConfigMapConfigSource implements ConfigSource {
   }
 
   @Override
-  @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
   public Set<String> getPropertyNames() {
     if (!Files.exists(folder)) {
-      return Collections.EMPTY_SET;
+      return Collections.emptySet();
     }
     Set<String> result = new THashSet<>();
     try (Stream<Path> list = Files.list(folder)) {
@@ -98,7 +226,7 @@ public final class DirConfigMapConfigSource implements ConfigSource {
         }
       }
     } catch (NoSuchFileException ex) {
-      return Collections.EMPTY_SET;
+      return Collections.emptySet();
     } catch (IOException ex) {
       throw new UncheckedIOException(ex);
     }
@@ -111,11 +239,12 @@ public final class DirConfigMapConfigSource implements ConfigSource {
   }
 
   @Override
+  @Nullable
   public String getValue(final String propertyName) {
     if (propertyName.indexOf(File.separatorChar) >= 0) {
       throw new IllegalArgumentException("Invalid Property name: " + propertyName);
     }
-    Path p  = folder.resolve(propertyName);
+    Path p = folder.resolve(propertyName);
     try {
       if (Files.isReadable(p)) {
         try {
@@ -139,6 +268,27 @@ public final class DirConfigMapConfigSource implements ConfigSource {
   @Override
   public String toString() {
     return "DirConfigMapConfigSource{" + "charset=" + charset + ", folder=" + folder + '}';
+  }
+
+  private static class ConfigWatcherAdapter implements ConfigWatcher {
+
+    private final String name;
+    private final PropertyWatcher consumer;
+
+    ConfigWatcherAdapter(final String name, final PropertyWatcher consumer) {
+      this.name = name;
+      this.consumer = consumer;
+    }
+
+    public void accept(final String n, final ConfigEvent event) {
+      if (name.equals(n)) {
+        consumer.accept(event);
+      }
+    }
+
+    public void unknownEvents() {
+      consumer.unknownEvents();
+    }
   }
 
 }

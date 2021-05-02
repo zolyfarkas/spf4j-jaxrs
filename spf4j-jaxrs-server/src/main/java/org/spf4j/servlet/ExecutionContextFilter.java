@@ -275,7 +275,7 @@ public final class ExecutionContextFilter implements Filter {
           org.spf4j.base.Runtime.goDownWithError(t, SysExits.EX_SOFTWARE);
         }
         ctx.accumulateComponent(ContextTags.LOG_ATTRIBUTES, t);
-        Level logLevel = isCommunicationError(t) ? org.spf4j.log.Level.WARN: org.spf4j.log.Level.ERROR;
+        Level logLevel = isCommunicationError(t) ? org.spf4j.log.Level.WARN : org.spf4j.log.Level.ERROR;
         logRequestEnd(logLevel, ctx, httpReq, httpResp);
       } finally {
         ctx.close();
@@ -284,7 +284,7 @@ public final class ExecutionContextFilter implements Filter {
   }
 
   /**
-   * Clients disconnecting prematurely, of sending invalid payloads.
+   * Clients disconnecting prematurely.
    * @return
    */
   private static boolean isCommunicationError(final Throwable t) {

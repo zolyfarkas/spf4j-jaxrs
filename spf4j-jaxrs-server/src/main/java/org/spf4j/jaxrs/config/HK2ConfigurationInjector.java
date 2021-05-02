@@ -138,39 +138,4 @@ public final class HK2ConfigurationInjector implements InjectionResolver<ConfigP
     return "HK2ConfigurationInjector{" + "resolver=" + resolver + '}';
   }
 
-  public static final class ConfigSupplier implements Supplier, Provider {
-
-    private final  BiFunction<Object, Type, Object> typeConv;
-    private final ConfigurationParam cfgParam;
-    private final Type type;
-    private final Configuration configuration;
-
-    ConfigSupplier(final Configuration configuration, final  BiFunction<Object, Type, Object> typeConv,
-            final ConfigurationParam cfgParam, final Type type) {
-      this.configuration = configuration;
-      this.typeConv = typeConv;
-      this.cfgParam = cfgParam;
-      this.type = type;
-    }
-
-    @Override
-    public Object get() {
-      Object val = configuration.getProperty(cfgParam.getPropertyName());
-      if (val != null) {
-        return typeConv.apply(val, type);
-      } else {
-        String dval = cfgParam.getDefaultValue();
-        if (dval != null) {
-          return typeConv.apply(dval, type);
-        } else {
-          if (cfgParam.isNullable()) {
-            return null;
-          } else {
-            throw new IllegalArgumentException("Unable to supply " + cfgParam + ", not nullable");
-          }
-        }
-      }
-    }
-  }
-
 }
