@@ -18,6 +18,9 @@ package org.spf4j.jaxrs.config;
 import java.lang.reflect.Type;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 import javax.ws.rs.core.Configuration;
 
@@ -31,6 +34,7 @@ final class ConfigSupplier implements Supplier, Provider {
   private final ConfigurationParam cfgParam;
   private final Type type;
   private final Configuration configuration;
+  private volatile Object value;
 
   ConfigSupplier(final Configuration configuration, final BiFunction<Object, Type, Object> typeConv,
           final ConfigurationParam cfgParam, final Type type) {
@@ -38,10 +42,50 @@ final class ConfigSupplier implements Supplier, Provider {
     this.typeConv = typeConv;
     this.cfgParam = cfgParam;
     this.type = type;
+    this.value = fetch();
+    ObservableConfigSource cfgSource
+            = (ObservableConfigSource) configuration.getProperty(ObservableConfigSource.PROPERTY_NAME);
+    if (cfgSource != null) {
+      cfgSource.addWatcher(cfgParam.getPropertyName(), new PropertyWatcher() {
+        public void accept(final ConfigEvent event) {
+          switch (event) {
+            case ADDED:
+            case MODIFIED:
+              try {
+                ConfigSupplier.this.value = fetch();
+              } catch (RuntimeException ex) {
+                Logger.getLogger(ConfigSupplier.class.getName())
+                        .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
+              }
+              break;
+            case DELETED:
+              ConfigSupplier.this.value = null;
+              break;
+            default:
+              throw new IllegalStateException("Unsupported config event: " + event);
+          }
+
+        }
+
+        public void unknownEvents() {
+          try {
+            ConfigSupplier.this.value = fetch();
+          } catch (RuntimeException ex) {
+            Logger.getLogger(ConfigSupplier.class.getName())
+                    .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
+          }
+        }
+      });
+    }
   }
 
   @Override
   public Object get() {
+    return value;
+  }
+
+  @Nullable
+  private Object fetch() {
     Object val = configuration.getProperty(cfgParam.getPropertyName());
     if (val != null) {
       return typeConv.apply(val, type);

@@ -47,13 +47,13 @@ public final class JerseyMicroprofileConfigurationProvider implements ExternalCo
   }
 
   @Override
-  public ExternalConfigurationModel getConfiguration() {
+  public JerseyMicroprofileConfigurationModel getConfiguration() {
     return configModel;
   }
 
   @Override
-  public ExternalConfigurationModel merge(final ExternalConfigurationModel otherModel) {
-    throw new UnsupportedOperationException();
+  public JerseyMicroprofileConfigurationModel merge(final ExternalConfigurationModel otherModel) {
+    throw new UnsupportedOperationException("Cannot merge JerseyMicroprofileConfigurationProvider with " + otherModel);
   }
 
   @Override

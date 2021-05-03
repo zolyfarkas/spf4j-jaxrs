@@ -17,6 +17,7 @@ package org.spf4j.jaxrs.config;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Arrays;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -43,7 +44,16 @@ public final class ConfigImpl implements Config {
 
   @Override
   @Nullable
+  @SuppressFBWarnings("URV_INHERITED_METHOD_WITH_RELATED_TYPES")
   public <T> T getValue(final String propertyName, final Class<T> clasz) {
+    if (ObservableConfigSource.PROPERTY_NAME.equals(propertyName)) {
+       for (ConfigSource source : configs) {
+         if (source instanceof ObservableConfigSource) {
+           return (T) source;
+         }
+       }
+       return null;
+    }
     String strValue = null;
     for (ConfigSource source : configs) {
       strValue = source.getValue(propertyName);
@@ -54,12 +64,15 @@ public final class ConfigImpl implements Config {
     if (strValue == null) {
       return null;
     }
+    if (String.class == clasz || Object.class == clasz) {
+      return (T) strValue;
+    }
     return (T) converters.get(clasz).apply(strValue, clasz);
   }
 
   @Override
-  public <T> Optional<T> getOptionalValue(final String prropertyName, final Class<T> clasz) {
-    return Optional.ofNullable(getValue(prropertyName, clasz));
+  public <T> Optional<T> getOptionalValue(final String propertyName, final Class<T> clasz) {
+    return Optional.ofNullable(getValue(propertyName, clasz));
   }
 
   @Override

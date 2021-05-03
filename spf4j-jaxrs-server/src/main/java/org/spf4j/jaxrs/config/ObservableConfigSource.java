@@ -22,6 +22,11 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  */
 public interface ObservableConfigSource extends ConfigSource {
 
+  /**
+   * A Observable configuration source will be able to return a instance of itself
+   */
+  String PROPERTY_NAME = "OBS_CFG_SOURCE";
+
   void addWatcher(ConfigWatcher consumer);
 
   void addWatcher(String name, PropertyWatcher consumer);
