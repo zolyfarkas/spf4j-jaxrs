@@ -177,9 +177,10 @@ public class MetricsClusterResource {
     Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
     for (InetAddress addr : peerAddresses) {
       URI uri = new URI(protocol, null,
-              addr.getHostAddress(), port, "/metrics/local/{metricName}", null, null);
+              addr.getHostAddress(), port, "/metrics/local", null, null);
       try {
         return addNodeToSchema(httpClient.target(uri)
+                .path("{metricName}")
                 .resolveTemplate("metricName", metricName)
                 .request("application/avsc+json").get(org.apache.avro.Schema.class));
       } catch (WebApplicationException ex) {
