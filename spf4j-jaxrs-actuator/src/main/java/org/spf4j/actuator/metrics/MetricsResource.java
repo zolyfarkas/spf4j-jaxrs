@@ -48,9 +48,10 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.spf4j.base.avro.AvroCloseableIterable;
 import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.ProjectionSupport;
+import org.spf4j.perf.MeasurementStore;
 import org.spf4j.perf.MeasurementStoreQuery;
 import org.spf4j.perf.TimeSeriesRecord;
-import org.spf4j.perf.impl.RecorderFactory;
+import org.spf4j.perf.impl.ProcessMeasurementStore;
 
 /**
  * @author Zoltan Farkas
@@ -63,10 +64,13 @@ public class MetricsResource {
 
   private final Duration defaultFromDuration;
 
+  private final MeasurementStore mStore;
+
   @Inject
   public MetricsResource(@ConfigProperty(name = "metrics.fromDefaultDuration",
           defaultValue = "PT1M") final Duration defaultFromDuration) {
     this.defaultFromDuration = defaultFromDuration;
+    mStore = ProcessMeasurementStore.getMeasurementStore();
   }
 
 
@@ -76,8 +80,8 @@ public class MetricsResource {
   @Path("local")
   @AvroSchema(value = "{\"type\":\"array\",\"items\": {\"type\":\"string\", \"logicalType\":\"avsc\"}}")
   public Collection<Schema> getMetrics() throws IOException {
-    RecorderFactory.MEASUREMENT_STORE.flush();
-    return RecorderFactory.MEASUREMENT_STORE.query().getMeasurements((x) -> true);
+    mStore.flush();
+    return mStore.query().getMeasurements((x) -> true);
   }
 
   /**
@@ -103,8 +107,8 @@ public class MetricsResource {
     if (aggMillis > Integer.MAX_VALUE) {
       throw new ClientErrorException("Invalid aggregation durration: " + agg, 400);
     }
-    RecorderFactory.MEASUREMENT_STORE.flush();
-    MeasurementStoreQuery query = RecorderFactory.MEASUREMENT_STORE.query();
+    mStore.flush();
+    MeasurementStoreQuery query = mStore.query();
     return new PrometheusOutput(query, aggMillis, from, to);
   }
 
@@ -114,13 +118,13 @@ public class MetricsResource {
   @Produces(value = {"application/avsc+json;qs=0.9"})
   public Schema getMetricSchema(@PathParam("metric") final String metricName)
           throws IOException {
-    RecorderFactory.MEASUREMENT_STORE.flush();
-    MeasurementStoreQuery query = RecorderFactory.MEASUREMENT_STORE.query();
-    Collection<Schema> measurements = query.getMeasurements((x) -> x.equals(metricName));
+    mStore.flush();
+    MeasurementStoreQuery query = mStore.query();
+    Collection<Schema> measurements = query.getMeasurements(x -> x.equals(metricName));
     if (measurements.isEmpty()) {
       throw new NotFoundException("Metric not found: " + metricName);
     } else if (measurements.size() > 1) {
-      throw new IllegalStateException("Multiple metrics found, this is a bug " + measurements);
+      throw new IllegalStateException("Multiple metrics found, this is a bug: " + measurements);
     }
     return measurements.iterator().next();
   }
@@ -144,7 +148,7 @@ public class MetricsResource {
       }
     }
     Schema measurement = getMetricSchema(metricName);
-    MeasurementStoreQuery query = RecorderFactory.MEASUREMENT_STORE.query();
+    MeasurementStoreQuery query = mStore.query();
     return  aggMillis <= 0
             ? query.getMeasurementData(measurement, from, to)
             : query.getAggregatedMeasurementData(measurement, from, to, (int) aggMillis, TimeUnit.MILLISECONDS);

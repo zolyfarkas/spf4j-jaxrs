@@ -38,11 +38,6 @@
       <version>${spf4j.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.microprofile.config</groupId>
-      <artifactId>microprofile-config-api</artifactId>
-      <version>1.4</version>
-    </dependency>
-    <dependency>
       <groupId>org.spf4j</groupId>
       <artifactId>spf4j-jaxrs-client</artifactId>
       <version>${project.version}</version>

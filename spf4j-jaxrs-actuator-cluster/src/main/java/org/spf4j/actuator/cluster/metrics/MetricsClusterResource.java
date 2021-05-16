@@ -209,7 +209,7 @@ public class MetricsClusterResource {
     AvroCloseableIterable<TimeSeriesRecord> metrics = localResource.getMetrics(metricName, from, to, agg);
     closeables.add(AvroCloseableIterable.from(
             Iterables.transform(metrics,
-                    (x) -> addNodeToRecord(nSchema, x, localAddress.getHostAddress())),
+                    x -> addNodeToRecord(nSchema, x, localAddress.getHostAddress())),
             metrics, nSchema));
     for (InetAddress addr : peerAddresses) {
       URI uri;

@@ -15,6 +15,7 @@ import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.TimeSource;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
 import org.spf4j.failsafe.AsyncRetryExecutor;
+import org.spf4j.service.avro.HttpExecutionPolicy;
 
 /**
  * @author Zoltan Farkas
@@ -40,14 +41,15 @@ public final class Spf4jCompletionStageRxInvoker
   private <T> CompletionStage<T> submit(final Callable<T> what, final String name, final String method) {
     long nanoTime = TimeSource.nanoTime();
     ExecutionContext current = ExecutionContexts.current();
+    HttpExecutionPolicy execPolicy = invocationBuilder.getExecPolicyBuilder().build();
     long deadlineNanos = ExecutionContexts.computeDeadline(current,
-            invocationBuilder.getTimeoutNanos(), TimeUnit.NANOSECONDS);
+            execPolicy.getOverallTimeout().toNanos(), TimeUnit.NANOSECONDS);
     Spf4jWebTarget target = invocationBuilder.getTarget();
     HttpCallable<T> pc = HttpCallable.invocationHandler(current, what, name,
             target.getUri(),
             method,
             target.getClient().getExceptionMapper(),
-            deadlineNanos, invocationBuilder.getHttpReqTimeoutNanos());
+            deadlineNanos, execPolicy.getAttemptTimeout().toNanos());
     return executor.submitRx(pc, nanoTime, deadlineNanos,
             () -> new ContextPropagatingCompletableFuture<>(current, deadlineNanos));
   }

@@ -251,28 +251,28 @@ public final class Spf4JClient implements Client {
 
   @Override
   public Spf4jWebTarget target(final String uri) {
-    return new Spf4jWebTarget(this, cl.target(uri), executor, null);
+    return new Spf4jWebTarget(this, cl.target(uri), executor);
   }
 
   @Override
   public Spf4jWebTarget target(final URI uri) {
-    return new Spf4jWebTarget(this, cl.target(uri), executor, null);
+    return new Spf4jWebTarget(this, cl.target(uri), executor);
   }
 
   @Override
   public Spf4jWebTarget target(final UriBuilder uriBuilder) {
-    return new Spf4jWebTarget(this, cl.target(uriBuilder), executor, null);
+    return new Spf4jWebTarget(this, cl.target(uriBuilder), executor);
   }
 
   @Override
   public Spf4jWebTarget target(final Link link) {
-    return new Spf4jWebTarget(this, cl.target(link), executor, null);
+    return new Spf4jWebTarget(this, cl.target(link), executor);
   }
 
   @Override
   public Spf4jInvocationBuilder invocation(final Link link) {
     return new Spf4jInvocationBuilder(this, cl.invocation(link), executor, new Spf4jWebTarget(this, cl.target(link),
-            executor, null));
+            executor));
   }
 
   @Override

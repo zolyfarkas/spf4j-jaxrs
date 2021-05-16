@@ -19,6 +19,7 @@ import org.spf4j.base.UncheckedTimeoutException;
 import org.spf4j.base.Wrapper;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
 import org.spf4j.failsafe.AsyncRetryExecutor;
+import org.spf4j.service.avro.HttpExecutionPolicy;
 
 /**
  * @author Zoltan Farkas
@@ -30,20 +31,17 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
   private final Invocation invocation;
   private final AsyncRetryExecutor<Object, HttpCallable<?>> executor;
   private final Spf4jWebTarget target;
-  private final long invocationTimeoutNanos;
-  private final long httpAttemptTimeoutNanos;
+  private final HttpExecutionPolicy execPolicy;
   private final String method;
 
-  public Spf4jInvocation(final Invocation invocation, final long timeoutNanos,
-          final long httpAttemptTimeoutNanos,
+  public Spf4jInvocation(final Invocation invocation, final HttpExecutionPolicy execPolicy,
           final AsyncRetryExecutor<Object, HttpCallable<?>> policy,
           final Spf4jWebTarget target, final String method) {
     this.invocation = invocation;
     this.executor = policy;
-    this.invocationTimeoutNanos = timeoutNanos;
     this.target = target;
     this.method = method;
-    this.httpAttemptTimeoutNanos = httpAttemptTimeoutNanos;
+    this.execPolicy = execPolicy;
   }
 
 
@@ -52,7 +50,7 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
   }
 
   public long getTimeoutNanos() {
-    return invocationTimeoutNanos;
+    return execPolicy.getOverallTimeout().toNanos();
   }
 
   public Spf4jWebTarget getTarget() {
@@ -70,20 +68,21 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
     if (invc == invocation) {
       return this;
     } else {
-      return new Spf4jInvocation(invc, invocationTimeoutNanos, httpAttemptTimeoutNanos, executor, target, method);
+      return new Spf4jInvocation(invc, execPolicy, executor, target, method);
     }
   }
 
   private <T> T invoke(final Callable<T> what) {
     long nanoTime = TimeSource.nanoTime();
     ExecutionContext current = ExecutionContexts.current();
-    long deadlineNanos = ExecutionContexts.computeDeadline(current, invocationTimeoutNanos, TimeUnit.NANOSECONDS);
+    long deadlineNanos = ExecutionContexts.computeDeadline(current,
+            execPolicy.getOverallTimeout().toNanos(), TimeUnit.NANOSECONDS);
     try {
       return executor.call(HttpCallable.invocationHandler(current, what, getName(),
                       this.target.getUri(),
                       this.method,
                       this.target.getClient().getExceptionMapper(),
-                      deadlineNanos, httpAttemptTimeoutNanos),
+                      deadlineNanos, execPolicy.getAttemptTimeout().toNanos()),
                RuntimeException.class, nanoTime, deadlineNanos);
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
@@ -96,12 +95,13 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
   private <T> Future<T> submit(final Callable<T> what) {
     long nanoTime = TimeSource.nanoTime();
     ExecutionContext current = ExecutionContexts.current();
-    long deadlineNanos = ExecutionContexts.computeDeadline(current, invocationTimeoutNanos, TimeUnit.NANOSECONDS);
+    long deadlineNanos = ExecutionContexts.computeDeadline(current,
+            execPolicy.getOverallTimeout().toNanos(), TimeUnit.NANOSECONDS);
     HttpCallable pc = HttpCallable.invocationHandler(current, what, getName(),
             this.target.getUri(),
             this.method,
             this.target.getClient().getExceptionMapper(),
-            deadlineNanos, httpAttemptTimeoutNanos);
+            deadlineNanos, execPolicy.getAttemptTimeout().toNanos());
     return executor.submitRx(pc, nanoTime, deadlineNanos,
             () -> new ContextPropagatingCompletableFuture<>(current, deadlineNanos));
   }
@@ -183,8 +183,8 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
   @Override
   public String toString() {
     return "Spf4jInvocation{" + "invocation=" + invocation + ", executor="
-            + executor + ", target=" + target + ", invocationTimeoutNanos=" + invocationTimeoutNanos
-            + ", httpAttemptTimeoutNanos=" + httpAttemptTimeoutNanos + ", method=" + method + '}';
+            + executor + ", target=" + target + ", execPOlicy=" + this.execPolicy
+            + ", method=" + method + '}';
   }
 
 }

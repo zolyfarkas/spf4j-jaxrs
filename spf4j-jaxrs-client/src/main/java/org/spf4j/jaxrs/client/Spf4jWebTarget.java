@@ -19,23 +19,15 @@ public final class Spf4jWebTarget implements WebTarget {
 
   private final Spf4JClient client;
 
-  private final Spf4jWebTarget fromTemplate;
-
   public Spf4jWebTarget(final Spf4JClient client,
-          final WebTarget tg, final AsyncRetryExecutor<Object, HttpCallable<?>> executor,
-          final Spf4jWebTarget fromTemplate) {
+          final WebTarget tg, final AsyncRetryExecutor<Object, HttpCallable<?>> executor) {
     this.tg = tg;
     this.client = client;
     this.executor = executor;
-    this.fromTemplate = fromTemplate;
   }
 
   public Spf4JClient getClient() {
     return client;
-  }
-
-  public Spf4jWebTarget getFromTemplate() {
-    return fromTemplate;
   }
 
   public Spf4jWebTarget withRetryRexecutor(final AsyncRetryExecutor<Object, HttpCallable<?>> exec) {
@@ -55,22 +47,22 @@ public final class Spf4jWebTarget implements WebTarget {
 
   @Override
   public Spf4jWebTarget path(final String path) {
-    return new Spf4jWebTarget(client, tg.path(path), executor, this.fromTemplate);
+    return new Spf4jWebTarget(client, tg.path(path), executor);
   }
 
   @Override
   public Spf4jWebTarget resolveTemplate(final String name, final Object value) {
-    return new Spf4jWebTarget(client, tg.resolveTemplate(name, value), executor, this);
+    return new Spf4jWebTarget(client, tg.resolveTemplate(name, value), executor);
   }
 
   @Override
   public Spf4jWebTarget resolveTemplate(final String name, final Object value, final boolean encodeSlashInPath) {
-    return new Spf4jWebTarget(client, tg.resolveTemplate(name, value, encodeSlashInPath), executor, this);
+    return new Spf4jWebTarget(client, tg.resolveTemplate(name, value, encodeSlashInPath), executor);
   }
 
   @Override
   public Spf4jWebTarget resolveTemplateFromEncoded(final String name, final Object value) {
-    return new Spf4jWebTarget(client, tg.resolveTemplateFromEncoded(name, value), executor, this);
+    return new Spf4jWebTarget(client, tg.resolveTemplateFromEncoded(name, value), executor);
   }
 
   @Override
@@ -78,7 +70,7 @@ public final class Spf4jWebTarget implements WebTarget {
     if (templateValues.isEmpty()) {
       return this;
     }
-    return new Spf4jWebTarget(client, tg.resolveTemplates(templateValues), executor, this);
+    return new Spf4jWebTarget(client, tg.resolveTemplates(templateValues), executor);
   }
 
   @Override
@@ -86,7 +78,7 @@ public final class Spf4jWebTarget implements WebTarget {
     if (templateValues.isEmpty()) {
       return this;
     }
-    return new Spf4jWebTarget(client, tg.resolveTemplates(templateValues, encodeSlashInPath), executor, this);
+    return new Spf4jWebTarget(client, tg.resolveTemplates(templateValues, encodeSlashInPath), executor);
   }
 
   @Override
@@ -94,21 +86,21 @@ public final class Spf4jWebTarget implements WebTarget {
     if (templateValues.isEmpty()) {
       return this;
     }
-    return new Spf4jWebTarget(client, tg.resolveTemplatesFromEncoded(templateValues), executor, this);
+    return new Spf4jWebTarget(client, tg.resolveTemplatesFromEncoded(templateValues), executor);
   }
 
   @Override
   public Spf4jWebTarget matrixParam(final String name, final Object... values) {
     return new Spf4jWebTarget(client, tg.matrixParam(name,
             Spf4JClient.convert(Spf4JClient.getParamConverters(getConfiguration()), values)),
-            executor, this.fromTemplate);
+            executor);
   }
 
   @Override
   public Spf4jWebTarget queryParam(final String name, final Object... values) {
     return new Spf4jWebTarget(client, tg.queryParam(name,
             Spf4JClient.convert(Spf4JClient.getParamConverters(getConfiguration()), values)),
-            executor, this.fromTemplate);
+            executor);
   }
 
   @Override
@@ -188,7 +180,7 @@ public final class Spf4jWebTarget implements WebTarget {
   @Override
   public String toString() {
     return "Spf4jWebTarget{" + "executor=" + executor + ", tg=" + tg + ", client=" + client
-            + ", fromTemplate=" + fromTemplate + '}';
+            + '}';
   }
 
 }

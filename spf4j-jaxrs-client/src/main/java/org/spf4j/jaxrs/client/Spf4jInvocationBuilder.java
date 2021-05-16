@@ -2,6 +2,7 @@
 package org.spf4j.jaxrs.client;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -19,6 +20,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.spf4j.failsafe.AsyncRetryExecutor;
+import org.spf4j.service.avro.HttpExecutionPolicy;
 
 /**
  * @author Zoltan Farkas
@@ -31,9 +33,8 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   private final Spf4jWebTarget target;
 
   private AsyncRetryExecutor<Object, HttpCallable<?>> executor;
-  private long timeoutNanos;
 
-  private long httpReqTimeoutNanos;
+  private final HttpExecutionPolicy.Builder execPolicyBuilder;
 
   public Spf4jInvocationBuilder(final Spf4JClient client, final Invocation.Builder ib,
           final AsyncRetryExecutor<Object, HttpCallable<?>> executor,
@@ -43,25 +44,21 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
     this.executor = executor;
     this.target = target;
     Number timeout =  (Number) client.getConfiguration().getProperty(Spf4jClientProperties.TIMEOUT_NANOS);
+    this.execPolicyBuilder = HttpExecutionPolicy.newBuilder();
     if (timeout != null) {
-      this.timeoutNanos = timeout.longValue();
+      this.execPolicyBuilder.setOverallTimeout(Duration.ofNanos(timeout.longValue()));
     } else {
-      this.timeoutNanos = Long.getLong(Spf4jClientProperties.TIMEOUT_NANOS, 60000000000L);
+      this.execPolicyBuilder.setOverallTimeout(
+              Duration.ofNanos(Long.getLong(Spf4jClientProperties.TIMEOUT_NANOS, 60000000000L)));
     }
-    this.httpReqTimeoutNanos = -1L;
   }
 
   public Spf4jWebTarget getTarget() {
     return target;
   }
 
-
-  public long getTimeoutNanos() {
-    return timeoutNanos;
-  }
-
-  public long getHttpReqTimeoutNanos() {
-    return httpReqTimeoutNanos;
+  HttpExecutionPolicy.Builder getExecPolicyBuilder() {
+    return execPolicyBuilder;
   }
 
   public Spf4jInvocationBuilder withRetryRexecutor(final AsyncRetryExecutor<Object, HttpCallable<?>> exec) {
@@ -70,48 +67,48 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   }
 
   public Spf4jInvocationBuilder withTimeout(final long timeout, final TimeUnit tu) {
-    timeoutNanos = tu.toNanos(timeout);
+    this.execPolicyBuilder.setOverallTimeout(Duration.ofNanos(tu.toNanos(timeout)));
     return this;
   }
 
   public Spf4jInvocationBuilder withHttpReqTimeout(final long timeout, final TimeUnit tu) {
-    httpReqTimeoutNanos = tu.toNanos(timeout);
+    this.execPolicyBuilder.setAttemptTimeout(Duration.ofNanos(tu.toNanos(timeout)));
     return this;
   }
 
   @Override
   public Spf4jInvocation build(final String method) {
-    return new Spf4jInvocation(ib.build(method), timeoutNanos, httpReqTimeoutNanos, executor, this.target,
+    return new Spf4jInvocation(ib.build(method), execPolicyBuilder.build(), executor, this.target,
             method);
   }
 
   @Override
   public Spf4jInvocation build(final String method, final Entity<?> entity) {
-    return new  Spf4jInvocation(ib.build(method, entity), timeoutNanos, httpReqTimeoutNanos,
+    return new  Spf4jInvocation(ib.build(method, entity), execPolicyBuilder.build(),
             executor, this.target, method);
   }
 
   @Override
   public Spf4jInvocation buildGet() {
-    return new Spf4jInvocation(ib.buildGet(), timeoutNanos, httpReqTimeoutNanos,
+    return new Spf4jInvocation(ib.buildGet(), execPolicyBuilder.build(),
             executor, this.target, HttpMethod.GET);
   }
 
   @Override
   public Spf4jInvocation buildDelete() {
-    return new Spf4jInvocation(ib.buildDelete(), timeoutNanos, httpReqTimeoutNanos,
+    return new Spf4jInvocation(ib.buildDelete(), execPolicyBuilder.build(),
             executor, this.target, HttpMethod.DELETE);
   }
 
   @Override
   public Spf4jInvocation buildPost(final Entity<?> entity) {
-    return new Spf4jInvocation(ib.buildPost(entity), timeoutNanos, httpReqTimeoutNanos,
+    return new Spf4jInvocation(ib.buildPost(entity), execPolicyBuilder.build(),
             executor, this.target, HttpMethod.POST);
   }
 
   @Override
   public Spf4jInvocation buildPut(final Entity<?> entity) {
-    return new Spf4jInvocation(ib.buildPut(entity), timeoutNanos, httpReqTimeoutNanos,
+    return new Spf4jInvocation(ib.buildPut(entity), execPolicyBuilder.build(),
             executor, this.target, HttpMethod.PUT);
   }
 
@@ -378,8 +375,8 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   @Override
   public String toString() {
     return "Spf4jInvocationBuilder{" + "client=" + client + ", ib=" + ib + ", target="
-            + target + ", executor=" + executor + ", timeoutNanos=" + timeoutNanos
-            + ", httpReqTimeoutNanos=" + httpReqTimeoutNanos + '}';
+            + target + ", executor=" + executor + ", execPolicyBuilder=" + execPolicyBuilder
+            + '}';
   }
 
 
