@@ -46,10 +46,14 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
     Number timeout =  (Number) client.getConfiguration().getProperty(Spf4jClientProperties.TIMEOUT_NANOS);
     this.execPolicyBuilder = HttpExecutionPolicy.newBuilder();
     if (timeout != null) {
-      this.execPolicyBuilder.setOverallTimeout(Duration.ofNanos(timeout.longValue()));
+      Duration overallTimeout = Duration.ofNanos(timeout.longValue());
+      this.execPolicyBuilder.setOverallTimeout(overallTimeout);
+      this.execPolicyBuilder.setAttemptTimeout(overallTimeout);
     } else {
-      this.execPolicyBuilder.setOverallTimeout(
-              Duration.ofNanos(Long.getLong(Spf4jClientProperties.TIMEOUT_NANOS, 60000000000L)));
+      Duration defaultOverallTimeout = Duration.ofNanos(
+              Long.getLong(Spf4jClientProperties.TIMEOUT_NANOS, 30000000000L));
+      this.execPolicyBuilder.setOverallTimeout(defaultOverallTimeout);
+      this.execPolicyBuilder.setAttemptTimeout(defaultOverallTimeout);
     }
   }
 
