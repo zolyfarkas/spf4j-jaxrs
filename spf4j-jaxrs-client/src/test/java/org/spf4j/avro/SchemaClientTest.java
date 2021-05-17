@@ -27,27 +27,27 @@ public class SchemaClientTest {
 
   @Test
   public void testSchemaClient() throws URISyntaxException {
-    SchemaClient client = new SchemaClient(new URI("https://dl.bintray.com/zolyfarkas/core"));
+    SchemaClient client = new SchemaClient(new URI("https://repo1.maven.org/maven2"));
     Schema schema = client.resolveSchema(DebugDetail.getClassSchema().getProp("mvnId"));
     Assert.assertEquals(DebugDetail.SCHEMA$.getName(), schema.getName());
   }
 
   @Test
   public void testArbitrarySchema() throws IOException, URISyntaxException {
-    String mvnId = "org.spf4j.avro:core-schema:0.2:6";
+    String mvnId = "org.spf4j.avro:core-schema:1.0.3:6";
     Files.deleteIfExists(Paths.get(org.spf4j.base.Runtime.USER_HOME,
-            ".m2/repository/org/spf4j/avro/core-schema/0.2/core-schema-0.2.jar"));
-    SchemaClient client = new SchemaClient(new URI("https://dl.bintray.com/zolyfarkas/core"));
+            ".m2/repository/org/spf4j/avro/core-schema/1.0.3/core-schema-1.0.3.jar"));
+    SchemaClient client = new SchemaClient(new URI("https://repo1.maven.org/maven2"));
     Schema resolveSchema = client.resolveSchema(mvnId);
-    Assert.assertEquals("ServiceError", resolveSchema.getName());
+    Assert.assertEquals("FileLocation", resolveSchema.getName());
   }
 
    @Test
   public void testCPSchema() throws IOException, URISyntaxException {
-    SchemaClient client = new SchemaClient(new URI("https://dl.bintray.com/zolyfarkas/core"));
-    Schema resolveSchema = client.getFromClassPath("org.spf4j.avro:core-schema:1.0.0:6");
+    SchemaClient client = new SchemaClient(new URI("https://repo1.maven.org/maven2"));
+    Schema resolveSchema = client.getFromClassPath("org.spf4j.avro:core-schema:1.0.4-SNAPSHOT:6");
     Assert.assertNotNull(resolveSchema);
-    Assert.assertEquals("org.spf4j.avro:core-schema:1.0.0:6", resolveSchema.getProp("mvnId"));
+    Assert.assertEquals("org.spf4j.avro:core-schema:1.0.4-SNAPSHOT:6", resolveSchema.getProp("mvnId"));
     resolveSchema = client.getFromClassPath("org.spf4j.avro:core-schema:0.14:6");
     Assert.assertNull(resolveSchema);
   }
@@ -55,20 +55,20 @@ public class SchemaClientTest {
   @Test
   public void testArbitrarySchemaMulti() throws IOException, URISyntaxException, ClassNotFoundException {
     Class.forName(Spf4jURLStreamHandlerFactoryTest.class.getName());
-    String mvnId = "org.spf4j.avro:core-schema:0.2:6";
+    String mvnId = "org.spf4j.avro:core-schema:1.0.3:6";
     Files.deleteIfExists(Paths.get(org.spf4j.base.Runtime.USER_HOME,
-            ".m2/repository/org/spf4j/avro/core-schema/0.2/core-schema-0.2.jar"));
+            ".m2/repository/org/spf4j/avro/core-schema/0.2/core-schema-1.0.2.jar"));
     SchemaClient client = new SchemaClient(MultiURLs.newURL(MultiURLs.Protocol.mhttps, "https://repo1.maven.org/maven2",
-            "https://dl.bintray.com/zolyfarkas/core").toURI());
+            "https://repo1.maven.org/maven2").toURI());
     Schema resolveSchema = client.resolveSchema(mvnId);
-    Assert.assertEquals("ServiceError", resolveSchema.getName());
-    Schema resolveSchema2 = client.resolveSchema("org.spf4j.avro:core-schema:0.23:6");
+    Assert.assertEquals("FileLocation", resolveSchema.getName());
+    Schema resolveSchema2 = client.resolveSchema("org.spf4j.avro:core-schema:1.0.3:6");
     Assert.assertEquals("FileLocation", resolveSchema2.getName());
   }
 
   @Test
   public void testSchemaClient2() throws URISyntaxException {
-    SchemaClient client = new SchemaClient(new URI("https://dl.bintray.com/zolyfarkas/core"));
+    SchemaClient client = new SchemaClient(new URI("https://repo1.maven.org/maven2"));
     try {
       client.resolveSchema("a:b:c:r");
       Assert.fail();

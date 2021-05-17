@@ -35,7 +35,7 @@
     <checkstyle.configLocation>${basedir}/../checkstyle_checks.xml</checkstyle.configLocation>
     <jersey.version>2.33</jersey.version>
     <spf4j.version>8.9.1-SNAPSHOT</spf4j.version>
-    <spf4j.logback.version>1.2.22</spf4j.logback.version>
+    <spf4j.logback.version>1.2.23-SNAPSHOT</spf4j.logback.version>
     <swagger.version>2.1.4</swagger.version>
   </properties>
 
