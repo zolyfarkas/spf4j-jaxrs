@@ -17,6 +17,7 @@ package org.spf4j.jaxrs.config;
 
 import com.google.common.base.Suppliers;
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -43,15 +44,16 @@ final class ConfigSupplier implements Supplier, Provider {
     this.typeConv = typeConv;
     this.cfgParam = cfgParam;
     this.type = type;
-    ObservableConfigSource cfgSource
-            = (ObservableConfigSource) configuration.getProperty(ObservableConfigSource.PROPERTY_NAME);
-    if (cfgSource != null) {
+    List<ObservableConfigSource> cfgSource
+            = (List<ObservableConfigSource>) configuration.getProperty(ObservableConfigSource.PROPERTY_NAME);
+    if (cfgSource != null && !cfgSource.isEmpty()) {
       this.value = Suppliers.ofInstance(fetch());
-      cfgSource.addWatcher(cfgParam.getPropertyName(), new PropertyWatcher() {
-        public void accept(final ConfigEvent event) {
-          switch (event) {
-            case ADDED:
-            case MODIFIED:
+      for (ObservableConfigSource s : cfgSource) {
+        s.addWatcher(cfgParam.getPropertyName(), new PropertyWatcher() {
+          public void accept(final ConfigEvent event) {
+            switch (event) {
+              case ADDED:
+              case MODIFIED:
               try {
                 ConfigSupplier.this.value = Suppliers.ofInstance(fetch());
               } catch (RuntimeException ex) {
@@ -59,26 +61,27 @@ final class ConfigSupplier implements Supplier, Provider {
                         .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
               }
               break;
-            case DELETED:
-              ConfigSupplier.this.value = null;
-              break;
-            default:
-              throw new IllegalStateException("Unsupported config event: " + event);
+              case DELETED:
+                ConfigSupplier.this.value = null;
+                break;
+              default:
+                throw new IllegalStateException("Unsupported config event: " + event);
+            }
+
           }
 
-        }
-
-        public void unknownEvents() {
-          try {
-            ConfigSupplier.this.value = Suppliers.ofInstance(fetch());
-          } catch (RuntimeException ex) {
-            Logger.getLogger(ConfigSupplier.class.getName())
-                    .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
+          public void unknownEvents() {
+            try {
+              ConfigSupplier.this.value = Suppliers.ofInstance(fetch());
+            } catch (RuntimeException ex) {
+              Logger.getLogger(ConfigSupplier.class.getName())
+                      .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
+            }
           }
-        }
-      });
+        });
+      }
     } else {
-       ConfigSupplier.this.value = this::fetch;
+      ConfigSupplier.this.value = this::fetch;
     }
   }
 

@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.eclipse.microprofile.config.Config;
@@ -47,12 +48,13 @@ public final class ConfigImpl implements Config {
   @SuppressFBWarnings("URV_INHERITED_METHOD_WITH_RELATED_TYPES")
   public <T> T getValue(final String propertyName, final Class<T> clasz) {
     if (ObservableConfigSource.PROPERTY_NAME.equals(propertyName)) {
+       List<ObservableConfigSource> sources = new java.util.ArrayList<>(2);
        for (ConfigSource source : configs) {
          if (source instanceof ObservableConfigSource) {
-           return (T) source;
+           sources.add((ObservableConfigSource) source);
          }
        }
-       return null;
+       return (T) sources;
     }
     String strValue = null;
     for (ConfigSource source : configs) {
