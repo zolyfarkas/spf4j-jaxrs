@@ -87,6 +87,9 @@ public final class ProjectionJaxRsFilter implements ContainerResponseFilter {
   @SuppressFBWarnings("ITC_INHERITANCE_TYPE_CHECKING")
   public void filter(final ContainerRequestContext requestContext,
           final ContainerResponseContext responseContext) {
+    if (responseContext.getStatus() >= 400) {
+      return; // No projections on error responses.
+    }
     MultivaluedMap<String, String> qp = requestContext.getUriInfo().getQueryParameters();
     String select = qp.getFirst("_project");
     List<String> projection;

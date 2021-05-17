@@ -29,8 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.actuator.ServiceIntegrationBase;
 import org.spf4j.base.CloseableIterable;
+import org.spf4j.perf.MeasurementStore;
 import org.spf4j.perf.impl.MeasurementsInfoImpl;
-import org.spf4j.perf.impl.RecorderFactory;
+import org.spf4j.perf.impl.ProcessMeasurementStore;
 import org.spf4j.tsdb2.avro.MeasurementType;
 
 /**
@@ -43,11 +44,12 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
 
   @BeforeClass
   public static void init() throws IOException {
-    long mid = RecorderFactory.MEASUREMENT_STORE.alocateMeasurements(
-            new MeasurementsInfoImpl("test-1", "test measurement",
+    MeasurementStore store = ProcessMeasurementStore.getMeasurementStore();
+    long mid = store.alocateMeasurements(
+            new MeasurementsInfoImpl("test_1", "test measurement",
                     new String[]{"a", "b"}, new String[]{"ms", "ms"}, MeasurementType.GAUGE), 0);
-    RecorderFactory.MEASUREMENT_STORE.saveMeasurements(mid, System.currentTimeMillis(), 1, 2);
-    RecorderFactory.MEASUREMENT_STORE.flush();
+    store.saveMeasurements(mid, System.currentTimeMillis(), 1, 2);
+    store.flush();
   }
 
   @Test
@@ -69,7 +71,7 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
 
   @Test
   public void testMetricsJoin() throws IOException {
-    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test-1/b")
+    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test_1/b")
             .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
     });
     for (GenericRecord data : measurements) {
@@ -81,7 +83,7 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
 
   @Test
   public void testMetricsProject() throws IOException {
-    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test-1")
+    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test_1")
             .queryParam("_project", "node,ts,b")
             .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
     });
@@ -93,7 +95,7 @@ public class MetricsClusterResourceTest extends ServiceIntegrationBase {
 
   @Test
   public void testMetricsProject2() throws IOException {
-    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test-1")
+    CloseableIterable<GenericRecord> measurements = getTarget().path("metrics/cluster/test_1")
             .queryParam("_project", "ts,b")
             .request("application/avro").get(new GenericType<CloseableIterable<GenericRecord>>() {
     });

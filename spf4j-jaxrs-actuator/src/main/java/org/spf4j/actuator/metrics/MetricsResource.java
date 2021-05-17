@@ -81,7 +81,7 @@ public class MetricsResource {
   @AvroSchema(value = "{\"type\":\"array\",\"items\": {\"type\":\"string\", \"logicalType\":\"avsc\"}}")
   public Collection<Schema> getMetrics() throws IOException {
     mStore.flush();
-    return mStore.query().getMeasurements((x) -> true);
+    return mStore.query().getMeasurements(x -> true);
   }
 
   /**
