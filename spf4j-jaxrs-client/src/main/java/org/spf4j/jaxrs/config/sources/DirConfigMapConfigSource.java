@@ -188,9 +188,6 @@ public final class DirConfigMapConfigSource implements ObservableConfigSource, C
   @Override
   @SuppressFBWarnings({"PATH_TRAVERSAL_IN"}) //intentional
   public Map<String, String> getProperties() {
-    if (!Files.exists(folder)) {
-      return Collections.emptyMap();
-    }
     Map<String, String> result = new HashMap<>();
     try (Stream<Path> list = Files.list(folder)) {
       Iterator<Path> it = list.iterator();
@@ -213,9 +210,6 @@ public final class DirConfigMapConfigSource implements ObservableConfigSource, C
 
   @Override
   public Set<String> getPropertyNames() {
-    if (!Files.exists(folder)) {
-      return Collections.emptySet();
-    }
     Set<String> result = new THashSet<>();
     try (Stream<Path> list = Files.list(folder)) {
       Iterator<Path> it = list.iterator();

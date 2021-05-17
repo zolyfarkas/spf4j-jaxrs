@@ -1,6 +1,7 @@
 
 package org.spf4j.avro;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -53,6 +54,7 @@ public class SchemaClientTest {
   }
 
   @Test
+  @SuppressFBWarnings("PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS")
   public void testArbitrarySchemaMulti() throws IOException, URISyntaxException, ClassNotFoundException {
     Class.forName(Spf4jURLStreamHandlerFactoryTest.class.getName());
     String mvnId = "org.spf4j.avro:core-schema:1.0.3:6";

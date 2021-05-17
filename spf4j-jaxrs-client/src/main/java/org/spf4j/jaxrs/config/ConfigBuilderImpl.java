@@ -15,8 +15,13 @@
  */
 package org.spf4j.jaxrs.config;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,6 +38,7 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
+import org.spf4j.base.Env;
 import org.spf4j.io.ObjectAppender;
 import org.spf4j.jaxrs.config.sources.ClassPathPropertiesConfigSource;
 import org.spf4j.jaxrs.config.sources.DirConfigMapConfigSource;
@@ -61,10 +67,14 @@ public final class ConfigBuilderImpl implements ConfigBuilder {
   }
 
   @Override
+  @SuppressFBWarnings("PATH_TRAVERSAL_IN")
   public ConfigBuilder addDefaultSources() {
     sources.add(new SysPropConfigSource());
     sources.add(new EnvConfigSource());
-    sources.add(new DirConfigMapConfigSource());
+    Path defaultConfig = Paths.get(Env.getValue("APP_CONFIG_MAP_DIR", "/etc/config"));
+    if (Files.isDirectory(defaultConfig)) {
+      sources.add(new DirConfigMapConfigSource(defaultConfig, StandardCharsets.UTF_8));
+    }
     sources.add(new ClassPathPropertiesConfigSource(cl));
     return this;
   }

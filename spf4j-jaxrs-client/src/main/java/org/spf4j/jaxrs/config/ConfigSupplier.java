@@ -15,6 +15,7 @@
  */
 package org.spf4j.jaxrs.config;
 
+import com.google.common.base.Suppliers;
 import java.lang.reflect.Type;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -34,7 +35,7 @@ final class ConfigSupplier implements Supplier, Provider {
   private final ConfigurationParam cfgParam;
   private final Type type;
   private final Configuration configuration;
-  private volatile Object value;
+  private volatile Supplier<Object> value;
 
   ConfigSupplier(final Configuration configuration, final BiFunction<Object, Type, Object> typeConv,
           final ConfigurationParam cfgParam, final Type type) {
@@ -42,17 +43,17 @@ final class ConfigSupplier implements Supplier, Provider {
     this.typeConv = typeConv;
     this.cfgParam = cfgParam;
     this.type = type;
-    this.value = fetch();
     ObservableConfigSource cfgSource
             = (ObservableConfigSource) configuration.getProperty(ObservableConfigSource.PROPERTY_NAME);
     if (cfgSource != null) {
+      this.value = Suppliers.ofInstance(fetch());
       cfgSource.addWatcher(cfgParam.getPropertyName(), new PropertyWatcher() {
         public void accept(final ConfigEvent event) {
           switch (event) {
             case ADDED:
             case MODIFIED:
               try {
-                ConfigSupplier.this.value = fetch();
+                ConfigSupplier.this.value = Suppliers.ofInstance(fetch());
               } catch (RuntimeException ex) {
                 Logger.getLogger(ConfigSupplier.class.getName())
                         .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
@@ -69,19 +70,21 @@ final class ConfigSupplier implements Supplier, Provider {
 
         public void unknownEvents() {
           try {
-            ConfigSupplier.this.value = fetch();
+            ConfigSupplier.this.value = Suppliers.ofInstance(fetch());
           } catch (RuntimeException ex) {
             Logger.getLogger(ConfigSupplier.class.getName())
                     .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
           }
         }
       });
+    } else {
+       ConfigSupplier.this.value = this::fetch;
     }
   }
 
   @Override
   public Object get() {
-    return value;
+    return value.get();
   }
 
   @Nullable
