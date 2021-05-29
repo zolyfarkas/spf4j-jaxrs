@@ -150,7 +150,7 @@ public final class ObjectConverters {
       return val;
     } else if (val instanceof CharSequence) {
       try {
-        return Configs.read(new CharSequenceReader((CharSequence) val),
+        return Configs.read(
                 (Class) type, new org.spf4j.avro.SchemaResolver() {
           @Nonnull
           public Schema resolveSchema(final String id) {
@@ -162,7 +162,7 @@ public final class ObjectConverters {
             return schemaResolver.getId(schema);
           }
 
-        });
+        }, new CharSequenceReader((CharSequence) val));
       } catch (IOException ex) {
         throw new UncheckedIOException(ex);
       }
