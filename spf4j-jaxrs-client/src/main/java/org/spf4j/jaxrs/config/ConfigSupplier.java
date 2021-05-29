@@ -30,13 +30,15 @@ import javax.ws.rs.core.Configuration;
  *
  * @author Zoltan Farkas
  */
-final class ConfigSupplier implements Supplier, Provider {
+final class ConfigSupplier implements Supplier, Provider, AutoCloseable {
 
   private final BiFunction<Object, Type, Object> typeConv;
   private final ConfigurationParam cfgParam;
   private final Type type;
   private final Configuration configuration;
   private volatile Supplier<Object> value;
+  private final PropertyWatcher propertyWatcher;
+  private final List<ObservableConfigSource> cfgSource;
 
   ConfigSupplier(final Configuration configuration, final BiFunction<Object, Type, Object> typeConv,
           final ConfigurationParam cfgParam, final Type type) {
@@ -44,23 +46,19 @@ final class ConfigSupplier implements Supplier, Provider {
     this.typeConv = typeConv;
     this.cfgParam = cfgParam;
     this.type = type;
-    List<ObservableConfigSource> cfgSource
-            = (List<ObservableConfigSource>) configuration.getProperty(ObservableConfigSource.PROPERTY_NAME);
-    if (cfgSource != null && !cfgSource.isEmpty()) {
-      this.value = Suppliers.ofInstance(fetch());
-      for (ObservableConfigSource s : cfgSource) {
-        s.addWatcher(cfgParam.getPropertyName(), new PropertyWatcher() {
+    this.cfgSource = (List<ObservableConfigSource>) configuration.getProperty(ObservableConfigSource.PROPERTY_NAME);
+    this.propertyWatcher = new PropertyWatcher() {
           public void accept(final ConfigEvent event) {
             switch (event) {
               case ADDED:
               case MODIFIED:
-              try {
-                ConfigSupplier.this.value = Suppliers.ofInstance(fetch());
-              } catch (RuntimeException ex) {
-                Logger.getLogger(ConfigSupplier.class.getName())
-                        .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
-              }
-              break;
+                try {
+                  ConfigSupplier.this.value = Suppliers.ofInstance(fetch());
+                } catch (RuntimeException ex) {
+                  Logger.getLogger(ConfigSupplier.class.getName())
+                          .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
+                }
+                break;
               case DELETED:
                 ConfigSupplier.this.value = null;
                 break;
@@ -78,10 +76,21 @@ final class ConfigSupplier implements Supplier, Provider {
                       .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
             }
           }
-        });
+        };
+    if (cfgSource != null && !cfgSource.isEmpty()) {
+      this.value = Suppliers.ofInstance(fetch());
+      for (ObservableConfigSource s : this.cfgSource) {
+        s.addWatcher(cfgParam.getPropertyName(), this.propertyWatcher);
       }
     } else {
       ConfigSupplier.this.value = this::fetch;
+    }
+  }
+
+  @Override
+  public void close() {
+    for (ObservableConfigSource s : this.cfgSource) {
+      s.removeWatcher(cfgParam.getPropertyName(), this.propertyWatcher);
     }
   }
 

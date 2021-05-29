@@ -15,10 +15,11 @@
  */
 package org.spf4j.jaxrs.config;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -56,6 +57,17 @@ public final class ConfigImpl implements Config {
        }
        return (T) sources;
     }
+    if (propertyName.startsWith("raw:")) {
+      String actualProp = propertyName.substring(4);
+      List<String> values = new ArrayList<>(2);
+      for (ConfigSource source : configs) {
+        String strValue = source.getValue(actualProp);
+        if (strValue != null) {
+          values.add(strValue);
+        }
+      }
+      return (T) values;
+    }
     String strValue = null;
     for (ConfigSource source : configs) {
       strValue = source.getValue(propertyName);
@@ -89,7 +101,7 @@ public final class ConfigImpl implements Config {
 
   @Override
   public Iterable<ConfigSource> getConfigSources() {
-    return ImmutableList.copyOf(configs);
+    return Collections.unmodifiableList(Arrays.asList(configs));
   }
 
   @Override

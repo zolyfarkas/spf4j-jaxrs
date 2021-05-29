@@ -33,12 +33,15 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -68,12 +71,15 @@ public final class DirConfigMapConfigSource implements ObservableConfigSource, C
 
   private final List<ConfigWatcher> watchers;
 
+  private final ConcurrentMap<String, List<PropertyWatcher>> propertyWatchers;
+
   private Thread watchThread;
 
   public DirConfigMapConfigSource(final Path folder, final Charset charset) {
     this.folder = folder;
     this.charset = charset;
     this.watchers = new CopyOnWriteArrayList<>();
+    this.propertyWatchers = new ConcurrentHashMap<>();
   }
 
   @SuppressFBWarnings("PATH_TRAVERSAL_IN") //comming from trusted config.
@@ -165,11 +171,20 @@ public final class DirConfigMapConfigSource implements ObservableConfigSource, C
     for (ConfigWatcher watcher : watchers) {
       watcher.unknownEvents();
     }
+    for (List<PropertyWatcher> pws : propertyWatchers.values()) {
+      for (PropertyWatcher pw : pws) {
+        pw.unknownEvents();
+      }
+    }
   }
 
   private void notify(final String propertyName, final ConfigEvent event) {
     for (ConfigWatcher watcher : watchers) {
       watcher.accept(propertyName, event);
+    }
+    List<PropertyWatcher> pws = propertyWatchers.get(propertyName);
+    for (PropertyWatcher pw : pws) {
+        pw.accept(event);
     }
   }
 
@@ -182,8 +197,39 @@ public final class DirConfigMapConfigSource implements ObservableConfigSource, C
   @Override
   public void addWatcher(final String name, final PropertyWatcher consumer) {
     // Temp inefifient dispatch.
-    addWatcher(new ConfigWatcherAdapter(name, consumer));
+    propertyWatchers.compute(name, (k, v) -> {
+      if (v == null) {
+        List<PropertyWatcher> pws = new ArrayList<>(2);
+        pws.add(consumer);
+        return pws;
+      } else {
+        v.add(consumer);
+        return v;
+      }
+    });
   }
+
+  @Override
+  public void removeWatcher(final ConfigWatcher consumer) {
+    watchers.remove(consumer);
+  }
+
+  @Override
+  public void removeWatcher(final String name, final PropertyWatcher consumer) {
+    propertyWatchers.compute(name, (k, v) -> {
+      if (v == null) {
+        return null;
+      } else {
+        v.remove(consumer);
+        if (v.isEmpty()) {
+          return null;
+        } else {
+          return v;
+        }
+      }
+    });
+  }
+
 
   @Override
   @SuppressFBWarnings({"PATH_TRAVERSAL_IN"}) //intentional

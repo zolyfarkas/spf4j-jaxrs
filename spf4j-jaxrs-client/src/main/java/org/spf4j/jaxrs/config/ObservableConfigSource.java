@@ -25,12 +25,15 @@ public interface ObservableConfigSource extends ConfigSource {
   /**
    * A Observable configuration source will be able to return a instance of itself
    */
-  String PROPERTY_NAME = "OBS_CFG_SOURCE";
+  String PROPERTY_NAME = "_OBS_CFG_SOURCE";
 
   void addWatcher(ConfigWatcher consumer);
 
   void addWatcher(String name, PropertyWatcher consumer);
 
-  //todo implement watcher removel.
+  void removeWatcher(ConfigWatcher consumer);
+  
+  void removeWatcher(String name, PropertyWatcher consumer);
+
 
 }
