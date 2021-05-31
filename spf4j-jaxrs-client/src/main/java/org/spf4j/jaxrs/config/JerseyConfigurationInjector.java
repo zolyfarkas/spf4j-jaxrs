@@ -64,7 +64,7 @@ public final class JerseyConfigurationInjector implements InjectionResolver<Conf
       TypeToken<?> tt = TypeToken.of(ptype);
       if (tt.isSubtypeOf(Provider.class) || tt.isSubtypeOf(Supplier.class)) {
         BiFunction<Object, Type, Object> typeConv = resolver.get(ptype.getActualTypeArguments()[0]);
-        return new ConfigSupplier(configuration, typeConv, cfgParam, requiredType);
+        return new RXConfigSupplier(configuration, typeConv, cfgParam, requiredType);
       } else {
         throw new IllegalArgumentException("Unable to inject " + injectee);
       }

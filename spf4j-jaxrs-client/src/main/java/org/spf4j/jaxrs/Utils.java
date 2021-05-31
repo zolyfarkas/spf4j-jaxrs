@@ -38,9 +38,8 @@ public final class Utils {
     return addDefaultRetryPredicated(builder).build();
   }
 
-  public static RetryPolicy.Builder<Object, Callable<? extends Object>>
-         addDefaultRetryPredicated(final RetryPolicy.Builder<Object, Callable<? extends Object>> builder) {
-    return builder
+  public static <T extends  RetryPolicy.Builder> T addDefaultRetryPredicated(final T builder) {
+    return (T) builder
             .withExceptionPartialPredicate(WebApplicationException.class, new HttpRetryHeaderExceptionRetryPredicate())
             .withResultPartialPredicate(Response.class, new HttpRetryHeaderResponseStatusses())
             .withExceptionPartialPredicate(WebApplicationException.class, new HttpDefaultRetryableStatusses())

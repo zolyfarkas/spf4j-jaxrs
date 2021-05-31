@@ -7,7 +7,6 @@ import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.client.ClientBuilder;
 import org.apache.avro.SchemaResolver;
-import org.spf4j.failsafe.HedgePolicy;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
@@ -74,7 +73,7 @@ public final class ClientBuilderUtil {
   public static Spf4JClient createClientNonSpf4jRest(final long connectTimeoutMillis,
           final long defaultReadTimeoutMillis) {
     return  createClientBuilderNonSpf4jRest(connectTimeoutMillis,
-            defaultReadTimeoutMillis).build().withHedgePolicy(HedgePolicy.NONE);
+            defaultReadTimeoutMillis).build();
   }
 
   public static Spf4jClientBuilder createClientBuilderNonSpf4jRest(final long connectTimeoutMillis,

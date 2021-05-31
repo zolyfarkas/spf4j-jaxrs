@@ -33,27 +33,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipError;
 import javax.annotation.Nullable;
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.apache.avro.AvroNamesRefResolver;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaResolver;
 import org.glassfish.jersey.client.ClientProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spf4j.failsafe.HedgePolicy;
-import org.spf4j.failsafe.RetryDecision;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.io.Streams;
-import org.spf4j.jaxrs.Utils;
 import org.spf4j.jaxrs.client.providers.ClientCustomExecutorServiceProvider;
 import org.spf4j.jaxrs.client.providers.ClientCustomScheduledExecutionServiceProvider;
 import org.spf4j.jaxrs.client.providers.ExecutionContextClientFilter;
@@ -130,15 +124,7 @@ public final class SchemaClient implements SchemaResolver {
             .register(ClientCustomExecutorServiceProvider.class)
             .register(ClientCustomScheduledExecutionServiceProvider.class)
             .property(ClientProperties.USE_ENCODING, "gzip")
-            .build())
-            .withRetryPolicy(Utils.createHttpRetryPolicy((WebApplicationException ex, Callable<? extends Object> c) -> {
-              Response response = ex.getResponse();
-              if (404 == response.getStatus()) {
-                return RetryDecision.retryDefault(c);
-              }
-              return null;
-            }, 10))
-            .withHedgePolicy(HedgePolicy.NONE);
+            .build());
   }
 
 

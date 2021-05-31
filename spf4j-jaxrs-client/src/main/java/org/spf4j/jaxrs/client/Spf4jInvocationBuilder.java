@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.CompletionStageRxInvoker;
 import javax.ws.rs.client.Entity;
@@ -20,6 +22,13 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.spf4j.failsafe.AsyncRetryExecutor;
+import org.spf4j.failsafe.InvalidRetryPolicyException;
+import org.spf4j.failsafe.RetryPolicies;
+import org.spf4j.failsafe.TimeoutRelativeHedge;
+import org.spf4j.failsafe.avro.RetryPolicy;
+import org.spf4j.failsafe.avro.TimeoutRelativeHedgePolicy;
+import org.spf4j.failsafe.concurrent.FailSafeExecutor;
+import org.spf4j.jaxrs.Utils;
 import org.spf4j.service.avro.HttpExecutionPolicy;
 
 /**
@@ -32,12 +41,12 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   private final Invocation.Builder ib;
   private final Spf4jWebTarget target;
 
-  private AsyncRetryExecutor<Object, HttpCallable<?>> executor;
+  private FailSafeExecutor executor;
 
   private final HttpExecutionPolicy.Builder execPolicyBuilder;
 
   public Spf4jInvocationBuilder(final Spf4JClient client, final Invocation.Builder ib,
-          final AsyncRetryExecutor<Object, HttpCallable<?>> executor,
+          final FailSafeExecutor executor,
           final Spf4jWebTarget target) {
     this.client = client;
     this.ib = ib;
@@ -65,7 +74,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
     return execPolicyBuilder;
   }
 
-  public Spf4jInvocationBuilder withRetryRexecutor(final AsyncRetryExecutor<Object, HttpCallable<?>> exec) {
+  public Spf4jInvocationBuilder withRetryRexecutor(final FailSafeExecutor exec) {
     this.executor = exec;
     return this;
   }
@@ -80,40 +89,73 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
     return this;
   }
 
+  public Spf4jInvocationBuilder withHedgePolicy(final TimeoutRelativeHedgePolicy hedgePolicy) {
+    this.execPolicyBuilder.setHedgePolicy(hedgePolicy);
+    return this;
+  }
+
+  public Spf4jInvocationBuilder withRetryPolicy(final RetryPolicy policy) {
+    this.execPolicyBuilder.setRetryPolicy(policy);
+    return this;
+  }
+
+  public static AsyncRetryExecutor<Object, HttpCallable<?>> buildExecutor(final HttpExecutionPolicy policy,
+          final FailSafeExecutor exec) {
+    org.spf4j.failsafe.RetryPolicy.Builder<Object, HttpCallable<?>> builder =
+            org.spf4j.failsafe.RetryPolicy.newBuilder();
+    try {
+      RetryPolicies.addRetryPolicy(builder, policy.getRetryPolicy());
+    } catch (InvalidRetryPolicyException ex) {
+      Logger log = Logger.getLogger(Spf4jInvocation.class.getName());
+      log.log(Level.WARNING, "Unable to set exec policy {0}", new Object[]{policy, ex});
+    }
+    Utils.addDefaultRetryPredicated(builder);
+    return org.spf4j.failsafe.RetryPolicy.async(c -> builder.build(),
+            c -> new TimeoutRelativeHedge(policy.getHedgePolicy()), exec);
+  }
+
+
+
   @Override
   public Spf4jInvocation build(final String method) {
-    return new Spf4jInvocation(ib.build(method), execPolicyBuilder.build(), executor, this.target,
+    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
+    return new Spf4jInvocation(ib.build(method), execPolicy, buildExecutor(execPolicy, executor), this.target,
             method);
   }
 
   @Override
   public Spf4jInvocation build(final String method, final Entity<?> entity) {
-    return new  Spf4jInvocation(ib.build(method, entity), execPolicyBuilder.build(),
-            executor, this.target, method);
+    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
+    return new  Spf4jInvocation(ib.build(method, entity), execPolicy,
+            buildExecutor(execPolicy, executor), this.target, method);
   }
 
   @Override
   public Spf4jInvocation buildGet() {
-    return new Spf4jInvocation(ib.buildGet(), execPolicyBuilder.build(),
-            executor, this.target, HttpMethod.GET);
+    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
+    return new Spf4jInvocation(ib.buildGet(), execPolicy,
+            buildExecutor(execPolicy, executor), this.target, HttpMethod.GET);
   }
 
   @Override
   public Spf4jInvocation buildDelete() {
-    return new Spf4jInvocation(ib.buildDelete(), execPolicyBuilder.build(),
-            executor, this.target, HttpMethod.DELETE);
+    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
+    return new Spf4jInvocation(ib.buildDelete(), execPolicy,
+            buildExecutor(execPolicy, executor), this.target, HttpMethod.DELETE);
   }
 
   @Override
   public Spf4jInvocation buildPost(final Entity<?> entity) {
-    return new Spf4jInvocation(ib.buildPost(entity), execPolicyBuilder.build(),
-            executor, this.target, HttpMethod.POST);
+    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
+    return new Spf4jInvocation(ib.buildPost(entity), execPolicy,
+            buildExecutor(execPolicy, executor), this.target, HttpMethod.POST);
   }
 
   @Override
   public Spf4jInvocation buildPut(final Entity<?> entity) {
-    return new Spf4jInvocation(ib.buildPut(entity), execPolicyBuilder.build(),
-            executor, this.target, HttpMethod.PUT);
+    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
+    return new Spf4jInvocation(ib.buildPut(entity), execPolicy,
+            buildExecutor(execPolicy, executor), this.target, HttpMethod.PUT);
   }
 
   @Override
@@ -243,7 +285,8 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
 
   @Override
   public CompletionStageRxInvoker rx() {
-    return new Spf4jCompletionStageRxInvoker(this, executor);
+    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
+    return new Spf4jCompletionStageRxInvoker(this, buildExecutor(execPolicy, executor));
   }
 
   @Override

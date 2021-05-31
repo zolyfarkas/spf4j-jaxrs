@@ -47,6 +47,7 @@ public class ConfigurationInjectorTest {
   }
 
   @Service
+  @Singleton
   public static final class TestClass {
 
     private final String value;
@@ -76,7 +77,7 @@ public class ConfigurationInjectorTest {
     ServiceLocatorUtilities.bind(loc, new AbstractBinder() {
       @Override
       protected void configure() {
-        bindAsContract(TestClass.class);
+        bindAsContract(TestClass.class).in(Singleton.class);
         bind(HK2ConfigurationInjector.class)
                 .to(new TypeLiteral<InjectionResolver<ConfigProperty>>() { })
                 .in(Singleton.class);
@@ -92,6 +93,7 @@ public class ConfigurationInjectorTest {
     Assert.assertNull(service.getValue2());
     System.setProperty("myProp2", "boooo");
     Assert.assertEquals("boooo", service.getValue2());
+    Assert.assertSame(service,  loc.getService(TestClass.class));
     loc.shutdown();
   }
 

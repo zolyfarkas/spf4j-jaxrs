@@ -2,7 +2,6 @@
 package org.spf4j.jaxrs.client;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.spf4j.jaxrs.Utils;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
@@ -22,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
 import javax.annotation.Nullable;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -36,9 +34,6 @@ import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientExecutor;
 import org.glassfish.jersey.client.HttpUrlConnectorProvider;
 import org.spf4j.base.Arrays;
-import org.spf4j.failsafe.AsyncRetryExecutor;
-import org.spf4j.failsafe.HedgePolicy;
-import org.spf4j.failsafe.RetryPolicy;
 import org.spf4j.failsafe.concurrent.DefaultFailSafeExecutor;
 import org.spf4j.failsafe.concurrent.FailSafeExecutor;
 import org.spf4j.jaxrs.common.providers.ProviderUtils;
@@ -64,45 +59,29 @@ public final class Spf4JClient implements Client {
 
   private final Client cl;
 
-  private final Function<HttpCallable<?>, RetryPolicy<Object, HttpCallable<?>>> retryPolicy;
-
-  private final Function<HttpCallable<?>, HedgePolicy> hedgePolicy;
-
-  private final FailSafeExecutor fsExec;
-
-  private final AsyncRetryExecutor<Object, HttpCallable<?>> executor;
+  private final FailSafeExecutor executor;
 
   private final ClientExceptionMapper exceptionMapper;
 
   public Spf4JClient(final  Client cl) {
-    this(cl, Utils.defaultRetryPolicy(), HedgePolicy.DEFAULT, DefaultFailSafeExecutor.instance(),
+    this(cl,  DefaultFailSafeExecutor.instance(),
             DefaultClientExceptionMapper.INSTANCE);
   }
 
-  public Spf4JClient(final  Client cl, final RetryPolicy retryPolicy, final HedgePolicy hedgePolicy,
+  public Spf4JClient(final  Client cl,
           final FailSafeExecutor fsExec) {
-    this(cl, retryPolicy, hedgePolicy, fsExec, DefaultClientExceptionMapper.INSTANCE);
-  }
-
-  public Spf4JClient(final  Client cl, final RetryPolicy retryPolicy, final HedgePolicy hedgePolicy,
-          final FailSafeExecutor fsExec, final ClientExceptionMapper exceptionMapper) {
-    this(cl, c -> retryPolicy, c -> hedgePolicy, fsExec, exceptionMapper);
+    this(cl, fsExec, DefaultClientExceptionMapper.INSTANCE);
   }
 
   @SuppressWarnings("unchecked")
   public Spf4JClient(final  Client cl,
-          final Function<HttpCallable<?>, RetryPolicy<Object, HttpCallable<?>>> retryPolicy,
-          final Function<HttpCallable<?>, HedgePolicy> hedgePolicy,
           final FailSafeExecutor fsExec, final ClientExceptionMapper exceptionMapper) {
     this.cl = cl;
     ClientConfig configuration = (ClientConfig) cl.getConfiguration();
     HttpUrlConnectorProvider httpUrlConnectorProvider = new HttpUrlConnectorProvider();
     httpUrlConnectorProvider.connectionFactory(CustomConnectionFactory.INSTANCE);
     configuration.connectorProvider(httpUrlConnectorProvider);
-    this.retryPolicy = retryPolicy;
-    this.hedgePolicy = hedgePolicy;
-    this.fsExec = fsExec;
-    this.executor = RetryPolicy.async(retryPolicy, hedgePolicy, fsExec);
+    this.executor = fsExec;
     this.exceptionMapper = exceptionMapper;
   }
 
@@ -223,25 +202,8 @@ public final class Spf4JClient implements Client {
     }
   }
 
-
-  public Spf4JClient withHedgePolicy(final HedgePolicy hp) {
-    return new Spf4JClient(cl, retryPolicy, c -> hp, fsExec, exceptionMapper);
-  }
-
-  public Spf4JClient withHedgePolicy(final Function<HttpCallable<?>, HedgePolicy> hp) {
-    return new Spf4JClient(cl, retryPolicy, hp, fsExec, exceptionMapper);
-  }
-
-  public Spf4JClient withRetryPolicy(final RetryPolicy rp) {
-    return new Spf4JClient(cl, c -> rp, hedgePolicy, fsExec, exceptionMapper);
-  }
-
-  public Spf4JClient withRetryPolicy(final Function<HttpCallable<?>, RetryPolicy<Object, HttpCallable<?>>> rp) {
-    return new Spf4JClient(cl, rp, hedgePolicy, fsExec, exceptionMapper);
-  }
-
   public Spf4JClient withExceptionMapper(final ClientExceptionMapper pexceptionMapper) {
-    return new Spf4JClient(cl, retryPolicy, hedgePolicy, fsExec, pexceptionMapper);
+    return new Spf4JClient(cl,  executor, pexceptionMapper);
   }
 
   @Override
@@ -346,8 +308,7 @@ public final class Spf4JClient implements Client {
 
   @Override
   public String toString() {
-    return "Spf4JClient{" + "cl=" + cl + ", retryPolicy=" + retryPolicy + ", hedgePolicy=" + hedgePolicy
-            + ", fsExec=" + fsExec + ", executor=" + executor + '}';
+    return "Spf4JClient{" + "cl=" + cl +  ", executor=" + executor + '}';
   }
 
   private static class CustomConnectionFactory implements HttpUrlConnectorProvider.ConnectionFactory {

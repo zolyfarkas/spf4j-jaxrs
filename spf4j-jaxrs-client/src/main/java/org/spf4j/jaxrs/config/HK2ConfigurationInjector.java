@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Context;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -66,7 +67,11 @@ public final class HK2ConfigurationInjector implements InjectionResolver<ConfigP
       if (tt.isSubtypeOf(Provider.class) || tt.isSubtypeOf(Supplier.class)) {
         BiFunction<Object, Type, Object> typeConv
                 = resolver.get(ptype.getActualTypeArguments()[0]);
-        return new ConfigSupplier(configuration,  typeConv, cfgParam, ptype.getActualTypeArguments()[0]);
+        if (injectee.getInjecteeDescriptor().getScopeAnnotation() == Singleton.class) {
+          return new RXConfigSupplier(configuration,  typeConv, cfgParam, ptype.getActualTypeArguments()[0]);
+        } else {
+          return new SimpleConfigSupplier(configuration,  typeConv, cfgParam, ptype.getActualTypeArguments()[0]);
+        }
       } else {
         throw new IllegalArgumentException("Unable to inject " + injectee);
       }

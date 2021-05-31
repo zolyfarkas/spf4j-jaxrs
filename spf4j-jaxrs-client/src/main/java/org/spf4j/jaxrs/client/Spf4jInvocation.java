@@ -7,6 +7,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import javax.ws.rs.ServiceUnavailableException;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.core.GenericType;
@@ -29,20 +30,21 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
 
 
   private final Invocation invocation;
-  private final AsyncRetryExecutor<Object, HttpCallable<?>> executor;
+  private final AsyncRetryExecutor<Object, HttpCallable<?>> aexecutor;
   private final Spf4jWebTarget target;
   private final HttpExecutionPolicy execPolicy;
   private final String method;
 
   public Spf4jInvocation(final Invocation invocation, final HttpExecutionPolicy execPolicy,
-          final AsyncRetryExecutor<Object, HttpCallable<?>> policy,
+          final AsyncRetryExecutor<Object, HttpCallable<?>> aexecutor,
           final Spf4jWebTarget target, final String method) {
     this.invocation = invocation;
-    this.executor = policy;
     this.target = target;
     this.method = method;
     this.execPolicy = execPolicy;
+    this.aexecutor = aexecutor;
   }
+
 
 
   public String getMethod() {
@@ -68,17 +70,20 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
     if (invc == invocation) {
       return this;
     } else {
-      return new Spf4jInvocation(invc, execPolicy, executor, target, method);
+      return new Spf4jInvocation(invc, execPolicy, aexecutor, target, method);
     }
   }
 
   private <T> T invoke(final Callable<T> what) {
+    if (execPolicy.getCircuitBreaker()) {
+      throw new ServiceUnavailableException("Circuit breaker active: " + getName());
+    }
     long nanoTime = TimeSource.nanoTime();
     ExecutionContext current = ExecutionContexts.current();
     long deadlineNanos = ExecutionContexts.computeDeadline(current,
             execPolicy.getOverallTimeout().toNanos(), TimeUnit.NANOSECONDS);
     try {
-      return executor.call(HttpCallable.invocationHandler(current, what, getName(),
+      return aexecutor.call(HttpCallable.invocationHandler(current, what, getName(),
                       this.target.getUri(),
                       this.method,
                       this.target.getClient().getExceptionMapper(),
@@ -93,6 +98,9 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
   }
 
   private <T> Future<T> submit(final Callable<T> what) {
+    if (execPolicy.getCircuitBreaker()) {
+      throw new ServiceUnavailableException("Circuit breaker active: " + getName());
+    }
     long nanoTime = TimeSource.nanoTime();
     ExecutionContext current = ExecutionContexts.current();
     long deadlineNanos = ExecutionContexts.computeDeadline(current,
@@ -102,7 +110,7 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
             this.method,
             this.target.getClient().getExceptionMapper(),
             deadlineNanos, execPolicy.getAttemptTimeout().toNanos());
-    return executor.submitRx(pc, nanoTime, deadlineNanos,
+    return aexecutor.submitRx(pc, nanoTime, deadlineNanos,
             () -> new ContextPropagatingCompletableFuture<>(current, deadlineNanos));
   }
 
@@ -138,6 +146,9 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
 
   @Override
   public <T> Future<T> submit(final InvocationCallback<T> callback) {
+    if (execPolicy.getCircuitBreaker()) {
+      throw new ServiceUnavailableException("Circuit breaker active: " + getName());
+    }
     final Type callbackParamType;
     final ReflectionHelper.DeclaringClassInterfacePair pair
             = ReflectionHelper.getClass(callback.getClass(), InvocationCallback.class);
@@ -182,8 +193,8 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
 
   @Override
   public String toString() {
-    return "Spf4jInvocation{" + "invocation=" + invocation + ", executor="
-            + executor + ", target=" + target + ", execPOlicy=" + this.execPolicy
+    return "Spf4jInvocation{" + "invocation=" + invocation + ", aexecutor="
+            + aexecutor + ", target=" + target + ", execPOlicy=" + this.execPolicy
             + ", method=" + method + '}';
   }
 

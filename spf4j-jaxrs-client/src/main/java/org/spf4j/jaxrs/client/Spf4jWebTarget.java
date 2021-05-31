@@ -6,21 +6,21 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
-import org.spf4j.failsafe.AsyncRetryExecutor;
+import org.spf4j.failsafe.concurrent.FailSafeExecutor;
 
 /**
  * @author Zoltan Farkas
  */
 public final class Spf4jWebTarget implements WebTarget {
 
-  private AsyncRetryExecutor<Object, HttpCallable<?>> executor;
+  private FailSafeExecutor executor;
 
   private final WebTarget tg;
 
   private final Spf4JClient client;
 
   public Spf4jWebTarget(final Spf4JClient client,
-          final WebTarget tg, final AsyncRetryExecutor<Object, HttpCallable<?>> executor) {
+          final WebTarget tg, final FailSafeExecutor executor) {
     this.tg = tg;
     this.client = client;
     this.executor = executor;
@@ -28,11 +28,6 @@ public final class Spf4jWebTarget implements WebTarget {
 
   public Spf4JClient getClient() {
     return client;
-  }
-
-  public Spf4jWebTarget withRetryRexecutor(final AsyncRetryExecutor<Object, HttpCallable<?>> exec) {
-    this.executor = exec;
-    return this;
   }
 
   @Override
