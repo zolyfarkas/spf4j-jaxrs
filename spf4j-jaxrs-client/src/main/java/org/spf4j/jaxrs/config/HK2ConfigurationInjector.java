@@ -67,6 +67,10 @@ public final class HK2ConfigurationInjector implements InjectionResolver<ConfigP
       if (tt.isSubtypeOf(Provider.class) || tt.isSubtypeOf(Supplier.class)) {
         BiFunction<Object, Type, Object> typeConv
                 = resolver.get(ptype.getActualTypeArguments()[0]);
+
+        if (tt.isSubtypeOf(ObservableSupplier.class)) {
+          return new ObservableRXConfigSupplier(configuration,  typeConv, cfgParam, ptype.getActualTypeArguments()[0]);
+        }
         if (injectee.getInjecteeDescriptor().getScopeAnnotation() == Singleton.class) {
           return new RXConfigSupplier(configuration,  typeConv, cfgParam, ptype.getActualTypeArguments()[0]);
         } else {

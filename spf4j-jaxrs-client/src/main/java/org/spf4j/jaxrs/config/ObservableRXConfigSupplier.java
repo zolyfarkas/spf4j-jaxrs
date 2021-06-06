@@ -18,6 +18,7 @@ package org.spf4j.jaxrs.config;
 import com.google.common.base.Suppliers;
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -30,16 +31,18 @@ import javax.ws.rs.core.Configuration;
  * These should be used  for Singleton scoped services.
  * @author Zoltan Farkas
  */
-final class RXConfigSupplier extends SimpleConfigSupplier implements AutoCloseable {
+final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements ObservableSupplier {
 
 
   private volatile Supplier<Object> value;
   private final PropertyWatcher propertyWatcher;
   private final List<ObservableConfigSource> cfgSource;
+  private final List<PropertyWatcher> watchers;
 
-  RXConfigSupplier(final Configuration configuration, final BiFunction<Object, Type, Object> typeConv,
+  ObservableRXConfigSupplier(final Configuration configuration, final BiFunction<Object, Type, Object> typeConv,
           final ConfigurationParam cfgParam, final Type type) {
     super(configuration, typeConv, cfgParam, type);
+    this.watchers = new CopyOnWriteArrayList<>();
     this.cfgSource = (List<ObservableConfigSource>) configuration.getProperty(ObservableConfigSource.PROPERTY_NAME);
     this.propertyWatcher = new PropertyWatcher() {
           public void accept(final ConfigEvent event) {
@@ -47,27 +50,32 @@ final class RXConfigSupplier extends SimpleConfigSupplier implements AutoCloseab
               case ADDED:
               case MODIFIED:
                 try {
-                  RXConfigSupplier.this.value = Suppliers.ofInstance(fetch());
+                  ObservableRXConfigSupplier.this.value = Suppliers.ofInstance(fetch());
                 } catch (RuntimeException ex) {
-                  Logger.getLogger(RXConfigSupplier.class.getName())
+                  Logger.getLogger(ObservableRXConfigSupplier.class.getName())
                           .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
                 }
                 break;
               case DELETED:
-                RXConfigSupplier.this.value = null;
+                ObservableRXConfigSupplier.this.value = null;
                 break;
               default:
                 throw new IllegalStateException("Unsupported config event: " + event);
             }
-
+            for (PropertyWatcher watcher : watchers) {
+              watcher.accept(event);
+            }
           }
 
           public void unknownEvents() {
             try {
-              RXConfigSupplier.this.value = Suppliers.ofInstance(fetch());
+              ObservableRXConfigSupplier.this.value = Suppliers.ofInstance(fetch());
             } catch (RuntimeException ex) {
-              Logger.getLogger(RXConfigSupplier.class.getName())
+              Logger.getLogger(ObservableRXConfigSupplier.class.getName())
                       .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
+            }
+            for (PropertyWatcher watcher : watchers) {
+              watcher.unknownEvents();
             }
           }
         };
@@ -76,7 +84,7 @@ final class RXConfigSupplier extends SimpleConfigSupplier implements AutoCloseab
         s.addWatcher(cfgParam.getPropertyName(), this.propertyWatcher);
       }
     } else {
-      RXConfigSupplier.this.value = this::fetch;
+      ObservableRXConfigSupplier.this.value = this::fetch;
     }
   }
 
@@ -90,6 +98,17 @@ final class RXConfigSupplier extends SimpleConfigSupplier implements AutoCloseab
   @Override
   public Object get() {
     return value.get();
+  }
+
+  @Override
+  public void add(final PropertyWatcher watcher) {
+    watchers.add(watcher);
+    watcher.unknownEvents();
+  }
+
+  @Override
+  public boolean remove(final PropertyWatcher watcher) {
+    return watchers.remove(watcher);
   }
 
 }

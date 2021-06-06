@@ -192,11 +192,11 @@ public final class DirConfigMapConfigSource implements ObservableConfigSource, C
   public void addWatcher(final ConfigWatcher consumer) {
     initWatcher();
     watchers.add(consumer);
+    consumer.unknownEvents();
   }
 
   @Override
   public void addWatcher(final String name, final PropertyWatcher consumer) {
-    // Temp inefifient dispatch.
     propertyWatchers.compute(name, (k, v) -> {
       if (v == null) {
         List<PropertyWatcher> pws = new ArrayList<>(2);
@@ -207,6 +207,7 @@ public final class DirConfigMapConfigSource implements ObservableConfigSource, C
         return v;
       }
     });
+    consumer.unknownEvents();
   }
 
   @Override
