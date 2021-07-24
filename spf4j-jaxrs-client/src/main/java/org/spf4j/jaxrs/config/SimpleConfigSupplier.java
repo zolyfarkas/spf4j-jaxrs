@@ -16,11 +16,9 @@
 package org.spf4j.jaxrs.config;
 
 import java.lang.reflect.Type;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
-import javax.ws.rs.core.Configuration;
 
 /**
  *
@@ -28,17 +26,15 @@ import javax.ws.rs.core.Configuration;
  */
 class SimpleConfigSupplier implements Supplier, Provider {
 
-  private final BiFunction<Object, Type, Object> typeConv;
   private final ConfigurationParam cfgParam;
-  private final Type type;
-  private final Configuration configuration;
+  private final Type suppliedType;
+  private final ExtendedConfig configuration;
 
-  SimpleConfigSupplier(final Configuration configuration, final BiFunction<Object, Type, Object> typeConv,
-          final ConfigurationParam cfgParam, final Type type) {
+  SimpleConfigSupplier(final ExtendedConfig configuration,
+          final ConfigurationParam cfgParam, final Type suppliedType) {
     this.configuration = configuration;
-    this.typeConv = typeConv;
     this.cfgParam = cfgParam;
-    this.type = type;
+    this.suppliedType = suppliedType;
   }
 
   public ConfigurationParam getCfgParam() {
@@ -56,27 +52,21 @@ class SimpleConfigSupplier implements Supplier, Provider {
 
   @Nullable
   public final Object fetch() {
-    Object val = configuration.getProperty(cfgParam.getPropertyName());
-    if (val != null) {
-      return typeConv.apply(val, type);
-    } else {
-      String dval = cfgParam.getDefaultValue();
-      if (dval != null) {
-        return typeConv.apply(dval, type);
-      } else {
+    Object val = configuration.getValue(cfgParam.getPropertyName(), suppliedType, cfgParam.getDefaultValue());
+    if (val == null)  {
         if (cfgParam.isNullable()) {
           return null;
         } else {
           throw new IllegalArgumentException("Unable to supply " + cfgParam + ", not nullable");
         }
-      }
     }
+    return val;
   }
 
   @Override
   public String toString() {
-    return "ConfigSupplier{" + "typeConv=" + typeConv + ", cfgParam=" + cfgParam
-            + ", type=" + type + ", configuration=" + configuration + '}';
+    return "ConfigSupplier{, cfgParam=" + cfgParam
+            + ", type=" + suppliedType + ", configuration=" + configuration + '}';
   }
 
 }

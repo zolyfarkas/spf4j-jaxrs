@@ -43,11 +43,14 @@ public final class JerseyConfigurationInjector implements InjectionResolver<Conf
 
   private final ObjectConverters resolver;
 
+  private final ExtendedConfig xConfig;
+
   @Inject
   public JerseyConfigurationInjector(@Context final Configuration configuration,
            final JerseyMicroprofileConfigurationProvider prov) {
     this.configuration = new MergedConfigs(configuration, prov.getConfiguration());
     this.resolver = prov.getConverters();
+    this.xConfig = prov.getConfiguration().getConfig();
   }
 
   @Override
@@ -62,12 +65,11 @@ public final class JerseyConfigurationInjector implements InjectionResolver<Conf
     if (requiredType instanceof ParameterizedType) {
       ParameterizedType ptype = (ParameterizedType) requiredType;
       TypeToken<?> tt = TypeToken.of(ptype);
-      if (tt.isSubtypeOf(Provider.class) || tt.isSubtypeOf(Supplier.class)) {
-        BiFunction<Object, Type, Object> typeConv = resolver.get(ptype.getActualTypeArguments()[0]);
-        if (tt.isSubtypeOf(ObservableSupplier.class)) {
-          return new ObservableRXConfigSupplier(configuration,  typeConv, cfgParam, ptype.getActualTypeArguments()[0]);
-        }
-        return new RXConfigSupplier(configuration, typeConv, cfgParam, requiredType);
+      Class<?> rawType = tt.getRawType();
+      if (rawType == Provider.class || rawType == Supplier.class || rawType == ObservableSupplier.class) {
+        Type pTypeArg = ptype.getActualTypeArguments()[0];
+        return xConfig.getObservableValueSupplier(cfgParam.getPropertyName(), TypeToken.of(pTypeArg).getRawType(),
+                  cfgParam.getDefaultValue(), cfgParam.isNullable());
       } else {
         throw new IllegalArgumentException("Unable to inject " + injectee);
       }

@@ -79,7 +79,7 @@ public final class ClassPathPropertiesConfigSource implements ConfigSource {
 
   @Override
   public int getOrdinal() {
-    return 100;
+    return 300;
   }
 
   @Override

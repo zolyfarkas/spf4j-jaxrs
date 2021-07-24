@@ -83,6 +83,8 @@ public final class Spf4JClient implements Client {
     configuration.connectorProvider(httpUrlConnectorProvider);
     this.executor = fsExec;
     this.exceptionMapper = exceptionMapper;
+//    this.getConfiguration().getProperty(arg0)
+//    http.endpoint.policies
   }
 
   public static Spf4JClient  create(final Client cl) {

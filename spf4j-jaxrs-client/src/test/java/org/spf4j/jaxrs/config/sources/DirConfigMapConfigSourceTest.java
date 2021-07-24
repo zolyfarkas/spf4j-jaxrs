@@ -66,7 +66,10 @@ public class DirConfigMapConfigSourceTest {
         }
 
         public void unknownEvents() {
-          throw new IllegalStateException();
+          String value = cfg.getValue("testProp");
+          if (value != null) {
+            configs.put("testProp", value);
+          }
         }
       });
       Path testProp = testConfig.resolve("testProp");

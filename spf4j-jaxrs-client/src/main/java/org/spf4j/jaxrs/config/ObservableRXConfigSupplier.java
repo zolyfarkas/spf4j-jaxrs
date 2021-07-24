@@ -19,11 +19,9 @@ import com.google.common.base.Suppliers;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.ws.rs.core.Configuration;
 
 /**
  * a more advanced config supplier implementation, where value type conversion and update happens asybchronously
@@ -36,16 +34,16 @@ final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements O
 
   private volatile Supplier<Object> value;
   private final PropertyWatcher propertyWatcher;
-  private final List<ObservableConfigSource> cfgSource;
   private final List<PropertyWatcher> watchers;
+  private final ExtendedConfig configuration;
 
-  ObservableRXConfigSupplier(final Configuration configuration, final BiFunction<Object, Type, Object> typeConv,
+  ObservableRXConfigSupplier(final ExtendedConfig configuration,
           final ConfigurationParam cfgParam, final Type type) {
-    super(configuration, typeConv, cfgParam, type);
+    super(configuration, cfgParam, type);
     this.watchers = new CopyOnWriteArrayList<>();
-    this.cfgSource = (List<ObservableConfigSource>) configuration.getProperty(ObservableConfigSource.PROPERTY_NAME);
+    this.configuration = configuration;
     this.propertyWatcher = new PropertyWatcher() {
-          public void accept(final ConfigEvent event) {
+          public synchronized void accept(final ConfigEvent event) {
             switch (event) {
               case ADDED:
               case MODIFIED:
@@ -67,7 +65,7 @@ final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements O
             }
           }
 
-          public void unknownEvents() {
+          public synchronized void unknownEvents() {
             try {
               ObservableRXConfigSupplier.this.value = Suppliers.ofInstance(fetch());
             } catch (RuntimeException ex) {
@@ -79,20 +77,13 @@ final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements O
             }
           }
         };
-    if (cfgSource != null && !cfgSource.isEmpty()) {
-      for (ObservableConfigSource s : this.cfgSource) {
-        s.addWatcher(cfgParam.getPropertyName(), this.propertyWatcher);
-      }
-    } else {
-      ObservableRXConfigSupplier.this.value = this::fetch;
-    }
+        configuration.addWatcher(cfgParam.getPropertyName(), this.propertyWatcher);
+        this.value = Suppliers.ofInstance(null);
   }
 
   @Override
   public void close() {
-    for (ObservableConfigSource s : this.cfgSource) {
-      s.removeWatcher(getCfgParam().getPropertyName(), this.propertyWatcher);
-    }
+    this.configuration.removeWatcher(getCfgParam().getPropertyName(), this.propertyWatcher);
   }
 
   @Override

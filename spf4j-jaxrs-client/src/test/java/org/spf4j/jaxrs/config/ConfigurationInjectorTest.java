@@ -15,6 +15,7 @@
  */
 package org.spf4j.jaxrs.config;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -35,6 +36,7 @@ import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.junit.Assert;
 import org.junit.Test;
 import org.jvnet.hk2.annotations.Service;
+import org.spf4j.jaxrs.config.sources.MemoryConfigSource;
 
 /**
  *
@@ -42,8 +44,12 @@ import org.jvnet.hk2.annotations.Service;
  */
 public class ConfigurationInjectorTest {
 
+  private static final MemoryConfigSource M_CONFIG = new MemoryConfigSource();
+
   static {
-    ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl(SchemaResolver.NONE));
+    ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl(SchemaResolver.NONE,
+            new ConfigBuilderImpl(SchemaResolver.NONE).addDefaultSources().withSources(M_CONFIG).build()));
+    System.setProperty("SysPropEnv", "1");
   }
 
   @Service
@@ -54,11 +60,19 @@ public class ConfigurationInjectorTest {
 
     private final Provider<String> providedValue;
 
+    private final int envSys;
+
     @Inject
     public TestClass(@ConfigProperty(name = "myProp", defaultValue = "bubu") final String value,
-            @Nullable @ConfigProperty(name = "myProp2") final Provider<String> providedValue) {
+            @Nullable @ConfigProperty(name = "myProp2") final Provider<String> providedValue,
+            @ConfigProperty(name = "SysPropEnv") final int envSys) {
       this.value = value;
       this.providedValue = providedValue;
+      this.envSys = envSys;
+    }
+
+    public int getEnvSys() {
+      return envSys;
     }
 
     public String getValue() {
@@ -72,6 +86,7 @@ public class ConfigurationInjectorTest {
   }
 
   @Test
+  @SuppressFBWarnings("PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS")
   public void testConfigInjection() {
     ServiceLocator loc = ServiceLocatorFactory.getInstance().create("test");
     ServiceLocatorUtilities.bind(loc, new AbstractBinder() {
@@ -79,7 +94,8 @@ public class ConfigurationInjectorTest {
       protected void configure() {
         bindAsContract(TestClass.class).in(Singleton.class);
         bind(HK2ConfigurationInjector.class)
-                .to(new TypeLiteral<InjectionResolver<ConfigProperty>>() { })
+                .to(new TypeLiteral<InjectionResolver<ConfigProperty>>() {
+                })
                 .in(Singleton.class);
         bind(new JerseyMicroprofileConfigurationModel(
                 (ConfigImpl) ConfigProvider.getConfig())).to(Configuration.class);
@@ -92,8 +108,11 @@ public class ConfigurationInjectorTest {
     Assert.assertEquals("bubu", service.getValue());
     Assert.assertNull(service.getValue2());
     System.setProperty("myProp2", "boooo");
+    Assert.assertNull(service.getValue2()); // properties/envs are considered immutable configurations.
+    M_CONFIG.putValue("myProp2", "boooo");
     Assert.assertEquals("boooo", service.getValue2());
-    Assert.assertSame(service,  loc.getService(TestClass.class));
+    Assert.assertSame(service, loc.getService(TestClass.class));
+    Assert.assertEquals(1, service.getEnvSys());
     loc.shutdown();
   }
 

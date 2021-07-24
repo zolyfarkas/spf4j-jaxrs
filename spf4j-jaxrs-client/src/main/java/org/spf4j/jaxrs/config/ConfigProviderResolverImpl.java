@@ -24,21 +24,21 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
-/**
- *
- * @author Zoltan Farkas
- */
-final class ConfigProviderResolverImpl extends ConfigProviderResolver {
+
+public final class ConfigProviderResolverImpl extends ConfigProviderResolver {
 
   private final SchemaResolver schemaResolver;
 
   private final ConcurrentMap<ClassLoader, Config> configs = new ConcurrentHashMap<>();
 
-  ConfigProviderResolverImpl(final SchemaResolver schemaResolver) {
-    this.schemaResolver = schemaResolver;
-    configs.put(Thread.currentThread().getContextClassLoader(),
-            new ConfigBuilderImpl(schemaResolver).addDefaultSources()
+  public ConfigProviderResolverImpl(final SchemaResolver schemaResolver) {
+    this(schemaResolver, new ConfigBuilderImpl(schemaResolver).addDefaultSources()
                     .addDiscoveredSources().addDiscoveredConverters().build());
+  }
+
+  public ConfigProviderResolverImpl(final SchemaResolver schemaResolver, final Config config) {
+    this.schemaResolver = schemaResolver;
+    configs.put(Thread.currentThread().getContextClassLoader(), config);
   }
 
   @Override

@@ -48,10 +48,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.spf4j.base.Env;
 import org.spf4j.jaxrs.config.ConfigEvent;
 import org.spf4j.jaxrs.config.ConfigWatcher;
-import org.spf4j.jaxrs.config.ObservableConfigSource;
+import org.spf4j.jaxrs.config.ObservableConfig;
 import org.spf4j.jaxrs.config.PropertyWatcher;
 
 /**
@@ -61,7 +62,7 @@ import org.spf4j.jaxrs.config.PropertyWatcher;
  * @author Zoltan Farkas
  */
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-public final class DirConfigMapConfigSource implements ObservableConfigSource, Closeable, Runnable {
+public final class DirConfigMapConfigSource implements ObservableConfig, ConfigSource, Closeable, Runnable {
 
   private final Charset charset;
 
@@ -95,7 +96,7 @@ public final class DirConfigMapConfigSource implements ObservableConfigSource, C
           StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE,
           StandardWatchEventKinds.OVERFLOW
         }, SensitivityWatchEventModifier.HIGH);
-        watchThread = new Thread(this, "config-watcher");
+        watchThread = new Thread(this, "dir-config-watcher");
         watchThread.setDaemon(true);
         watchThread.start();
       } catch (IOException ex) {
@@ -197,6 +198,7 @@ public final class DirConfigMapConfigSource implements ObservableConfigSource, C
 
   @Override
   public void addWatcher(final String name, final PropertyWatcher consumer) {
+    initWatcher();
     propertyWatchers.compute(name, (k, v) -> {
       if (v == null) {
         List<PropertyWatcher> pws = new ArrayList<>(2);
@@ -276,7 +278,7 @@ public final class DirConfigMapConfigSource implements ObservableConfigSource, C
 
   @Override
   public int getOrdinal() {
-    return 500;
+    return 10;
   }
 
   @Override
@@ -309,27 +311,6 @@ public final class DirConfigMapConfigSource implements ObservableConfigSource, C
   @Override
   public String toString() {
     return "DirConfigMapConfigSource{" + "charset=" + charset + ", folder=" + folder + '}';
-  }
-
-  private static class ConfigWatcherAdapter implements ConfigWatcher {
-
-    private final String name;
-    private final PropertyWatcher consumer;
-
-    ConfigWatcherAdapter(final String name, final PropertyWatcher consumer) {
-      this.name = name;
-      this.consumer = consumer;
-    }
-
-    public void accept(final String n, final ConfigEvent event) {
-      if (name.equals(n)) {
-        consumer.accept(event);
-      }
-    }
-
-    public void unknownEvents() {
-      consumer.unknownEvents();
-    }
   }
 
 }

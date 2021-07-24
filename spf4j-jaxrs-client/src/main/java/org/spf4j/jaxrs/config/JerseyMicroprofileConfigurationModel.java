@@ -71,7 +71,7 @@ public final class JerseyMicroprofileConfigurationModel implements ExternalConfi
   }
 
   @Override
-  public Config getConfig() {
+  public ExtendedConfig getConfig() {
     return config;
   }
 

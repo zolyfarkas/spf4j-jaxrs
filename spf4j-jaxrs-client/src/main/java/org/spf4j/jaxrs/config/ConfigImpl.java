@@ -15,29 +15,49 @@
  */
 package org.spf4j.jaxrs.config;
 
-import com.google.common.collect.Iterables;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import java.util.ArrayList;
+import gnu.trove.set.hash.THashSet;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.annotation.Nullable;
-import org.eclipse.microprofile.config.Config;
+import javax.annotation.ParametersAreNonnullByDefault;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
  * @author Zoltan Farkas
  */
-public final class ConfigImpl implements Config {
+@ParametersAreNonnullByDefault
+public final class ConfigImpl implements ExtendedConfig {
 
   private final ConfigSource[] configs;
 
   private final ObjectConverters converters;
 
+  private final ObservableConfig observableConfig;
+
   ConfigImpl(final ObjectConverters converters, final ConfigSource... configs) {
     this.converters = converters;
     this.configs = configs;
+    if (configs.length > 0) {
+      ConfigSource first =  configs[0];
+      if (first instanceof ObservableConfig) {
+         this.observableConfig = (ObservableConfig) first;
+      } else {
+        this.observableConfig = null;
+      }
+      for (int i = 1; i < configs.length; i++) {
+        ConfigSource cs = configs[i];
+        if (cs instanceof ObservableConfig) {
+          throw new IllegalArgumentException("You should not have more than 2 observable configs in your setup: "
+                  + Arrays.toString(configs));
+        }
+      }
+    } else {
+       this.observableConfig = null;
+    }
   }
 
   public ObjectConverters getConverters() {
@@ -48,26 +68,42 @@ public final class ConfigImpl implements Config {
   @Nullable
   @SuppressFBWarnings("URV_INHERITED_METHOD_WITH_RELATED_TYPES")
   public <T> T getValue(final String propertyName, final Class<T> clasz) {
-    if (ObservableConfigSource.PROPERTY_NAME.equals(propertyName)) {
-       List<ObservableConfigSource> sources = new java.util.ArrayList<>(2);
-       for (ConfigSource source : configs) {
-         if (source instanceof ObservableConfigSource) {
-           sources.add((ObservableConfigSource) source);
-         }
-       }
-       return (T) sources;
+    return (T) getValue(propertyName, clasz, null);
+  }
+
+  @Override
+  @Nullable
+  @SuppressFBWarnings("URV_INHERITED_METHOD_WITH_RELATED_TYPES")
+  public Object getValue(final String propertyName, final Type propertyType, @Nullable final String defaultValue) {
+    if (ExtendedConfig.PROPERTY_NAME.equals(propertyName)) {
+      return this;
     }
-    if (propertyName.startsWith("raw:")) {
-      String actualProp = propertyName.substring(4);
-      List<String> values = new ArrayList<>(2);
-      for (ConfigSource source : configs) {
-        String strValue = source.getValue(actualProp);
-        if (strValue != null) {
-          values.add(strValue);
-        }
-      }
-      return (T) values;
+    Object value = getCfgValue(propertyName, propertyType);
+    if (value == null) {
+      value = defaultValue == null ? null : convert(propertyType, defaultValue);
     }
+    return value;
+  }
+
+  @Nullable
+  private Object getCfgValue(final String propertyName, final Type type) {
+    String strValue = getCfgStrValue(propertyName);
+    if (strValue == null) {
+      return null;
+    }
+    return convert(type, strValue);
+  }
+
+  @SuppressFBWarnings("URV_UNRELATED_RETURN_VALUES")
+  private Object convert(final Type type, final String strValue) {
+    if (String.class == type || Object.class == type) {
+      return strValue;
+    }
+    return converters.get(type).apply(strValue, type);
+  }
+
+  @Nullable
+  private String getCfgStrValue(final String propertyName) {
     String strValue = null;
     for (ConfigSource source : configs) {
       strValue = source.getValue(propertyName);
@@ -75,13 +111,7 @@ public final class ConfigImpl implements Config {
         break;
       }
     }
-    if (strValue == null) {
-      return null;
-    }
-    if (String.class == clasz || Object.class == clasz) {
-      return (T) strValue;
-    }
-    return (T) converters.get(clasz).apply(strValue, clasz);
+    return strValue;
   }
 
   @Override
@@ -91,17 +121,48 @@ public final class ConfigImpl implements Config {
 
   @Override
   public Iterable<String> getPropertyNames() {
-    Iterable<String>[] names = new Iterable[configs.length];
-    int i = 0;
+    Set<String> result = new THashSet<>(64);
     for (ConfigSource source : configs) {
-      names[i++] = source.getPropertyNames();
+      result.addAll(source.getPropertyNames());
     }
-    return Iterables.concat(names);
+    return result;
   }
 
   @Override
   public Iterable<ConfigSource> getConfigSources() {
     return Collections.unmodifiableList(Arrays.asList(configs));
+  }
+
+  @Override
+  public void addWatcher(final ConfigWatcher consumer) {
+    if (observableConfig != null) {
+      observableConfig.addWatcher(consumer);
+    } else {
+      consumer.unknownEvents();
+    }
+  }
+
+  @Override
+  public void addWatcher(final String name, final PropertyWatcher consumer) {
+    if (observableConfig != null) {
+      observableConfig.addWatcher(name, consumer);
+    } else {
+      consumer.unknownEvents();
+    }
+  }
+
+  @Override
+  public void removeWatcher(final ConfigWatcher consumer) {
+    if (observableConfig != null) {
+      observableConfig.removeWatcher(consumer);
+    }
+  }
+
+  @Override
+  public void removeWatcher(final String name, final PropertyWatcher consumer) {
+    if (observableConfig != null) {
+      observableConfig.removeWatcher(name, consumer);
+    }
   }
 
   @Override

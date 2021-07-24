@@ -15,19 +15,18 @@
  */
 package org.spf4j.jaxrs.config;
 
-import java.util.function.Supplier;
-
 /**
  * @author Zoltan Farkas
- * @param <T> the type of the supplied value.
  */
-public interface ObservableSupplier<T> extends Supplier<T>, AutoCloseable {
-    /**
-     * On registering a watcher unknownEvents() will be called.
-     * @param watcher
-     */
-    void add(PropertyWatcher watcher);
+public interface ObservableConfig {
 
-    boolean remove(PropertyWatcher watcher);
+  void addWatcher(ConfigWatcher consumer);
+
+  void addWatcher(String name, PropertyWatcher consumer);
+
+  void removeWatcher(ConfigWatcher consumer);
+
+  void removeWatcher(String name, PropertyWatcher consumer);
+
 
 }
