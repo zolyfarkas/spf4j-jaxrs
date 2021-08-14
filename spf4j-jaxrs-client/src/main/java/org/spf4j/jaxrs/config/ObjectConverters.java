@@ -102,6 +102,9 @@ public final class ObjectConverters {
         } else {
           Type ct = tComponentType.getType();
           BiFunction<Object, Type, Object> compResolver = resolvers.get(ct);
+          if (compResolver == null) {
+            throw new IllegalArgumentException("No resolver of array component " + ct);
+          }
           int length = Array.getLength(val);
           Object result = Array.newInstance(tComponentType.getRawType(), length);
           for (int i = 0; i < length; i++) {
@@ -113,6 +116,9 @@ public final class ObjectConverters {
         TypeToken<?> tComponentType = tt.getComponentType();
         Type ct = tComponentType.getType();
         BiFunction<Object, Type, Object> compResolver = resolvers.get(ct);
+        if (compResolver == null) {
+          throw new IllegalArgumentException("No resolver for " + ct);
+        }
         List result = new ArrayList();
         for (CharSequence elem : Csv.CSV.singleRow(new StringReader((String) val))) {
           result.add(compResolver.apply(elem, ct));

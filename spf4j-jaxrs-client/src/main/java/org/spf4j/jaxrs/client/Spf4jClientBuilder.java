@@ -24,7 +24,9 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Configuration;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.glassfish.jersey.client.JerseyClientBuilder;
+import org.spf4j.jaxrs.config.ExtendedConfig;
 
 /**
  * A failsafe capable client builder.
@@ -105,6 +107,9 @@ public final class Spf4jClientBuilder extends ClientBuilder {
 
   @Override
   public Spf4JClient build() {
+    if (this.jerseyBuilder.getConfiguration().getProperty(ExtendedConfig.PROPERTY_NAME) == null) {
+      this.jerseyBuilder.property(ExtendedConfig.PROPERTY_NAME, ConfigProviderResolver.instance().getConfig());
+    }
     return new Spf4JClient(jerseyBuilder.build());
   }
 

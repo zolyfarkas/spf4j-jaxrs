@@ -18,38 +18,44 @@ package org.spf4j.jaxrs.config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import javax.ws.rs.core.Configuration;
-import org.apache.avro.SchemaResolver;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.glassfish.hk2.api.InjectionResolver;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.hk2.api.ServiceLocatorFactory;
 import org.glassfish.hk2.api.TypeLiteral;
 import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.jvnet.hk2.annotations.Service;
-import org.spf4j.jaxrs.config.sources.MemoryConfigSource;
 
 /**
- *
- * @author Zoltan Farkas
+ * tests of this class should not be executed in parallel threads (even with other tests)
  */
+@NotThreadSafe
 public class ConfigurationInjectorTest {
 
-  private static final MemoryConfigSource M_CONFIG = new MemoryConfigSource();
-
   static {
-    ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl(SchemaResolver.NONE,
-            new ConfigBuilderImpl(SchemaResolver.NONE).addDefaultSources().withSources(M_CONFIG).build()));
     System.setProperty("SysPropEnv", "1");
+  }
+
+  @BeforeClass
+  public static void init() {
+    MemoryConfig.init();
+  }
+
+  @AfterClass
+  public static void dispose() {
+    MemoryConfig.resetToDefault();
   }
 
   @Service
@@ -109,7 +115,7 @@ public class ConfigurationInjectorTest {
     Assert.assertNull(service.getValue2());
     System.setProperty("myProp2", "boooo");
     Assert.assertNull(service.getValue2()); // properties/envs are considered immutable configurations.
-    M_CONFIG.putValue("myProp2", "boooo");
+    MemoryConfig.put("myProp2", "boooo");
     Assert.assertEquals("boooo", service.getValue2());
     Assert.assertSame(service, loc.getService(TestClass.class));
     Assert.assertEquals(1, service.getEnvSys());

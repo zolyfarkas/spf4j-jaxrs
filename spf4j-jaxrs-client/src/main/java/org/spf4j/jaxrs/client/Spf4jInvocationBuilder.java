@@ -1,8 +1,14 @@
-
 package org.spf4j.jaxrs.client;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -37,6 +43,8 @@ import org.spf4j.service.avro.HttpExecutionPolicy;
 @SuppressFBWarnings("FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY")
 public final class Spf4jInvocationBuilder implements Invocation.Builder {
 
+
+  private static final String UTF8 = StandardCharsets.UTF_8.name();
   private final Spf4JClient client;
   private final Invocation.Builder ib;
   private final Spf4jWebTarget target;
@@ -52,7 +60,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
     this.ib = ib;
     this.executor = executor;
     this.target = target;
-    Number timeout =  (Number) client.getConfiguration().getProperty(Spf4jClientProperties.TIMEOUT_NANOS);
+    Number timeout = (Number) client.getConfiguration().getProperty(Spf4jClientProperties.TIMEOUT_NANOS);
     this.execPolicyBuilder = HttpExecutionPolicy.newBuilder();
     if (timeout != null) {
       Duration overallTimeout = Duration.ofNanos(timeout.longValue());
@@ -70,8 +78,70 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
     return target;
   }
 
-  HttpExecutionPolicy.Builder getExecPolicyBuilder() {
-    return execPolicyBuilder;
+  public static Map<String, List<String>> getQuery(final URI uri) {
+    String rawQuery = uri.getRawQuery();
+    if (rawQuery == null) {
+      return Collections.emptyMap();
+    }
+    final Map<String, List<String>> queryPairs = new LinkedHashMap<>();
+    final String[] pairs = rawQuery.split("&");
+    for (String pair : pairs) {
+      final int idx = pair.indexOf('=');
+      final String key;
+      if (idx >= 0) {
+        try {
+          key = URLDecoder.decode(pair.substring(0, idx), UTF8);
+          List<String> values = queryPairs.computeIfAbsent(key, k -> new ArrayList<>(2));
+          values.add(URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8.name()));
+        } catch (UnsupportedEncodingException ex) {
+          throw new RuntimeException(ex);
+        }
+      } else {
+        key = pair;
+        queryPairs.computeIfAbsent(key, k -> new ArrayList<>(2));
+      }
+    }
+    return queryPairs;
+  }
+
+  HttpExecutionPolicy getExecPolicy(final String method) {
+    URI uri = target.getUri();
+    HttpExecutionPolicy execPolicy = this.client.getEndpointConfig().getHttpExecutionPolicy(uri.getHost(),
+            uri.getPort(), uri.getPath(), method, getQuery(uri), Collections.EMPTY_MAP);
+    HttpExecutionPolicy.Builder builder;
+    if (execPolicy != null) {
+      builder = HttpExecutionPolicy.newBuilder(execPolicy);
+    } else {
+      builder = HttpExecutionPolicy.newBuilder();
+    }
+    if (this.execPolicyBuilder.hasAttemptTimeout()) {
+      builder.setAttemptTimeout(this.execPolicyBuilder.getAttemptTimeout());
+    }
+    if (this.execPolicyBuilder.hasCircuitBreaker()) {
+      builder.setCircuitBreaker(this.execPolicyBuilder.getCircuitBreaker());
+    }
+    if (this.execPolicyBuilder.hasConnectTimeout()) {
+      builder.setConnectTimeout(this.execPolicyBuilder.getConnectTimeout());
+    }
+    if (this.execPolicyBuilder.hasHedgePolicy()) {
+      builder.setHedgePolicy(this.execPolicyBuilder.getHedgePolicy());
+    }
+    if (this.execPolicyBuilder.hasOverallTimeout()) {
+      builder.setOverallTimeout(this.execPolicyBuilder.getOverallTimeout());
+    }
+    if (this.execPolicyBuilder.hasPoolMaxIdle()) {
+      builder.setPoolMaxIdle(this.execPolicyBuilder.getPoolMaxIdle());
+    }
+    if (this.execPolicyBuilder.hasRetryPolicy()) {
+      builder.setRetryPolicy(this.execPolicyBuilder.getRetryPolicy());
+    }
+    if (this.execPolicyBuilder.hasShadowTraffic()) {
+      builder.setShadowTraffic(this.execPolicyBuilder.getShadowTraffic());
+    }
+    if (this.execPolicyBuilder.hasSplitTraffic()) {
+      builder.setSplitTraffic(this.execPolicyBuilder.getSplitTraffic());
+    }
+    return builder.build();
   }
 
   public Spf4jInvocationBuilder withRetryRexecutor(final FailSafeExecutor exec) {
@@ -99,61 +169,63 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
     return this;
   }
 
-  public static AsyncRetryExecutor<Object, HttpCallable<?>> buildExecutor(final HttpExecutionPolicy policy,
+  public AsyncRetryExecutor<Object, HttpCallable<?>> buildExecutor(final HttpExecutionPolicy policy,
           final FailSafeExecutor exec) {
-    org.spf4j.failsafe.RetryPolicy.Builder<Object, HttpCallable<?>> builder =
-            org.spf4j.failsafe.RetryPolicy.newBuilder();
-    try {
-      RetryPolicies.addRetryPolicy(builder, policy.getRetryPolicy());
-    } catch (InvalidRetryPolicyException ex) {
-      Logger log = Logger.getLogger(Spf4jInvocation.class.getName());
-      log.log(Level.WARNING, "Unable to set exec policy {0}", new Object[]{policy, ex});
+    org.spf4j.failsafe.RetryPolicy.Builder<Object, HttpCallable<?>> builder
+            = org.spf4j.failsafe.RetryPolicy.newBuilder();
+    RetryPolicy retryPolicy = policy.getRetryPolicy();
+    if (retryPolicy != null) {
+      try {
+        RetryPolicies.addRetryPolicy(builder, retryPolicy,
+                client.getEndpointConfig().toResultMatcherSupplier());
+      } catch (InvalidRetryPolicyException ex) {
+        Logger log = Logger.getLogger(Spf4jInvocation.class.getName());
+        log.log(Level.WARNING, "Unable to set exec policy {0}", new Object[]{policy, ex});
+      }
     }
     Utils.addDefaultRetryPredicated(builder);
     return org.spf4j.failsafe.RetryPolicy.async(c -> builder.build(),
             c -> new TimeoutRelativeHedge(policy.getHedgePolicy()), exec);
   }
 
-
-
   @Override
   public Spf4jInvocation build(final String method) {
-    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
+    HttpExecutionPolicy execPolicy = getExecPolicy(method);
     return new Spf4jInvocation(ib.build(method), execPolicy, buildExecutor(execPolicy, executor), this.target,
             method);
   }
 
   @Override
   public Spf4jInvocation build(final String method, final Entity<?> entity) {
-    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
-    return new  Spf4jInvocation(ib.build(method, entity), execPolicy,
+    HttpExecutionPolicy execPolicy = getExecPolicy(method);
+    return new Spf4jInvocation(ib.build(method, entity), execPolicy,
             buildExecutor(execPolicy, executor), this.target, method);
   }
 
   @Override
   public Spf4jInvocation buildGet() {
-    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
+    HttpExecutionPolicy execPolicy = getExecPolicy(HttpMethod.GET);
     return new Spf4jInvocation(ib.buildGet(), execPolicy,
             buildExecutor(execPolicy, executor), this.target, HttpMethod.GET);
   }
 
   @Override
   public Spf4jInvocation buildDelete() {
-    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
+    HttpExecutionPolicy execPolicy = getExecPolicy(HttpMethod.DELETE);
     return new Spf4jInvocation(ib.buildDelete(), execPolicy,
             buildExecutor(execPolicy, executor), this.target, HttpMethod.DELETE);
   }
 
   @Override
   public Spf4jInvocation buildPost(final Entity<?> entity) {
-    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
+    HttpExecutionPolicy execPolicy = getExecPolicy(HttpMethod.POST);
     return new Spf4jInvocation(ib.buildPost(entity), execPolicy,
             buildExecutor(execPolicy, executor), this.target, HttpMethod.POST);
   }
 
   @Override
   public Spf4jInvocation buildPut(final Entity<?> entity) {
-    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
+    HttpExecutionPolicy execPolicy = getExecPolicy(HttpMethod.PUT);
     return new Spf4jInvocation(ib.buildPut(entity), execPolicy,
             buildExecutor(execPolicy, executor), this.target, HttpMethod.PUT);
   }
@@ -246,7 +318,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
   @Override
   public Invocation.Builder header(final String name, final Object value) {
     Invocation.Builder builder = ib.header(name, Spf4JClient.convert(
-              Spf4JClient.getParamConverters(this.getTarget().getConfiguration()), value));
+            Spf4JClient.getParamConverters(this.getTarget().getConfiguration()), value));
     if (builder == ib) {
       return this;
     } else {
@@ -269,8 +341,12 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
         map.put(entry.getKey(), cValue);
       }
     }
-    ib.headers(map == null ? headers : map);
-    return this;
+    Invocation.Builder builder = ib.headers(map == null ? headers : map);
+    if (builder == ib) {
+      return this;
+    } else {
+      return new Spf4jInvocationBuilder(client, builder, executor, target);
+    }
   }
 
   @Override
@@ -285,13 +361,16 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
 
   @Override
   public CompletionStageRxInvoker rx() {
-    HttpExecutionPolicy execPolicy = execPolicyBuilder.build();
-    return new Spf4jCompletionStageRxInvoker(this, buildExecutor(execPolicy, executor));
+    return new Spf4jCompletionStageRxInvoker(this,  executor);
   }
 
   @Override
   public <T extends RxInvoker> T rx(final Class<T> clazz) {
-    return ib.rx(clazz);
+    if (clazz == Spf4jCompletionStageRxInvoker.class) {
+      return (T)  new Spf4jCompletionStageRxInvoker(this, executor);
+    } else {
+      return ib.rx(clazz);
+    }
   }
 
   @Override
@@ -311,7 +390,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
 
   @Override
   public Response put(final Entity<?> entity) {
-     return buildPut(entity).invoke();
+    return buildPut(entity).invoke();
   }
 
   @Override
@@ -425,7 +504,5 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
             + target + ", executor=" + executor + ", execPolicyBuilder=" + execPolicyBuilder
             + '}';
   }
-
-
 
 }

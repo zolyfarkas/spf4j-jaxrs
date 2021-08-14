@@ -19,9 +19,11 @@ import com.google.common.base.Suppliers;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.spf4j.base.Either;
 
 /**
  * a more advanced config supplier implementation, where value type conversion and update happens asybchronously
@@ -38,17 +40,26 @@ final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements O
   private final ExtendedConfig configuration;
 
   ObservableRXConfigSupplier(final ExtendedConfig configuration,
-          final ConfigurationParam cfgParam, final Type type) {
-    super(configuration, cfgParam, type);
+          final ConfigurationParam cfgParam, final Either<Type, Function<String, ?>> typeOrConverter) {
+    super(configuration, cfgParam, typeOrConverter.isLeft() ? typeOrConverter.getLeft() : String.class);
     this.watchers = new CopyOnWriteArrayList<>();
     this.configuration = configuration;
     this.propertyWatcher = new PropertyWatcher() {
+
+          private Object convert(final Object initial) {
+            if (typeOrConverter.isLeft()) {
+              return initial;
+            } else {
+              return typeOrConverter.getRight().apply((String) initial);
+            }
+          }
+
           public synchronized void accept(final ConfigEvent event) {
             switch (event) {
               case ADDED:
               case MODIFIED:
                 try {
-                  ObservableRXConfigSupplier.this.value = Suppliers.ofInstance(fetch());
+                  ObservableRXConfigSupplier.this.value = Suppliers.ofInstance(convert(fetch()));
                 } catch (RuntimeException ex) {
                   Logger.getLogger(ObservableRXConfigSupplier.class.getName())
                           .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
@@ -78,8 +89,16 @@ final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements O
           }
         };
         configuration.addWatcher(cfgParam.getPropertyName(), this.propertyWatcher);
-        this.value = Suppliers.ofInstance(null);
+        String defVal = cfgParam.getDefaultValue();
+        if (typeOrConverter.isLeft()) {
+          this.value = Suppliers.ofInstance(defVal == null
+                  ? null : configuration.convert(typeOrConverter.getLeft(), defVal));
+        } else {
+          this.value = Suppliers.ofInstance(defVal == null ? null : typeOrConverter.getRight().apply(defVal));
+        }
   }
+
+
 
   @Override
   public void close() {

@@ -1,0 +1,16 @@
+{
+  "throwablePatterns": {
+  "exception_response": {
+      "type" : "java.lang.Exception"
+  },
+  "io_errror" :   {
+      "type" : "java.io.IOException"
+    }
+  },
+  "returnPatterns": {
+  "resource_not_found" : {
+      "type" : "javax.ws.rs.core.Response",
+      "codes" : {"status" : [404]}
+   }
+  }
+}

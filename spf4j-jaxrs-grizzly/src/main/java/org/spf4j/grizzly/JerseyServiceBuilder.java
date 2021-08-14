@@ -54,7 +54,6 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.spf4j.avro.NoSnapshotRefsResolver;
 import org.spf4j.avro.SchemaClient;
 import org.spf4j.concurrent.LifoThreadPoolBuilder;
-import org.spf4j.failsafe.HedgePolicy;
 import org.spf4j.jaxrs.Spf4jBinder;
 import org.spf4j.http.DefaultDeadlineProtocol;
 import org.spf4j.jaxrs.server.SecurityAuthenticator;
@@ -336,7 +335,7 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
             .register(avroFeature)
             .register(DelegatingAuthenticationClientFilter.class)
             .property(ClientProperties.USE_ENCODING, "gzip")
-            .build()).withHedgePolicy(HedgePolicy.NONE);
+            .build());
       resourceConfig.register(new Spf4jBinder(schemaClient, restClient));
       resourceConfig.register(avroFeature);
       resourceConfig.register(ImmediateFeature.class);

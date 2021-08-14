@@ -94,8 +94,9 @@ public final class ConfigImpl implements ExtendedConfig {
     return convert(type, strValue);
   }
 
-  @SuppressFBWarnings("URV_UNRELATED_RETURN_VALUES")
-  private Object convert(final Type type, final String strValue) {
+  @SuppressFBWarnings("URV_INHERITED_METHOD_WITH_RELATED_TYPES")
+  @Override
+  public Object convert(final Type type, final String strValue) {
     if (String.class == type || Object.class == type) {
       return strValue;
     }

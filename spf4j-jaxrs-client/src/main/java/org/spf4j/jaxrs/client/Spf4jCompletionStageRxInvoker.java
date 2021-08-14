@@ -14,7 +14,7 @@ import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.TimeSource;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
-import org.spf4j.failsafe.AsyncRetryExecutor;
+import org.spf4j.failsafe.concurrent.FailSafeExecutor;
 import org.spf4j.service.avro.HttpExecutionPolicy;
 
 /**
@@ -25,10 +25,10 @@ public final class Spf4jCompletionStageRxInvoker
         implements CompletionStageRxInvoker {
 
   private final Spf4jInvocationBuilder invocationBuilder;
-  private final AsyncRetryExecutor<Object, HttpCallable<?>> executor;
+  private final FailSafeExecutor executor;
 
   public Spf4jCompletionStageRxInvoker(final Spf4jInvocationBuilder invocationBuilder,
-          final AsyncRetryExecutor<Object, HttpCallable<?>> executor) {
+          final FailSafeExecutor executor) {
     this.invocationBuilder = invocationBuilder;
     this.executor = executor;
   }
@@ -38,10 +38,11 @@ public final class Spf4jCompletionStageRxInvoker
     return method + '/' + uri.getHost() + ':' + uri.getPort() + uri.getPath();
   }
 
+
   private <T> CompletionStage<T> submit(final Callable<T> what, final String name, final String method) {
     long nanoTime = TimeSource.nanoTime();
     ExecutionContext current = ExecutionContexts.current();
-    HttpExecutionPolicy execPolicy = invocationBuilder.getExecPolicyBuilder().build();
+    HttpExecutionPolicy execPolicy = invocationBuilder.getExecPolicy(method);
     long deadlineNanos = ExecutionContexts.computeDeadline(current,
             execPolicy.getOverallTimeout().toNanos(), TimeUnit.NANOSECONDS);
     Spf4jWebTarget target = invocationBuilder.getTarget();
@@ -50,7 +51,7 @@ public final class Spf4jCompletionStageRxInvoker
             method,
             target.getClient().getExceptionMapper(),
             deadlineNanos, execPolicy.getAttemptTimeout().toNanos());
-    return executor.submitRx(pc, nanoTime, deadlineNanos,
+    return invocationBuilder.buildExecutor(execPolicy, executor).submitRx(pc, nanoTime, deadlineNanos,
             () -> new ContextPropagatingCompletableFuture<>(current, deadlineNanos));
   }
 

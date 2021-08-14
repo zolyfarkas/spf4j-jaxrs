@@ -1,0 +1,11 @@
+{
+  "overallTimeout": "PT10S",
+  "attemptTimeout": "PT3S",
+  "retryPolicy" : {
+    "response2RetryParams" : {
+      "resource_not_found" : {
+        "maxNrRetries" : 2
+      }
+    }
+  }
+}

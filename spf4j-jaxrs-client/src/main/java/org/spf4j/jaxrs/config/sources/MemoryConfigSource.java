@@ -100,6 +100,10 @@ public final class MemoryConfigSource implements ConfigSource, ObservableConfig 
       return watchers.remove(watcher);
     }
 
+    synchronized void removeWatchers() {
+      this.watchers = null;
+    }
+
     synchronized boolean hasWatchers() {
       return watchers != null && !watchers.isEmpty();
     }
@@ -199,6 +203,18 @@ public final class MemoryConfigSource implements ConfigSource, ObservableConfig 
         }
       }
     });
+  }
+
+  public void clearValues() {
+    this.configs.forEach((k, v) -> v.put(k, null));
+  }
+
+  public void clear() {
+    this.configs.forEach((k, v) -> {
+      v.put(k, null);
+      v.removeWatchers();
+    });
+    this.globalWatchers.clear();
   }
 
   @Override

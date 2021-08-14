@@ -1,0 +1,26 @@
+{
+  "overallTimeout": "PT30S",
+  "attemptTimeout": "PT15S",
+  "connectTimeout": "PT1S",
+  "retryPolicy" : {
+    "maxSupressedExceptions" : 3,
+    "retryRules" : [{ "name" : "re_retry_header"},
+      {"name": "ex_retry_header"},
+      {"name": "re_retry_default"},
+      {"name": "ex_retry_default"}
+    ],
+    "response2RetryParams" : {
+      "resource_not_found" : {
+        "maxNrRetries" : 0
+      },
+      "exception_response" : {
+        "nrInitialImmediateRetries" : 2,
+        "startDelay" : "PT0.1S",
+        "maxDelay" : "PT1S",
+        "retryDelayJitter" : 0.3,
+        "maxNrRetries" : 3,
+        "maxTimeToRetryFactor" : 0.99
+      }
+    }
+  }
+}

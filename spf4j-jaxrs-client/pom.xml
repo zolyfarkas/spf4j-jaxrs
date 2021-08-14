@@ -100,6 +100,12 @@
           <environmentVariables>
             <SysPropEnv>2</SysPropEnv>
           </environmentVariables>
+          <properties>
+            <property>
+              <name>listener</name>
+              <value>org.spf4j.test.log.junit4.Spf4jTestLogRunListener</value>
+            </property>
+          </properties>
         </configuration>
       </plugin>
       <plugin>
@@ -121,6 +127,9 @@
         <configuration>
           <services>
             <param>javax.ws.rs.client.ClientBuilder</param>
+            <param>org.spf4j.failsafe.PartialExceptionRetryPredicateSupplier</param>
+            <param>org.spf4j.failsafe.PartialResultRetryPredicateSupplier</param>
+            <param>org.eclipse.microprofile.config.spi.ConfigProviderResolver</param>
           </services>
         </configuration>
         <executions>

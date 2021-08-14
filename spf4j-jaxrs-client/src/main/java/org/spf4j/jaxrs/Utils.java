@@ -12,7 +12,11 @@ import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Response;
+import org.spf4j.base.Timing;
+import org.spf4j.failsafe.PartialExceptionRetryPredicate;
+import org.spf4j.failsafe.PartialExceptionRetryPredicateSupplier;
 import org.spf4j.failsafe.PartialResultRetryPredicate;
+import org.spf4j.failsafe.PartialResultRetryPredicateSupplier;
 import org.spf4j.failsafe.PartialTypedExceptionRetryPredicate;
 import org.spf4j.failsafe.RetryDecision;
 import org.spf4j.failsafe.RetryPolicy;
@@ -72,6 +76,100 @@ public final class Utils {
     }
   }
 
+  public static final class HttpRetryHeaderPartialExceptionRetryPredicateSupplier
+          implements PartialExceptionRetryPredicateSupplier<Object, Callable<? extends Object>> {
+
+    @Override
+    public String getName() {
+      return "ex_retry_header";
+    }
+
+    @Override
+    public PartialExceptionRetryPredicate<Object, Callable<? extends Object>> get(final long startTimeNanos,
+            final long deadlineNanos) {
+      return (final Throwable value, final Callable<? extends Object> what) -> {
+        WebApplicationException wex = org.spf4j.base.Throwables.first(value, WebApplicationException.class);
+        if (wex != null) {
+          return (RetryDecision<Object, Callable<? extends Object>>) getHeaderBasedRetryDecision(wex.getResponse(),
+                  what, deadlineNanos);
+        }
+        return null;
+      };
+    }
+
+  }
+
+
+  public static final class HttpRetryHeaderPartialResultRetryPredicateSupplier
+          implements PartialResultRetryPredicateSupplier<Object, Callable<Object>> {
+
+    @Override
+    public String getName() {
+      return "re_retry_header";
+    }
+
+    @Override
+    public PartialResultRetryPredicate<Object, Callable<Object>> get(final long startTimeNanos,
+            final long deadlineNanos) {
+      return (Object value, Callable<Object> what) -> {
+        if (value instanceof Response) {
+          return getHeaderBasedRetryDecision((Response) value, what, deadlineNanos);
+        }
+        return null;
+      };
+    }
+
+  }
+
+
+  public static final class HttpDefaultPartialExceptionRetryPredicateSupplier
+          implements PartialExceptionRetryPredicateSupplier<Object, Callable<? extends Object>> {
+
+    @Override
+    public String getName() {
+      return "ex_retry_default";
+    }
+
+    @Override
+    public PartialExceptionRetryPredicate<Object, Callable<? extends Object>> get(final long startTimeNanos,
+            final long deadlineNanos) {
+      return (final Throwable value, final Callable<? extends Object> what) -> {
+        WebApplicationException wex = org.spf4j.base.Throwables.first(value, WebApplicationException.class);
+        if (wex != null) {
+          return (RetryDecision<Object, Callable<? extends Object>>) getDefaultResponseDecision(wex.getResponse(),
+                  what);
+        }
+        return null;
+      };
+    }
+
+  }
+
+
+  public static final class HttpDefaultPartialResultRetryPredicateSupplier
+          implements PartialResultRetryPredicateSupplier<Object, Callable<Object>> {
+
+    @Override
+    public String getName() {
+      return "re_retry_default";
+    }
+
+    @Override
+    public PartialResultRetryPredicate<Object, Callable<Object>> get(final long startTimeNanos,
+            final long deadlineNanos) {
+      return (Object value, Callable<Object> what) -> {
+        if (value instanceof Response) {
+          return getDefaultResponseDecision((Response) value, what);
+        }
+        return null;
+      };
+    }
+
+  }
+
+
+
+
   private static class HttpRetryHeaderExceptionRetryPredicate
           implements PartialTypedExceptionRetryPredicate<Object, Callable<? extends Object>, WebApplicationException> {
 
@@ -94,6 +192,33 @@ public final class Utils {
     }
 
   }
+
+  @Nullable
+  public static <T> RetryDecision<T, Callable<T>> getHeaderBasedRetryDecision(
+          final Response response, final Callable<T> c, final long deadlineNanos) {
+    String retryAfter = response.getHeaderString("Retry-After");
+    if (retryAfter != null && !retryAfter.isEmpty()) {
+      Instant deadline = Timing.getCurrentTiming().fromNanoTimeToInstant(deadlineNanos);
+      Instant now = Instant.now();
+      Duration maxDuration = Duration.between(now, deadline);
+      if (Character.isDigit(retryAfter.charAt(0))) {
+        return RetryDecision.retry(Math.min(Long.parseLong(retryAfter), maxDuration.getSeconds()), TimeUnit.SECONDS, c);
+      } else {
+        return RetryDecision.retry(
+                Math.min(maxDuration.toNanos(),
+                Duration.between(now, DateTimeFormatter.RFC_1123_DATE_TIME.parse(retryAfter, Instant::from)).toNanos()),
+                TimeUnit.NANOSECONDS, c);
+      }
+    }
+    String noRetry = response.getHeaderString("No-Retry");
+    // Not standard,
+    // but a way for the server to tell the client there is no point for the client to retry.
+    if (noRetry != null) {
+      return RetryDecision.abort();
+    }
+    return null;
+  }
+
 
   @Nullable
   public static <T> RetryDecision<T, Callable<T>> getHeaderBasedRetryDecision(

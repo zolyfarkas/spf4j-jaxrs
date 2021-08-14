@@ -1,4 +1,3 @@
-
 package org.spf4j.jaxrs.client;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -30,6 +29,7 @@ import javax.ws.rs.core.Link;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
+import org.spf4j.avro.SchemaResolver;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientExecutor;
 import org.glassfish.jersey.client.HttpUrlConnectorProvider;
@@ -39,11 +39,8 @@ import org.spf4j.failsafe.concurrent.FailSafeExecutor;
 import org.spf4j.jaxrs.common.providers.ProviderUtils;
 
 /**
- * A improved JAX-RS client, that will do the following in addition to the stock Jersey client:
- * 1) retried + hedged execution.
- * 2) timeout propagation.
- * 3) Execution context propagation.
- * 4) JAX-RS Parameter converters in the client!
+ * A improved JAX-RS client, that will do the following in addition to the stock Jersey client: 1) retried + hedged
+ * execution. 2) timeout propagation. 3) Execution context propagation. 4) JAX-RS Parameter converters in the client!
  *
  * @author Zoltan Farkas
  */
@@ -63,19 +60,30 @@ public final class Spf4JClient implements Client {
 
   private final ClientExceptionMapper exceptionMapper;
 
-  public Spf4JClient(final  Client cl) {
-    this(cl,  DefaultFailSafeExecutor.instance(),
-            DefaultClientExceptionMapper.INSTANCE);
+  private final EndpointPoliciesConfig endpointConfig;
+
+  Spf4JClient(final Client cl) {
+    this(cl, DefaultFailSafeExecutor.instance(),
+            DefaultClientExceptionMapper.INSTANCE, SchemaResolver.NONE);
   }
 
-  public Spf4JClient(final  Client cl,
+  Spf4JClient(final Client cl,
           final FailSafeExecutor fsExec) {
-    this(cl, fsExec, DefaultClientExceptionMapper.INSTANCE);
+    this(cl, fsExec, DefaultClientExceptionMapper.INSTANCE, SchemaResolver.NONE);
+  }
+
+  Spf4JClient(final Client cl,
+          final FailSafeExecutor fsExec,
+          final ClientExceptionMapper exceptionMapper,
+          final SchemaResolver resolver) {
+    this(cl, fsExec, exceptionMapper, new EndpointPoliciesConfig(cl.getConfiguration(), resolver));
   }
 
   @SuppressWarnings("unchecked")
-  public Spf4JClient(final  Client cl,
-          final FailSafeExecutor fsExec, final ClientExceptionMapper exceptionMapper) {
+  Spf4JClient(final Client cl,
+          final FailSafeExecutor fsExec,
+          final ClientExceptionMapper exceptionMapper,
+          final EndpointPoliciesConfig endpointConfig) {
     this.cl = cl;
     ClientConfig configuration = (ClientConfig) cl.getConfiguration();
     HttpUrlConnectorProvider httpUrlConnectorProvider = new HttpUrlConnectorProvider();
@@ -83,15 +91,18 @@ public final class Spf4JClient implements Client {
     configuration.connectorProvider(httpUrlConnectorProvider);
     this.executor = fsExec;
     this.exceptionMapper = exceptionMapper;
-//    this.getConfiguration().getProperty(arg0)
-//    http.endpoint.policies
+    this.endpointConfig = endpointConfig;
   }
 
-  public static Spf4JClient  create(final Client cl) {
+  public static Spf4JClient create(final Client cl) {
     if (cl instanceof Spf4JClient) {
       return (Spf4JClient) cl;
     }
     return new Spf4JClient(cl);
+  }
+
+  public EndpointPoliciesConfig getEndpointConfig() {
+    return endpointConfig;
   }
 
   public ClientExceptionMapper getExceptionMapper() {
@@ -131,7 +142,6 @@ public final class Spf4JClient implements Client {
     }
     return paramConverters == null ? Collections.EMPTY_LIST : ProviderUtils.ordered(paramConverters);
   }
-
 
   @Nullable
   public static ParamConverter getConverter(final Class type, final Iterable<ParamConverterProvider> paramConverters) {
@@ -205,7 +215,7 @@ public final class Spf4JClient implements Client {
   }
 
   public Spf4JClient withExceptionMapper(final ClientExceptionMapper pexceptionMapper) {
-    return new Spf4JClient(cl,  executor, pexceptionMapper);
+    return new Spf4JClient(cl, executor, pexceptionMapper, this.endpointConfig);
   }
 
   @Override
@@ -310,7 +320,7 @@ public final class Spf4JClient implements Client {
 
   @Override
   public String toString() {
-    return "Spf4JClient{" + "cl=" + cl +  ", executor=" + executor + '}';
+    return "Spf4JClient{" + "cl=" + cl + ", executor=" + executor + '}';
   }
 
   private static class CustomConnectionFactory implements HttpUrlConnectorProvider.ConnectionFactory {
@@ -318,9 +328,8 @@ public final class Spf4JClient implements Client {
     private static final CustomConnectionFactory INSTANCE = new CustomConnectionFactory();
 
     /**
-     * Attempt to client side load balance...
-     * Approach works for HTTP only.
-     * for HTTPS  we would need to register a new HTTP URL connection. to do implemented later.
+     * Attempt to client side load balance... Approach works for HTTP only. for HTTPS we would need to register a new
+     * HTTP URL connection. to do implemented later.
      *
      * @param url
      * @return
@@ -344,7 +353,7 @@ public final class Spf4JClient implements Client {
         }
         InetAddress[] targets = InetAddress.getAllByName(host);
         if (targets.length <= 1) {
-           return (HttpURLConnection) url.openConnection();
+          return (HttpURLConnection) url.openConnection();
         }
         InetAddress chosen = targets[ThreadLocalRandom.current().nextInt(targets.length)];
         URI newUri = UriBuilder.fromUri(uri).host(chosen.getHostAddress()).build();

@@ -1,0 +1,26 @@
+{
+  "policies" : [
+    {
+      "matcher" : {
+        "host" : "my-service\\.prod\\.svc\\.cluster\\.local",
+        "path" : ".*"
+      },
+      "policies" : {"httpExecutionPolicyRef" : "http.exec.policy.my-service-local"}
+    },
+    {
+      "matcher" : {
+        "host" : "my-service\\.prod\\.svc\\..*",
+        "path" : ".*",
+        "methods" : ["GET", "OPTIONS"]
+      },
+      "policies" : {"httpExecutionPolicyRef" : "http.exec.policy.my-service-read"}
+    },
+    {
+      "matcher" : {
+        "host" : ".*",
+        "path" : ".*"
+      },
+      "policies" : {"httpExecutionPolicyRef" : "http.exec.policy.default"}
+    }
+  ]
+}

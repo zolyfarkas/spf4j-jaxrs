@@ -31,6 +31,10 @@ public final class ConfigProviderResolverImpl extends ConfigProviderResolver {
 
   private final ConcurrentMap<ClassLoader, Config> configs = new ConcurrentHashMap<>();
 
+  public ConfigProviderResolverImpl() {
+    this(SchemaResolver.NONE);
+  }
+
   public ConfigProviderResolverImpl(final SchemaResolver schemaResolver) {
     this(schemaResolver, new ConfigBuilderImpl(schemaResolver).addDefaultSources()
                     .addDiscoveredSources().addDiscoveredConverters().build());
