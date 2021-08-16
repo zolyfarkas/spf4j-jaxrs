@@ -33,6 +33,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.ext.Provider;
+import org.spf4j.base.Reflections;
 import org.spf4j.jaxrs.server.security.SecuredInternaly;
 
 /**
@@ -89,14 +90,13 @@ public final class AnnotationAuthorizationFilter implements ContainerRequestFilt
 
   private static boolean isAnnotationPresent(final Method m,
           final Class<? extends Annotation> annotClasz) {
-    return m.isAnnotationPresent(annotClasz) || m.getDeclaringClass().isAnnotationPresent(annotClasz);
+    return Reflections.getInheritedAnnotation(annotClasz, m) != null;
   }
 
   private static boolean isAnnotationPresent(final Method m,
           final Class<? extends Annotation>... annotClasses) {
     for (Class<? extends Annotation> annotClasz : annotClasses) {
-      boolean isa =  m.isAnnotationPresent(annotClasz) || m.getDeclaringClass().isAnnotationPresent(annotClasz);
-      if (isa) {
+      if (Reflections.getInheritedAnnotation(annotClasz, m) != null) {
         return true;
       }
     }
@@ -106,11 +106,7 @@ public final class AnnotationAuthorizationFilter implements ContainerRequestFilt
   @Nullable
   private static <T extends Annotation> T getAnnotation(final Method m,
           final Class<T> annotClasz) {
-    T annotation = m.getAnnotation(annotClasz);
-    if (annotation != null) {
-      return annotation;
-    }
-    return m.getDeclaringClass().getAnnotation(annotClasz);
+    return Reflections.getInheritedAnnotation(annotClasz, m);
   }
 
   @Override
