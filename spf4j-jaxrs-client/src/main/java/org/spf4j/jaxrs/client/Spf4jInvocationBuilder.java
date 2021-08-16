@@ -28,6 +28,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.spf4j.failsafe.AsyncRetryExecutor;
+import org.spf4j.failsafe.HedgePolicy;
 import org.spf4j.failsafe.InvalidRetryPolicyException;
 import org.spf4j.failsafe.RetryPolicies;
 import org.spf4j.failsafe.TimeoutRelativeHedge;
@@ -184,8 +185,9 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
       }
     }
     Utils.addDefaultRetryPredicated(builder);
+    TimeoutRelativeHedgePolicy trp = policy.getHedgePolicy();
     return org.spf4j.failsafe.RetryPolicy.async(c -> builder.build(),
-            c -> new TimeoutRelativeHedge(policy.getHedgePolicy()), exec);
+           trp == null ? c -> HedgePolicy.NONE : c -> new TimeoutRelativeHedge(trp), exec);
   }
 
   @Override
