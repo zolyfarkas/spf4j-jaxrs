@@ -7,11 +7,13 @@ import java.io.StringReader;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.annotation.security.PermitAll;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import org.apache.avro.Schema;
@@ -74,10 +76,10 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
       LOG.debug("Registered {} table to schema", name);
       schema.add(name, new AvroDataSetAsProjectableFilterableTable(res));
     }
-    SqlParser.Config cfg = SqlParser.configBuilder()
-            .setCaseSensitive(true)
-            .setIdentifierMaxLength(255)
-            .setLex(Lex.JAVA).build();
+    SqlParser.Config cfg = SqlParser.config()
+            .withCaseSensitive(true)
+            .withIdentifierMaxLength(255)
+            .withLex(Lex.JAVA);
     config = Frameworks.newConfigBuilder()
             .parserConfig(cfg)
             .defaultSchema(schema)
@@ -162,17 +164,32 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
   @AvroSchema("{ \"type\" : \"map\", \"values\" : { \"type\" : \"string\" , \"logicalType\" : \"avsc\"} } ")
   public Map<String, Schema> schemas(final JaxRsSecurityContext secCtx) {
     SchemaPlus defaultSchema = config.getDefaultSchema();
+    if (defaultSchema == null) {
+      throw new IllegalStateException("Default schema should be always set in config: " + config);
+    }
     Set<String> tableNames = defaultSchema.getTableNames();
     Map<String, Schema> result = Maps.newHashMapWithExpectedSize(tableNames.size());
     for (String tableName : tableNames) {
-      result.put(tableName, getTableSchema(defaultSchema.getTable(tableName)));
+      Table table = defaultSchema.getTable(tableName);
+      if (table == null) {
+        continue;
+      }
+      result.put(tableName, getTableSchema(table));
     }
     return result;
   }
 
   @Override
+  @Nullable
   public Schema entitySchema(final String entityName, final JaxRsSecurityContext secCtx) {
-    Table table = config.getDefaultSchema().getTable(entityName);
+    SchemaPlus defaultSchema = config.getDefaultSchema();
+    if (defaultSchema == null) {
+      throw new IllegalStateException("Default schema should be always set in config: " + config);
+    }
+    Table table = defaultSchema.getTable(entityName);
+    if (table == null) {
+      throw new NotFoundException("Table not found: " + entityName);
+    }
     return getTableSchema(table);
   }
 
