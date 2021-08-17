@@ -54,6 +54,8 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
 
   private final HttpExecutionPolicy.Builder execPolicyBuilder;
 
+  private boolean addDefaultRetryPolicies;
+
   public Spf4jInvocationBuilder(final Spf4JClient client, final Invocation.Builder ib,
           final FailSafeExecutor executor,
           final Spf4jWebTarget target) {
@@ -61,6 +63,7 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
     this.ib = ib;
     this.executor = executor;
     this.target = target;
+    this.addDefaultRetryPolicies = true;
     Number timeout = (Number) client.getConfiguration().getProperty(Spf4jClientProperties.TIMEOUT_NANOS);
     this.execPolicyBuilder = HttpExecutionPolicy.newBuilder();
     if (timeout != null) {
@@ -170,6 +173,11 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
     return this;
   }
 
+  public Spf4jInvocationBuilder noDefaultRetryPolicy() {
+    this.addDefaultRetryPolicies = false;
+    return this;
+  }
+
   public AsyncRetryExecutor<Object, HttpCallable<?>> buildExecutor(final HttpExecutionPolicy policy,
           final FailSafeExecutor exec) {
     org.spf4j.failsafe.RetryPolicy.Builder<Object, HttpCallable<?>> builder
@@ -184,7 +192,9 @@ public final class Spf4jInvocationBuilder implements Invocation.Builder {
         log.log(Level.WARNING, "Unable to set exec policy {0}", new Object[]{policy, ex});
       }
     }
-    Utils.addDefaultRetryPredicated(builder);
+    if (addDefaultRetryPolicies) {
+      Utils.addDefaultRetryPredicated(builder);
+    }
     TimeoutRelativeHedgePolicy trp = policy.getHedgePolicy();
     return org.spf4j.failsafe.RetryPolicy.async(c -> builder.build(),
            trp == null ? c -> HedgePolicy.NONE : c -> new TimeoutRelativeHedge(trp), exec);
