@@ -76,7 +76,7 @@ public final class DefaultAspectsApiFilter extends AbstractSpecFilter {
       operation.setParameters(parameters);
     }
     parameters.add(new Parameter().required(Boolean.FALSE).name(Headers.REQ_TIMEOUT).in("header")
-            .description("request-timeout → TimeoutValue TimeoutUnit?\n"
+            .description(Headers.REQ_TIMEOUT + " → TimeoutValue TimeoutUnit?\n"
                     + " TimeoutValue → {positive integer as ASCII string of at most 8 digits}\n"
                     + " TimeoutUnit → Hour / Minute / Second / Millisecond / Microsecond / Nanosecond\n"
                     + " Hour → \"H\"\n"
@@ -85,6 +85,10 @@ public final class DefaultAspectsApiFilter extends AbstractSpecFilter {
                     + " Millisecond → \"m\"\n"
                     + " Microsecond → \"u\"\n"
                     + " Nanosecond → \"n\"")
+            .schema(PrimitiveType.STRING.createProperty()));
+    parameters.add(new Parameter().required(Boolean.FALSE).name(Headers.REQ_DEADLINE).in("header")
+            .description(Headers.REQ_DEADLINE + " → SecondsSinceEpoch Nanos? ; this header takes precendence to "
+            + Headers.REQ_TIMEOUT)
             .schema(PrimitiveType.STRING.createProperty()));
     parameters.add(new Parameter().description("Request context log level")
             .required(Boolean.FALSE).name(Headers.CTX_LOG_LEVEL).in("header")
