@@ -3,9 +3,13 @@ package org.spf4j.jaxrs.client;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.lang.reflect.Type;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.ws.rs.ServiceUnavailableException;
@@ -13,6 +17,7 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import org.glassfish.jersey.internal.util.ReflectionHelper;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
@@ -21,6 +26,7 @@ import org.spf4j.base.UncheckedTimeoutException;
 import org.spf4j.base.Wrapper;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
 import org.spf4j.failsafe.AsyncRetryExecutor;
+import org.spf4j.service.avro.DestinationTraffic;
 import org.spf4j.service.avro.HttpExecutionPolicy;
 
 /**
@@ -75,26 +81,85 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
     }
   }
 
-  <T> HttpCallable<T> createCall(final ExecutionContext current, final Callable<T> what) {
+  private static class HttpInvocations<T> {
+    private final HttpCallable<T> primaryCall;
+    private final List<HttpCallable<T>> backgroundCalls;
+
+    HttpInvocations(final HttpCallable<T> primaryCall, final List<HttpCallable<T>> backgroundCalls) {
+      this.primaryCall = primaryCall;
+      this.backgroundCalls = backgroundCalls;
+    }
+
+    public HttpCallable<T> getPrimaryCall() {
+      return primaryCall;
+    }
+
+    public List<HttpCallable<T>> getBackgroundCalls() {
+      return backgroundCalls;
+    }
+
+
+  }
+
+  @SuppressFBWarnings({ "PREDICTABLE_RANDOM", "PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS" })
+  <T> HttpInvocations<T> createCall(final ExecutionContext current, final Callable<T> what) {
     if (execPolicy.getCircuitBreaker()) {
       throw new ServiceUnavailableException("Circuit breaker active: " + getName());
     }
     long nanoTime = TimeSource.nanoTime();
     long deadlineNanos = ExecutionContexts.computeDeadline(current,
             execPolicy.getOverallTimeout().toNanos(), TimeUnit.NANOSECONDS);
-    return HttpCallable.invocationHandler(current, what, getName(),
-            this.target.getUri(),
+    URI uri = this.target.getUri();
+    List<DestinationTraffic> split = execPolicy.getSplitTraffic();
+    double rnd = -1d;
+    if (!split.isEmpty()) {
+      rnd = ThreadLocalRandom.current().nextDouble();
+      for (DestinationTraffic destination : split) {
+        if (rnd < destination.getRatio()) {
+          uri = UriBuilder.fromUri(uri).host(destination.getDestination()).build();
+          break;
+        }
+      }
+    }
+    HttpCallable<T> primary = HttpCallable.invocationHandler(current, what, getName(),
+            uri,
             this.method,
             this.target.getClient().getExceptionMapper(),
             nanoTime,
             deadlineNanos, execPolicy.getAttemptTimeout().toNanos());
+    List<DestinationTraffic> shadow =  execPolicy.getShadowTraffic();
+    if (shadow.isEmpty()) {
+      return new HttpInvocations(primary, Collections.EMPTY_LIST);
+    } else {
+      if (rnd < 0) {
+        rnd = ThreadLocalRandom.current().nextDouble();
+      }
+      List<HttpCallable<T>> shadowInvocations = new ArrayList<>(shadow.size());
+      for (DestinationTraffic destination : shadow) {
+        if (rnd < destination.getRatio()) {
+          HttpCallable<T> shCall = HttpCallable.invocationHandler(current, what, getName(),
+                  UriBuilder.fromUri(uri).host(destination.getDestination()).build(),
+                  this.method,
+                  this.target.getClient().getExceptionMapper(),
+                  nanoTime,
+                  deadlineNanos, execPolicy.getAttemptTimeout().toNanos());
+          shadowInvocations.add(shCall);
+        }
+      }
+      return new HttpInvocations<>(primary, shadowInvocations);
+    }
   }
 
   private <T> T invoke(final Callable<T> what) {
-    HttpCallable<T> hc = createCall(ExecutionContexts.current(), what);
+    ExecutionContext current = ExecutionContexts.current();
+    HttpInvocations<T> hc = createCall(current, what);
+    HttpCallable<T> pc = hc.getPrimaryCall();
+    for (HttpCallable<T> call : hc.getBackgroundCalls()) {
+      submit(current, call);
+    }
     try {
-      return aexecutor.call(hc,
-               RuntimeException.class, hc.getStartNanos(), hc.getDeadlineNanos());
+      return aexecutor.call(pc,
+               RuntimeException.class, pc.getStartNanos(), pc.getDeadlineNanos());
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
       throw new RuntimeException(ex);
@@ -105,7 +170,15 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
 
   <T> CompletableFuture<T> submit(final Callable<T> what) {
     ExecutionContext current = ExecutionContexts.current();
-    HttpCallable<T> pc = createCall(current, what);
+    HttpInvocations<T> hc = createCall(current, what);
+    HttpCallable<T> pc = hc.getPrimaryCall();
+    for (HttpCallable<T> call : hc.getBackgroundCalls()) {
+      submit(current, call);
+    }
+    return submit(current, pc);
+  }
+
+  private <T> CompletableFuture<T> submit(final ExecutionContext current, final HttpCallable<T> pc) {
     return aexecutor.submitRx(pc, pc.getStartNanos(), pc.getDeadlineNanos(),
             () -> new ContextPropagatingCompletableFuture<>(current, pc.getDeadlineNanos()));
   }
