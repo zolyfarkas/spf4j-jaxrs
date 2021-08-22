@@ -37,17 +37,23 @@ public interface HttpCallable<T> extends Callable<T> {
 
   String getHttpMethod();
 
+  long getStartNanos();
 
- static <T> HttpCallable<T> invocationHandler(
+  long getDeadlineNanos();
+
+
+  static <T> HttpCallable<T> invocationHandler(
           final ExecutionContext ctx,
           final Callable<T> callable,
           @Nullable final String name,
-            final URI uri,
-            final String method,
-           final ClientExceptionMapper exMapper,
-           final long deadlineNanos,
+          final URI uri,
+          final String method,
+          final ClientExceptionMapper exMapper,
+          final long nanoTime,
+          final long deadlineNanos,
           final long callableTimeoutNanos) {
-    return new InvocationHandler(callable, ctx, name, uri, method, exMapper, deadlineNanos, callableTimeoutNanos);
+    return new InvocationHandler(callable, ctx, name, uri, method, exMapper,
+            nanoTime, deadlineNanos, callableTimeoutNanos);
   }
 
   final class InvocationHandler<T> implements HttpCallable<T>, Wrapper<Callable<T>> {
@@ -56,6 +62,8 @@ public interface HttpCallable<T> extends Callable<T> {
     private final ExecutionContext current;
 
     private final String name;
+
+    private final long nanoTime;
 
     private final long deadlineNanos;
 
@@ -75,12 +83,14 @@ public interface HttpCallable<T> extends Callable<T> {
             final URI uri,
             final String method,
             final ClientExceptionMapper exMapper,
+            final long nanoTime,
             final long deadlineNanos, final long callableTimeoutNanos) {
       this.task = task;
       this.current = current;
       this.name = name;
       this.uri = uri;
       this.method = method;
+      this.nanoTime = nanoTime;
       this.deadlineNanos = deadlineNanos;
       this.callableTimeoutNanos = callableTimeoutNanos;
       this.tryCount = new AtomicInteger(1);
@@ -125,6 +135,16 @@ public interface HttpCallable<T> extends Callable<T> {
     @Override
     public String getHttpMethod() {
       return method;
+    }
+
+    @Override
+    public long getStartNanos() {
+      return this.nanoTime;
+    }
+
+    @Override
+    public long getDeadlineNanos() {
+      return this.deadlineNanos;
     }
 
   }

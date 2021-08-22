@@ -4,6 +4,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -74,21 +75,26 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
     }
   }
 
-  private <T> T invoke(final Callable<T> what) {
+  <T> HttpCallable<T> createCall(final ExecutionContext current, final Callable<T> what) {
     if (execPolicy.getCircuitBreaker()) {
       throw new ServiceUnavailableException("Circuit breaker active: " + getName());
     }
     long nanoTime = TimeSource.nanoTime();
-    ExecutionContext current = ExecutionContexts.current();
     long deadlineNanos = ExecutionContexts.computeDeadline(current,
             execPolicy.getOverallTimeout().toNanos(), TimeUnit.NANOSECONDS);
+    return HttpCallable.invocationHandler(current, what, getName(),
+            this.target.getUri(),
+            this.method,
+            this.target.getClient().getExceptionMapper(),
+            nanoTime,
+            deadlineNanos, execPolicy.getAttemptTimeout().toNanos());
+  }
+
+  private <T> T invoke(final Callable<T> what) {
+    HttpCallable<T> hc = createCall(ExecutionContexts.current(), what);
     try {
-      return aexecutor.call(HttpCallable.invocationHandler(current, what, getName(),
-                      this.target.getUri(),
-                      this.method,
-                      this.target.getClient().getExceptionMapper(),
-                      deadlineNanos, execPolicy.getAttemptTimeout().toNanos()),
-               RuntimeException.class, nanoTime, deadlineNanos);
+      return aexecutor.call(hc,
+               RuntimeException.class, hc.getStartNanos(), hc.getDeadlineNanos());
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
       throw new RuntimeException(ex);
@@ -97,21 +103,11 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
     }
   }
 
-  private <T> Future<T> submit(final Callable<T> what) {
-    if (execPolicy.getCircuitBreaker()) {
-      throw new ServiceUnavailableException("Circuit breaker active: " + getName());
-    }
-    long nanoTime = TimeSource.nanoTime();
+  <T> CompletableFuture<T> submit(final Callable<T> what) {
     ExecutionContext current = ExecutionContexts.current();
-    long deadlineNanos = ExecutionContexts.computeDeadline(current,
-            execPolicy.getOverallTimeout().toNanos(), TimeUnit.NANOSECONDS);
-    HttpCallable pc = HttpCallable.invocationHandler(current, what, getName(),
-            this.target.getUri(),
-            this.method,
-            this.target.getClient().getExceptionMapper(),
-            deadlineNanos, execPolicy.getAttemptTimeout().toNanos());
-    return aexecutor.submitRx(pc, nanoTime, deadlineNanos,
-            () -> new ContextPropagatingCompletableFuture<>(current, deadlineNanos));
+    HttpCallable<T> pc = createCall(current, what);
+    return aexecutor.submitRx(pc, pc.getStartNanos(), pc.getDeadlineNanos(),
+            () -> new ContextPropagatingCompletableFuture<>(current, pc.getDeadlineNanos()));
   }
 
   @Override
