@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.ws.rs.client.Entity;
@@ -39,12 +38,10 @@ import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyReader;
 import org.spf4j.jaxrs.common.providers.avro.XJsonAvroMessageBodyWriter;
 
 /**
- * A mini kubernetes client that implements "discovery" and is meant to be used within a
- * kubernetes pod.
+ * A mini kubernetes client that implements "discovery" and is meant to be used within a kubernetes pod.
  *
- * example invocation:
- * curl --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
- * -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+ * example invocation: curl --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer
+ * $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
  * https://kubernetes.default.svc/api/v1/namespaces/default/endpoints/jaxrs-spf4j-demo
  *
  * @see https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/#accessing-the-api-from-a-pod
@@ -61,13 +58,13 @@ public final class Client {
 
   private final WebTarget roleBindingsTarget;
 
-  public Client(@Nullable final Supplier<String> apiToken,
+  public Client(@Nullable final TokenProvider apiToken,
           @Nullable final byte[] caCertificate) {
     this("kubernetes.default.svc", apiToken, caCertificate);
   }
 
   public Client(final String kubernetesMaster,
-          @Nullable final Supplier<String> apiToken,
+          @Nullable final TokenProvider apiToken,
           @Nullable final byte[] caCertificate) {
     Spf4jClientBuilder clBuilder = new Spf4jClientBuilder()
             .connectTimeout(2, TimeUnit.SECONDS)
@@ -76,7 +73,8 @@ public final class Client {
       clBuilder = clBuilder.sslContext(buildSslContext(caCertificate));
     }
     if (apiToken != null) {
-      clBuilder = clBuilder.register(new BearerAuthClientFilter((hv) -> hv.append(apiToken.get())));
+      clBuilder = clBuilder.register(
+              new BearerAuthClientFilter((hv) -> apiToken.access((t, o, l) -> hv.append(t, o, l))));
     }
     Spf4jWebTarget rootTarget = clBuilder
             .register(new ExecutionContextClientFilter(DeadlineProtocol.NONE, true))
@@ -92,7 +90,6 @@ public final class Client {
     clusterRoleBindingsTarget = rootTarget.path("apis/rbac.authorization.k8s.io/v1/clusterrolebindings");
     roleBindingsTarget = rootTarget.path("apis/rbac.authorization.k8s.io/v1/rolebindings");
   }
-
 
   public TokenReview.Status tokenReview(final String token) {
     return tokenReviewTarget.request(MediaType.APPLICATION_JSON_TYPE).post(
@@ -115,9 +112,8 @@ public final class Client {
             .get(Endpoints.class);
   }
 
-
   private static SSLContext buildSslContext(final byte[] caCertificate) {
-    return SSLUtils.buildTrustManagerSslContext((keyStore)  -> {
+    return SSLUtils.buildTrustManagerSslContext((keyStore) -> {
       try {
         keyStore.setCertificateEntry("ca", SSLUtils.generateCertificate(caCertificate));
       } catch (IOException | CertificateException | KeyStoreException ex) {

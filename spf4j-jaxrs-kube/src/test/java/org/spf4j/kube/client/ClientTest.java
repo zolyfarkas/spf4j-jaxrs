@@ -30,11 +30,13 @@ import org.spf4j.kube.cluster.KubeCluster;
 import javax.ws.rs.core.MultivaluedHashMap;
 import org.apache.avro.Schema;
 import org.apache.avro.reflect.ExtendedReflectData;
+import org.junit.Ignore;
 
 /**
  *
  * @author Zoltan Farkas
  */
+@Ignore
 public class ClientTest {
 
   private static final Logger LOG = LoggerFactory.getLogger(ClientTest.class);

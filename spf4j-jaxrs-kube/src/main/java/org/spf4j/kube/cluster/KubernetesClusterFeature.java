@@ -15,15 +15,12 @@
  */
 package org.spf4j.kube.cluster;
 
-import com.google.common.base.Suppliers;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
@@ -33,6 +30,7 @@ import org.spf4j.base.Env;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.Service;
 import org.spf4j.kube.client.Client;
+import org.spf4j.kube.client.FileTokenProvider;
 
 /**
  * @author Zoltan Farkas
@@ -40,11 +38,11 @@ import org.spf4j.kube.client.Client;
 @SuppressFBWarnings("PATH_TRAVERSAL_IN")
 public final class KubernetesClusterFeature implements Feature {
 
-  private static final String CA_CRT_FILE
-          = Env.getValue("CA_CRT_FILE", "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt");
+  private static final Path CA_CRT_FILE
+          = Paths.get(Env.getValue("CA_CRT_FILE", "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"));
 
-  private static final String SVC_TOKEN_FILE = Env.getValue("SVC_TOKEN_FILE",
-          "/var/run/secrets/kubernetes.io/serviceaccount/token");
+  private static final Path SVC_TOKEN_FILE = Paths.get(Env.getValue("SVC_TOKEN_FILE",
+          "/var/run/secrets/kubernetes.io/serviceaccount/token"));
 
   private final String kubeNameSpace;
 
@@ -59,7 +57,7 @@ public final class KubernetesClusterFeature implements Feature {
 
   @Override
   public boolean configure(final FeatureContext fc) {
-    Path certPath = Paths.get(CA_CRT_FILE);
+    Path certPath = CA_CRT_FILE;
     byte[] caCert;
     try {
       if (Files.isReadable(certPath)) {
@@ -67,15 +65,8 @@ public final class KubernetesClusterFeature implements Feature {
       } else {
         caCert = null;
       }
-      KubeCluster kubeCluster = new KubeCluster(new Client(Suppliers.memoizeWithExpiration(
-              () -> {
-                try {
-                  return new String(Files.readAllBytes(Paths.get(SVC_TOKEN_FILE)),
-                          StandardCharsets.UTF_8);
-                } catch (IOException ex) {
-                  throw new UncheckedIOException(ex);
-                }
-              }, 10, TimeUnit.MINUTES), caCert), kubeNameSpace, kubeAppName);
+      KubeCluster kubeCluster = new KubeCluster(new Client(new FileTokenProvider(SVC_TOKEN_FILE), caCert),
+              kubeNameSpace, kubeAppName);
       fc.register(new ClusterBinder(kubeCluster));
     } catch (IOException ex) {
       throw new UncheckedIOException(ex);
