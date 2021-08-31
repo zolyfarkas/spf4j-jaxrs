@@ -27,12 +27,11 @@ import org.spf4j.base.Either;
 
 /**
  * a more advanced config supplier implementation, where value type conversion and update happens asybchronously
- * reducing the cost of reading the config.
- * These should be used  for Singleton scoped services.
+ * reducing the cost of reading the config. These should be used for Singleton scoped services.
+ *
  * @author Zoltan Farkas
  */
 final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements ObservableSupplier {
-
 
   private volatile Supplier<Object> value;
   private final PropertyWatcher propertyWatcher;
@@ -46,59 +45,70 @@ final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements O
     this.configuration = configuration;
     this.propertyWatcher = new PropertyWatcher() {
 
-          private Object convert(final Object initial) {
-            if (typeOrConverter.isLeft()) {
-              return initial;
-            } else {
-              return typeOrConverter.getRight().apply((String) initial);
-            }
-          }
-
-          public synchronized void accept(final ConfigEvent event) {
-            switch (event) {
-              case ADDED:
-              case MODIFIED:
-                try {
-                  ObservableRXConfigSupplier.this.value = Suppliers.ofInstance(convert(fetch()));
-                } catch (RuntimeException ex) {
-                  Logger.getLogger(ObservableRXConfigSupplier.class.getName())
-                          .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
-                }
-                break;
-              case DELETED:
-                ObservableRXConfigSupplier.this.value = null;
-                break;
-              default:
-                throw new IllegalStateException("Unsupported config event: " + event);
-            }
-            for (PropertyWatcher watcher : watchers) {
-              watcher.accept(event);
-            }
-          }
-
-          public synchronized void unknownEvents() {
-            try {
-              ObservableRXConfigSupplier.this.value = Suppliers.ofInstance(fetch());
-            } catch (RuntimeException ex) {
-              Logger.getLogger(ObservableRXConfigSupplier.class.getName())
-                      .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
-            }
-            for (PropertyWatcher watcher : watchers) {
-              watcher.unknownEvents();
-            }
-          }
-        };
-        configuration.addWatcher(cfgParam.getPropertyName(), this.propertyWatcher);
-        String defVal = cfgParam.getDefaultValue();
+      private Object convert(final Object initial) {
         if (typeOrConverter.isLeft()) {
-          this.value = Suppliers.ofInstance(defVal == null
-                  ? null : configuration.convert(typeOrConverter.getLeft(), defVal));
+          return initial;
         } else {
-          this.value = Suppliers.ofInstance(defVal == null ? null : typeOrConverter.getRight().apply(defVal));
+          return typeOrConverter.getRight().apply((String) initial);
         }
+      }
+
+      public synchronized void accept(final ConfigEvent event) {
+        switch (event) {
+          case ADDED:
+          case MODIFIED:
+                try {
+            ObservableRXConfigSupplier.this.value = Suppliers.ofInstance(convert(fetch()));
+          } catch (RuntimeException ex) {
+            Logger.getLogger(ObservableRXConfigSupplier.class.getName())
+                    .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
+          }
+          break;
+          case DELETED:
+            ObservableRXConfigSupplier.this.value = getDefaultValueSupplier(cfgParam, typeOrConverter, configuration);
+            break;
+          default:
+            throw new IllegalStateException("Unsupported config event: " + event);
+        }
+        for (PropertyWatcher watcher : watchers) {
+          watcher.accept(event);
+        }
+      }
+
+      public synchronized void unknownEvents() {
+        try {
+          Object fetchedConfig = fetch();
+          if (fetchedConfig != null) {
+            ObservableRXConfigSupplier.this.value = Suppliers.ofInstance(fetchedConfig);
+          } else {
+            ObservableRXConfigSupplier.this.value = getDefaultValueSupplier(cfgParam, typeOrConverter, configuration);
+          }
+        } catch (RuntimeException ex) {
+          Logger.getLogger(ObservableRXConfigSupplier.class.getName())
+                  .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
+        }
+        for (PropertyWatcher watcher : watchers) {
+          watcher.unknownEvents();
+        }
+      }
+    };
+    ObservableRXConfigSupplier.this.value = getDefaultValueSupplier(cfgParam, typeOrConverter, configuration);
+    configuration.addWatcher(cfgParam.getPropertyName(), this.propertyWatcher);
   }
 
-
+  private Supplier<Object> getDefaultValueSupplier(final ConfigurationParam cfgParam,
+          final Either<Type, Function<String, ?>> typeOrConverter, final ExtendedConfig configuration1) {
+    String defVal = cfgParam.getDefaultValue();
+    if (defVal != null) {
+      if (typeOrConverter.isLeft()) {
+        return Suppliers.ofInstance(configuration1.convert(typeOrConverter.getLeft(), defVal));
+      } else {
+        return Suppliers.ofInstance(typeOrConverter.getRight().apply(defVal));
+      }
+    } else {
+      return Suppliers.ofInstance(null);
+    }
+  }
 
   @Override
   public void close() {
