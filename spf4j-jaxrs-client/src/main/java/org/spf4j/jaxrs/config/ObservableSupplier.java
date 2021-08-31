@@ -30,4 +30,6 @@ public interface ObservableSupplier<T> extends Supplier<T>, AutoCloseable {
 
     boolean remove(PropertyWatcher watcher);
 
+    void close();
+
 }
