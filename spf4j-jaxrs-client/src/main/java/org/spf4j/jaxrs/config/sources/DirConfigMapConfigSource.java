@@ -184,8 +184,10 @@ public final class DirConfigMapConfigSource implements ObservableConfig, ConfigS
       watcher.accept(propertyName, event);
     }
     List<PropertyWatcher> pws = propertyWatchers.get(propertyName);
-    for (PropertyWatcher pw : pws) {
-        pw.accept(event);
+    if (pws != null) {
+      for (PropertyWatcher pw : pws) {
+          pw.accept(event);
+      }
     }
   }
 
