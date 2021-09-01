@@ -219,7 +219,7 @@ public final class MemoryConfigSource implements ConfigSource, ObservableConfig 
 
   @Override
   public String toString() {
-    return "MemoryConfigSource{" + "configs=" + configs + ", globalWatchers=" + globalWatchers + '}';
+    return getName();
   }
 
 }

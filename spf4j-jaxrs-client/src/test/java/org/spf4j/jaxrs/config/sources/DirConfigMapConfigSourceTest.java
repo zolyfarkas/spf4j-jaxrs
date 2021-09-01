@@ -41,8 +41,13 @@ public class DirConfigMapConfigSourceTest {
 
   @Test
   public void tesDirBasedConfigs() throws IOException, InterruptedException {
-    Path testConfig = Files.createTempDirectory("temp");
-    try (DirConfigMapConfigSource cfg = new DirConfigMapConfigSource(testConfig, StandardCharsets.UTF_8)) {
+     Path testConfig = Files.createTempDirectory("temp");
+    assertDirBasedConfigs(new DirConfigMapConfigSource(testConfig, StandardCharsets.UTF_8));
+  }
+
+  static void assertDirBasedConfigs(final ObservableDirConfigMapConfigSource odms)
+          throws IOException, InterruptedException {
+    try (ObservableDirConfigMapConfigSource cfg = odms) {
       Assert.assertNull(cfg.getValue("testProp"));
       Map<String, String> configs = new ConcurrentHashMap<>();
       BlockingQueue<ConfigEvent> queue = new LinkedBlockingDeque<>();
@@ -72,7 +77,7 @@ public class DirConfigMapConfigSourceTest {
           }
         }
       });
-      Path testProp = testConfig.resolve("testProp");
+      Path testProp = odms.getFolder().resolve("testProp");
       Files.write(testProp, "bla bla".getBytes(StandardCharsets.UTF_8));
       Assert.assertNotNull(queue.poll(10, TimeUnit.SECONDS));
       Assert.assertEquals("bla bla", configs.get("testProp"));

@@ -41,8 +41,8 @@ import org.eclipse.microprofile.config.spi.Converter;
 import org.spf4j.base.Env;
 import org.spf4j.io.ObjectAppender;
 import org.spf4j.jaxrs.config.sources.ClassPathPropertiesConfigSource;
-import org.spf4j.jaxrs.config.sources.DirConfigMapConfigSource;
 import org.spf4j.jaxrs.config.sources.EnvConfigSource;
+import org.spf4j.jaxrs.config.sources.PollingDirConfigMapConfigSource;
 import org.spf4j.jaxrs.config.sources.SysPropConfigSource;
 
 /**
@@ -72,8 +72,9 @@ public final class ConfigBuilderImpl implements ConfigBuilder {
     sources.add(new SysPropConfigSource());
     sources.add(new EnvConfigSource());
     Path defaultConfig = Paths.get(Env.getValue("APP_CONFIG_MAP_DIR", "/etc/config"));
+    int defaultPollSeconds = Env.getValue("APP_CONFIG_MAP_DIR_POLL_SECONDS", 5);
     if (Files.isDirectory(defaultConfig)) {
-      sources.add(new DirConfigMapConfigSource(defaultConfig, StandardCharsets.UTF_8));
+      sources.add(new PollingDirConfigMapConfigSource(defaultConfig, StandardCharsets.UTF_8, defaultPollSeconds));
     }
     sources.add(new ClassPathPropertiesConfigSource(cl));
     return this;

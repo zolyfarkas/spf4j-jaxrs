@@ -21,7 +21,6 @@ import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 /**
- *
  * @author Zoltan Farkas
  */
 class SimpleConfigSupplier implements Supplier, Provider {
@@ -65,7 +64,7 @@ class SimpleConfigSupplier implements Supplier, Provider {
 
   @Override
   public String toString() {
-    return "ConfigSupplier{, cfgParam=" + cfgParam
+    return "ConfigSupplier{cfgParam=" + cfgParam.getPropertyName()
             + ", type=" + suppliedType + ", configuration=" + configuration + '}';
   }
 
