@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spf4j.base.Either;
 
 /**
@@ -33,6 +33,8 @@ import org.spf4j.base.Either;
  */
 final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements ObservableSupplier {
 
+  private static final Logger LOG = LoggerFactory.getLogger(ObservableRXConfigSupplier.class);
+
   private volatile Supplier<Object> value;
   private final PropertyWatcher propertyWatcher;
   private final List<PropertyWatcher> watchers;
@@ -41,11 +43,15 @@ final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements O
   ObservableRXConfigSupplier(final ExtendedConfig configuration,
           final ConfigurationParam cfgParam, final Either<Type, Function<String, ?>> typeOrConverter) {
     super(configuration, cfgParam, typeOrConverter.isLeft() ? typeOrConverter.getLeft() : String.class);
+    this.value = null;
     this.watchers = new CopyOnWriteArrayList<>();
     this.configuration = configuration;
     this.propertyWatcher = new PropertyWatcher() {
 
       private Object convert(final Object initial) {
+        if (initial == null) {
+          return null;
+        }
         if (typeOrConverter.isLeft()) {
           return initial;
         } else {
@@ -57,15 +63,10 @@ final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements O
         switch (event) {
           case ADDED:
           case MODIFIED:
-                try {
-            ObservableRXConfigSupplier.this.value = Suppliers.ofInstance(convert(fetch()));
-          } catch (RuntimeException ex) {
-            Logger.getLogger(ObservableRXConfigSupplier.class.getName())
-                    .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
-          }
-          break;
+            updateValue();
+            break;
           case DELETED:
-            ObservableRXConfigSupplier.this.value = getDefaultValueSupplier(cfgParam, typeOrConverter, configuration);
+            setDefaultValue(cfgParam, typeOrConverter, configuration);
             break;
           default:
             throw new IllegalStateException("Unsupported config event: " + event);
@@ -76,37 +77,49 @@ final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements O
       }
 
       public synchronized void unknownEvents() {
-        try {
-          Object fetchedConfig = fetch();
-          if (fetchedConfig != null) {
-            ObservableRXConfigSupplier.this.value = Suppliers.ofInstance(fetchedConfig);
-          } else {
-            ObservableRXConfigSupplier.this.value = getDefaultValueSupplier(cfgParam, typeOrConverter, configuration);
-          }
-        } catch (RuntimeException ex) {
-          Logger.getLogger(ObservableRXConfigSupplier.class.getName())
-                  .log(Level.SEVERE, ex, () -> "Cannot fetch config: " + cfgParam.getPropertyName());
-        }
+        updateValue();
         for (PropertyWatcher watcher : watchers) {
           watcher.unknownEvents();
         }
       }
+
+      private void updateValue() {
+        try {
+          Object fetchedConfig = convert(fetch());
+          if (fetchedConfig != null) {
+            ObservableRXConfigSupplier.this.value = Suppliers.ofInstance(fetchedConfig);
+            LOG.info("{} <- {}", ObservableRXConfigSupplier.this, fetchedConfig);
+          } else {
+            setDefaultValue(cfgParam, typeOrConverter, configuration);
+          }
+        } catch (RuntimeException ex) {
+          LOG.error("Cannot fetch config {} for {}", cfgParam.getPropertyName(), ObservableRXConfigSupplier.this, ex);
+        }
+      }
     };
-    ObservableRXConfigSupplier.this.value = getDefaultValueSupplier(cfgParam, typeOrConverter, configuration);
+ //   setDefaultValue(cfgParam, typeOrConverter, configuration);
     configuration.addWatcher(cfgParam.getPropertyName(), this.propertyWatcher);
+    if (this.value == null) {
+      setDefaultValue(cfgParam, typeOrConverter, configuration);
+    }
   }
 
-  private Supplier<Object> getDefaultValueSupplier(final ConfigurationParam cfgParam,
+
+  private void setDefaultValue(final ConfigurationParam cfgParam,
           final Either<Type, Function<String, ?>> typeOrConverter, final ExtendedConfig configuration1) {
     String defVal = cfgParam.getDefaultValue();
+    Object defaultValue;
     if (defVal != null) {
       if (typeOrConverter.isLeft()) {
-        return Suppliers.ofInstance(configuration1.convert(typeOrConverter.getLeft(), defVal));
+        defaultValue = configuration1.convert(typeOrConverter.getLeft(), defVal);
       } else {
-        return Suppliers.ofInstance(typeOrConverter.getRight().apply(defVal));
+        defaultValue = typeOrConverter.getRight().apply(defVal);
       }
+      this.value = Suppliers.ofInstance(defaultValue);
+      LOG.info("{} <- {} (default)", this, defaultValue);
     } else {
-      return Suppliers.ofInstance(null);
+      this.value = Suppliers.ofInstance(null);
+      LOG.info("{} <- null", this);
     }
   }
 

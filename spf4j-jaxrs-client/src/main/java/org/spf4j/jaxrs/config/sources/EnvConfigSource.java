@@ -19,7 +19,6 @@ import java.util.Map;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
- *
  * @author Zoltan Farkas
  */
 public final class EnvConfigSource implements ConfigSource {
