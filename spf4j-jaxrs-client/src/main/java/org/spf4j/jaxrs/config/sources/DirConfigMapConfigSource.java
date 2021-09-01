@@ -44,11 +44,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spf4j.base.Env;
 import org.spf4j.jaxrs.config.ConfigEvent;
 import org.spf4j.jaxrs.config.ConfigWatcher;
@@ -63,6 +63,8 @@ import org.spf4j.jaxrs.config.PropertyWatcher;
  */
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public final class DirConfigMapConfigSource implements ObservableConfig, ConfigSource, Closeable, Runnable {
+
+  private static final Logger LOG = LoggerFactory.getLogger(DirConfigMapConfigSource.class);
 
   private final Charset charset;
 
@@ -127,48 +129,46 @@ public final class DirConfigMapConfigSource implements ObservableConfig, ConfigS
   @Override
   public void run() {
     boolean alive = true;
-    try {
-      while (alive) {
-        try {
-          WatchKey key = getWatchService().poll(5, TimeUnit.SECONDS);
-          if (key == null) {
-            continue;
-          }
-          if (!key.isValid()) {
-            key.cancel();
-            break;
-          }
-          List<WatchEvent<?>> events = key.pollEvents();
-          for (WatchEvent<?> event : events) {
-            Kind<?> kind = event.kind();
-            if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-              String fileName = ((WatchEvent<Path>) event).context().getFileName().toString();
-              notify(fileName, ConfigEvent.ADDED);
-            } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-              String fileName = ((WatchEvent<Path>) event).context().getFileName().toString();
-              notify(fileName, ConfigEvent.DELETED);
-            } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-              String fileName = ((WatchEvent<Path>) event).context().getFileName().toString();
-              notify(fileName, ConfigEvent.MODIFIED);
-            } else { // overflow, etc...
-              notifyUnknown();
-            }
-          }
-          if (!key.reset()) {
-            key.cancel();
-            break;
-          }
-        } catch (InterruptedException ex) {
-          alive = false;
+    while (alive) {
+      try {
+        WatchKey key = getWatchService().poll(5, TimeUnit.SECONDS);
+        if (key == null) {
+          continue;
         }
+        if (!key.isValid()) {
+          key.cancel();
+          break;
+        }
+        List<WatchEvent<?>> events = key.pollEvents();
+        for (WatchEvent<?> event : events) {
+          Kind<?> kind = event.kind();
+          if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
+            String fileName = ((WatchEvent<Path>) event).context().getFileName().toString();
+            notify(fileName, ConfigEvent.ADDED);
+          } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
+            String fileName = ((WatchEvent<Path>) event).context().getFileName().toString();
+            notify(fileName, ConfigEvent.DELETED);
+          } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+            String fileName = ((WatchEvent<Path>) event).context().getFileName().toString();
+            notify(fileName, ConfigEvent.MODIFIED);
+          } else { // overflow, etc...
+            notifyUnknown();
+          }
+        }
+        if (!key.reset()) {
+          key.cancel();
+          break;
+        }
+      } catch (InterruptedException ex) {
+        alive = false;
+      } catch (RuntimeException ex) {
+        LOG.error("Failure in log watcher", ex);
       }
-    } catch (RuntimeException ex) {
-      Logger.getLogger(DirConfigMapConfigSource.class.getName())
-              .log(Level.SEVERE, "Failure in log watcher", ex);
     }
   }
 
   private void notifyUnknown() {
+    LOG.info("unknown config change event");
     for (ConfigWatcher watcher : watchers) {
       watcher.unknownEvents();
     }
@@ -180,13 +180,14 @@ public final class DirConfigMapConfigSource implements ObservableConfig, ConfigS
   }
 
   private void notify(final String propertyName, final ConfigEvent event) {
+    LOG.info("config event: {} for {}", event, propertyName);
     for (ConfigWatcher watcher : watchers) {
       watcher.accept(propertyName, event);
     }
     List<PropertyWatcher> pws = propertyWatchers.get(propertyName);
     if (pws != null) {
       for (PropertyWatcher pw : pws) {
-          pw.accept(event);
+        pw.accept(event);
       }
     }
   }
@@ -234,7 +235,6 @@ public final class DirConfigMapConfigSource implements ObservableConfig, ConfigS
       }
     });
   }
-
 
   @Override
   @SuppressFBWarnings({"PATH_TRAVERSAL_IN"}) //intentional
