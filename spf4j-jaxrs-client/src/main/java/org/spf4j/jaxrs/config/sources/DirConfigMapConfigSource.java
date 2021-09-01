@@ -15,6 +15,7 @@
  */
 package org.spf4j.jaxrs.config.sources;
 
+import com.sun.nio.file.ExtendedWatchEventModifier;
 import com.sun.nio.file.SensitivityWatchEventModifier;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import gnu.trove.set.hash.THashSet;
@@ -44,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -97,7 +99,7 @@ public final class DirConfigMapConfigSource implements ObservableConfig, ConfigS
         folder.register(watchService, new WatchEvent.Kind[]{StandardWatchEventKinds.ENTRY_MODIFY,
           StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE,
           StandardWatchEventKinds.OVERFLOW
-        }, SensitivityWatchEventModifier.HIGH);
+        }, SensitivityWatchEventModifier.HIGH, ExtendedWatchEventModifier.FILE_TREE);
         watchThread = new Thread(this, "dir-config-watcher");
         watchThread.setDaemon(true);
         watchThread.start();
@@ -143,13 +145,16 @@ public final class DirConfigMapConfigSource implements ObservableConfig, ConfigS
         for (WatchEvent<?> event : events) {
           Kind<?> kind = event.kind();
           if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-            String fileName = ((WatchEvent<Path>) event).context().getFileName().toString();
+            Path context = ((WatchEvent<Path>) event).context();
+            String fileName = context.getFileName().toString();
             notify(fileName, ConfigEvent.ADDED);
           } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-            String fileName = ((WatchEvent<Path>) event).context().getFileName().toString();
+            Path context = ((WatchEvent<Path>) event).context();
+            String fileName = context.getFileName().toString();
             notify(fileName, ConfigEvent.DELETED);
           } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-            String fileName = ((WatchEvent<Path>) event).context().getFileName().toString();
+            Path context = ((WatchEvent<Path>) event).context();
+            String fileName = context.getFileName().toString();
             notify(fileName, ConfigEvent.MODIFIED);
           } else { // overflow, etc...
             notifyUnknown();
@@ -180,7 +185,7 @@ public final class DirConfigMapConfigSource implements ObservableConfig, ConfigS
   }
 
   private void notify(final String propertyName, final ConfigEvent event) {
-    LOG.info("config event: {} for {}", event, propertyName);
+    LOG.info("config event: {} for {}, value = {}", event, propertyName, getValue(propertyName));
     for (ConfigWatcher watcher : watchers) {
       watcher.accept(propertyName, event);
     }
@@ -296,6 +301,14 @@ public final class DirConfigMapConfigSource implements ObservableConfig, ConfigS
           return new String(Files.readAllBytes(p), charset);
         } catch (NoSuchFileException ex) {
           return null;
+        } catch (IOException ex) {
+          if (ex.getMessage().contains("Is a directory")) {
+            try (Stream<Path> stream = Files.list(p)) {
+              return stream.map(Object::toString).collect(Collectors.joining(","));
+            }
+          } else {
+            throw ex;
+          }
         }
       } else {
         return null;
