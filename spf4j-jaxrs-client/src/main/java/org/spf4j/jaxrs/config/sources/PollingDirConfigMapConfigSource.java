@@ -32,6 +32,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import javax.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spf4j.base.Env;
@@ -131,6 +132,7 @@ public final class PollingDirConfigMapConfigSource extends ObservableDirConfigMa
   }
 
   @Override
+  @PreDestroy
   public synchronized void close() throws IOException {
     if (!closed) {
       try {
