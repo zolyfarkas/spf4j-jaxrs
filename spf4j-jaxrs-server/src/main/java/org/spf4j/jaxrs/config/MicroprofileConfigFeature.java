@@ -34,6 +34,14 @@ import org.glassfish.jersey.spi.ExternalConfigurationProvider;
 public final class MicroprofileConfigFeature implements Feature {
 
   static {
+    ConfigProviderResolver resolver = ConfigProviderResolver.instance();
+    if (resolver instanceof ConfigProviderResolverImpl) {
+      try {
+        ((ConfigProviderResolverImpl) resolver).close();
+      } catch (Exception ex) {
+        throw new ExceptionInInitializerError(ex);
+      }
+    }
     ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl(SchemaResolvers.getDefault()));
   }
 

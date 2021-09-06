@@ -30,6 +30,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import javax.ws.rs.client.ClientBuilder;
@@ -43,6 +45,7 @@ import org.glassfish.grizzly.http.server.ServerConfiguration;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.servlet.FixedWebappContext;
 import org.glassfish.grizzly.servlet.ServletRegistration;
+import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.filter.EncodingFilter;
@@ -260,16 +263,18 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
 
   private  class JerseyServiceImpl implements JerseyService {
 
-    private final HttpServer server;
+    private HttpServer server;
+
+    private WebappContext appContext;
 
     private ResourceConfig resourceConfig;
 
 
     JerseyServiceImpl() throws IOException {
-      server = createHttpServer();
+       createHttpServer();
     }
 
-    private HttpServer createHttpServer()
+    private void createHttpServer()
             throws IOException {
       String jerseyAppName = bindAddr + ':' + listenPort;
       FixedWebappContext webappContext = new FixedWebappContext(jerseyAppName, "");
@@ -352,7 +357,8 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
       result.addListener(createHttpListener(bindAddr, listenPort));
       webappContext.deploy(result);
       webappContext.setServerInfo(null);
-      return result;
+      this.appContext = webappContext;
+      this.server = result;
     }
 
     private NetworkListener createHttpListener(final String pbindAddr,
@@ -412,7 +418,10 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
 
     @Override
     public void close() {
+      Logger.getLogger("JerseyService").log(Level.INFO, "Shutting dow jersery service: {0}", server);
+      appContext.undeploy();
       server.shutdown(30, TimeUnit.SECONDS);
+      server.shutdownNow();
     }
 
     @Override

@@ -135,6 +135,7 @@ public final class PollingDirConfigMapConfigSource extends ObservableDirConfigMa
   @PreDestroy
   public synchronized void close() throws IOException {
     if (!closed) {
+      LOG.debug("Closing {}", this);
       try {
         if (poll != null) {
           poll.cancel(true);

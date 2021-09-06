@@ -25,12 +25,13 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.spf4j.base.Throwables;
 
 /**
  * @author Zoltan Farkas
  */
 @ParametersAreNonnullByDefault
-public final class ConfigImpl implements ExtendedConfig {
+public final class ConfigImpl implements ExtendedConfig, AutoCloseable {
 
   private final ConfigSource[] configs;
 
@@ -42,9 +43,9 @@ public final class ConfigImpl implements ExtendedConfig {
     this.converters = converters;
     this.configs = configs;
     if (configs.length > 0) {
-      ConfigSource first =  configs[0];
+      ConfigSource first = configs[0];
       if (first instanceof ObservableConfig) {
-         this.observableConfig = (ObservableConfig) first;
+        this.observableConfig = (ObservableConfig) first;
       } else {
         this.observableConfig = null;
       }
@@ -56,7 +57,7 @@ public final class ConfigImpl implements ExtendedConfig {
         }
       }
     } else {
-       this.observableConfig = null;
+      this.observableConfig = null;
     }
   }
 
@@ -169,6 +170,26 @@ public final class ConfigImpl implements ExtendedConfig {
   @Override
   public String toString() {
     return "ConfigImpl{configs=" + Arrays.toString(configs) + '}';
+  }
+
+  @Override
+  public void close() throws Exception {
+    Exception ex = null;
+    for (ConfigSource config : configs) {
+      if (config instanceof AutoCloseable) {
+        try {
+          ((AutoCloseable) config).close();
+        } catch (Exception ex1) {
+          if (ex != null) {
+            Throwables.suppressLimited(ex1, ex);
+          }
+          ex = ex1;
+        }
+      }
+    }
+    if (ex != null) {
+      throw ex;
+    }
   }
 
 }

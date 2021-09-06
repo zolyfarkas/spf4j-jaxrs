@@ -23,9 +23,9 @@ import org.apache.avro.SchemaResolver;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.spf4j.base.Throwables;
 
-
-public final class ConfigProviderResolverImpl extends ConfigProviderResolver {
+public final class ConfigProviderResolverImpl extends ConfigProviderResolver implements AutoCloseable {
 
   private final SchemaResolver schemaResolver;
 
@@ -37,7 +37,7 @@ public final class ConfigProviderResolverImpl extends ConfigProviderResolver {
 
   public ConfigProviderResolverImpl(final SchemaResolver schemaResolver) {
     this(schemaResolver, new ConfigBuilderImpl(schemaResolver).addDefaultSources()
-                    .addDiscoveredSources().addDiscoveredConverters().build());
+            .addDiscoveredSources().addDiscoveredConverters().build());
   }
 
   public ConfigProviderResolverImpl(final SchemaResolver schemaResolver, final Config config) {
@@ -54,7 +54,7 @@ public final class ConfigProviderResolverImpl extends ConfigProviderResolver {
   public Config getConfig(final ClassLoader arg) {
     Config result = configs.get(arg);
     ClassLoader parent = arg;
-    while (result == null && (parent = parent.getParent()) !=  null) {
+    while (result == null && (parent = parent.getParent()) != null) {
       result = configs.get(parent);
     }
     return result;
@@ -79,10 +79,37 @@ public final class ConfigProviderResolverImpl extends ConfigProviderResolver {
         it.remove();
       }
     }
+    if (cfg instanceof AutoCloseable) {
+      try {
+        ((AutoCloseable) cfg).close();
+      } catch (Exception ex) {
+        throw new RuntimeException(ex);
+      }
+    }
   }
 
   @Override
   public String toString() {
     return "ConfigProviderResolverImpl{" + "configs=" + configs + '}';
+  }
+
+  @Override
+  public void close() throws Exception {
+    Exception ex = null;
+    for (Config config : configs.values()) {
+      if (config instanceof AutoCloseable) {
+        try {
+          ((AutoCloseable) config).close();
+        } catch (Exception ex1) {
+          if (ex != null) {
+            Throwables.suppressLimited(ex1, ex);
+          }
+          ex = ex1;
+        }
+      }
+    }
+    if (ex != null) {
+      throw ex;
+    }
   }
 }
