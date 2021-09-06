@@ -116,6 +116,10 @@ public class PollingDirConfigMapConfigSourceTest {
             throw new IllegalStateException();
         }
       }
+
+      @Override
+      public void close() {
+      }
     });
     return configs;
   }

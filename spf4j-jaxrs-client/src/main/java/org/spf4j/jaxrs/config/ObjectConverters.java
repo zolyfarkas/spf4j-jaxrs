@@ -85,6 +85,16 @@ public final class ObjectConverters {
     }
   }
 
+  private ObjectConverters(final CachingTypeMapWrapper<BiFunction<Object, Type, Object>> resolvers,
+          final SchemaResolver schemaResolver) {
+    this.resolvers = resolvers;
+    this.schemaResolver = schemaResolver;
+  }
+
+  public ObjectConverters withNewSchemaResolver(final SchemaResolver nschemaResolver) {
+    return new ObjectConverters(this.resolvers, nschemaResolver);
+  }
+
   public BiFunction<Object, Type, Object> get(final Type clasz) {
     return resolvers.get(clasz);
   }

@@ -20,6 +20,7 @@ import javax.inject.Singleton;
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.core.GenericType;
+import org.apache.avro.SchemaResolver;
 import org.apache.avro.SchemaResolvers;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -35,14 +36,13 @@ public final class MicroprofileConfigFeature implements Feature {
 
   static {
     ConfigProviderResolver resolver = ConfigProviderResolver.instance();
+    SchemaResolver schemaResolver = SchemaResolvers.getDefault();
     if (resolver instanceof ConfigProviderResolverImpl) {
-      try {
-        ((ConfigProviderResolverImpl) resolver).close();
-      } catch (Exception ex) {
-        throw new ExceptionInInitializerError(ex);
-      }
+      ConfigProviderResolver.setInstance(((ConfigProviderResolverImpl) resolver).withNewSchemaResolver(schemaResolver));
+
+    } else {
+      ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl(schemaResolver));
     }
-    ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl(SchemaResolvers.getDefault()));
   }
 
   @Override
@@ -74,7 +74,8 @@ public final class MicroprofileConfigFeature implements Feature {
       bind(cfgProvider).to(JerseyMicroprofileConfigurationProvider.class);
       bind(cfgProvider).to(ExternalConfigurationProvider.class);
       bind(HK2ConfigurationInjector.class)
-              .to(new GenericType<InjectionResolver<ConfigProperty>>() { })
+              .to(new GenericType<InjectionResolver<ConfigProperty>>() {
+              })
               .in(Singleton.class);
 
 //      bind(JerseyConfigurationInjector.class)

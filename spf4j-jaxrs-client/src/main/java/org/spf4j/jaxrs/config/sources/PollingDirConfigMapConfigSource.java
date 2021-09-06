@@ -54,8 +54,6 @@ public final class PollingDirConfigMapConfigSource extends ObservableDirConfigMa
 
   private ScheduledFuture<?> poll;
 
-  private boolean closed;
-
   private int tick;
 
   private final Map<Path, LastState> lastState;
@@ -106,7 +104,6 @@ public final class PollingDirConfigMapConfigSource extends ObservableDirConfigMa
           final int pollSeconds, final Predicate<Path> filter) {
     super(folder, charset);
     this.tick = 0;
-    this.closed = false;
     this.poll = null;
     this.lastState = new HashMap<>();
     this.pollSeconds = pollSeconds;
@@ -122,7 +119,7 @@ public final class PollingDirConfigMapConfigSource extends ObservableDirConfigMa
   @Override
   @SuppressFBWarnings("EXS_EXCEPTION_SOFTENING_NO_CHECKED")
   synchronized void initWatcher() {
-    if (closed) {
+    if (isClosed()) {
       throw new IllegalStateException("Dir poller is closed: " + this);
     }
     if (poll == null) {
@@ -134,14 +131,14 @@ public final class PollingDirConfigMapConfigSource extends ObservableDirConfigMa
   @Override
   @PreDestroy
   public synchronized void close() throws IOException {
-    if (!closed) {
+    if (!isClosed()) {
       LOG.debug("Closing {}", this);
       try {
         if (poll != null) {
           poll.cancel(true);
         }
       } finally {
-        closed = true;
+        super.close();
       }
     }
   }

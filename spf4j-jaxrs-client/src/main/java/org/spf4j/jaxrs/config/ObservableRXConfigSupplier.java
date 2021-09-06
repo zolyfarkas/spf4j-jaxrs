@@ -96,6 +96,11 @@ final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements O
           LOG.error("Cannot fetch config {} for {}", cfgParam.getPropertyName(), ObservableRXConfigSupplier.this, ex);
         }
       }
+
+      @Override
+      public void close() {
+        ObservableRXConfigSupplier.this.value = null;
+      }
     };
  //   setDefaultValue(cfgParam, typeOrConverter, configuration);
     configuration.addWatcher(cfgParam.getPropertyName(), this.propertyWatcher);
@@ -130,7 +135,11 @@ final class ObservableRXConfigSupplier extends SimpleConfigSupplier implements O
 
   @Override
   public Object get() {
-    return value.get();
+    Supplier<Object> supp = value;
+    if (supp == null) {
+      throw new UnsupportedOperationException("Attempt to read " + this + " after config is closed");
+    }
+    return supp.get();
   }
 
   @Override

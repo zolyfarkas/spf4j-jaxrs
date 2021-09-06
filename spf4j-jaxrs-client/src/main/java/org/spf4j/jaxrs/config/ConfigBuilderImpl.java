@@ -34,7 +34,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Priority;
 import org.apache.avro.SchemaResolver;
-import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
@@ -68,7 +67,7 @@ public final class ConfigBuilderImpl implements ConfigBuilder {
 
   @Override
   @SuppressFBWarnings("PATH_TRAVERSAL_IN")
-  public ConfigBuilder addDefaultSources() {
+  public ConfigBuilderImpl addDefaultSources() {
     sources.add(new SysPropConfigSource());
     sources.add(new EnvConfigSource());
     Path defaultConfig = Paths.get(Env.getValue("APP_CONFIG_MAP_DIR", "/etc/config"));
@@ -81,7 +80,7 @@ public final class ConfigBuilderImpl implements ConfigBuilder {
   }
 
   @Override
-  public ConfigBuilder addDiscoveredSources() {
+  public ConfigBuilderImpl addDiscoveredSources() {
     ServiceLoader<ConfigSource> loader = ServiceLoader.load(ConfigSource.class);
     for (ConfigSource source : loader) {
       sources.add(source);
@@ -90,7 +89,7 @@ public final class ConfigBuilderImpl implements ConfigBuilder {
   }
 
   @Override
-  public ConfigBuilder addDiscoveredConverters() {
+  public ConfigBuilderImpl addDiscoveredConverters() {
     ServiceLoader<Converter> loader = ServiceLoader.load(Converter.class);
     for (Converter converter : loader) {
       addConverter(converter);
@@ -152,13 +151,13 @@ public final class ConfigBuilderImpl implements ConfigBuilder {
   }
 
   @Override
-  public ConfigBuilder forClassLoader(final ClassLoader ncl) {
+  public ConfigBuilderImpl forClassLoader(final ClassLoader ncl) {
     this.cl = ncl;
     return this;
   }
 
   @Override
-  public ConfigBuilder withSources(final ConfigSource... psources) {
+  public ConfigBuilderImpl withSources(final ConfigSource... psources) {
     for (ConfigSource source : psources) {
       this.sources.add(source);
     }
@@ -166,7 +165,7 @@ public final class ConfigBuilderImpl implements ConfigBuilder {
   }
 
   @Override
-  public ConfigBuilder withConverters(final Converter<?>... pconverters) {
+  public ConfigBuilderImpl withConverters(final Converter<?>... pconverters) {
     for (Converter converter : pconverters) {
       addConverter(converter);
     }
@@ -174,7 +173,7 @@ public final class ConfigBuilderImpl implements ConfigBuilder {
   }
 
   @Override
-  public <T> ConfigBuilder withConverter(final Class<T> type, final int priority, final Converter<T> converter) {
+  public <T> ConfigBuilderImpl withConverter(final Class<T> type, final int priority, final Converter<T> converter) {
     converters.compute(type, (k, v) -> {
       SortedMap<Integer, Converter<?>> result;
       if (v == null) {
@@ -193,7 +192,7 @@ public final class ConfigBuilderImpl implements ConfigBuilder {
   }
 
   @Override
-  public Config build() {
+  public ConfigImpl build() {
    Collections.sort(sources, (a, b) -> a.getOrdinal() - b.getOrdinal());
    return new ConfigImpl(new ObjectConverters(converters, schemaResolver),
            sources.toArray(new ConfigSource[sources.size()]));

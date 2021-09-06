@@ -91,6 +91,7 @@ public final class DirConfigMapConfigSource extends ObservableDirConfigMapConfig
       } finally {
         watchService.close();
         watchService = null;
+        super.close();
       }
     }
   }

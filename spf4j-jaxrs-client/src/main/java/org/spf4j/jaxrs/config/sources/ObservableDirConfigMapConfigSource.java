@@ -17,6 +17,7 @@ package org.spf4j.jaxrs.config.sources;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.Closeable;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spf4j.base.Closeables;
 import org.spf4j.jaxrs.config.ConfigEvent;
 import org.spf4j.jaxrs.config.ConfigWatcher;
 import org.spf4j.jaxrs.config.ObservableConfig;
@@ -47,10 +49,13 @@ public abstract class ObservableDirConfigMapConfigSource extends BasicDirConfigM
 
   private final ConcurrentMap<String, List<PropertyWatcher>> propertyWatchers;
 
+  private boolean closed;
+
   ObservableDirConfigMapConfigSource(final Path folder, final Charset charset) {
     super(folder, charset);
     this.watchers = new CopyOnWriteArrayList<>();
     this.propertyWatchers = new ConcurrentHashMap<>();
+    this.closed = false;
   }
 
   /**
@@ -140,5 +145,36 @@ public abstract class ObservableDirConfigMapConfigSource extends BasicDirConfigM
       }
     });
   }
+
+  public final synchronized boolean isClosed() {
+    return closed;
+  }
+
+  /**
+   * Overwrite in subclass to cleanup any additional resources.
+   * @throws IOException
+   */
+  @Override
+  @SuppressFBWarnings("ITC_INHERITANCE_TYPE_CHECKING")
+  public synchronized void close() throws IOException {
+    if (closed) {
+      Exception ex = Closeables.closeAll(null, watchers);
+      for (List<PropertyWatcher> pws :  propertyWatchers.values()) {
+        ex = Closeables.closeAll(ex, pws);
+      }
+      watchers.clear();
+      propertyWatchers.clear();
+      closed = true;
+      if (ex instanceof IOException) {
+        throw (IOException) ex;
+      } else if (ex instanceof RuntimeException) {
+        throw (RuntimeException) ex;
+      } else {
+        throw new RuntimeException(ex);
+      }
+    }
+  }
+
+
 
 }

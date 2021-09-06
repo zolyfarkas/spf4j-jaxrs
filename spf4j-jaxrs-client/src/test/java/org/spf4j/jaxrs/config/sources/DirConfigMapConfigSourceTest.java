@@ -76,6 +76,10 @@ public class DirConfigMapConfigSourceTest {
             configs.put("testProp", value);
           }
         }
+
+        @Override
+        public void close() {
+        }
       });
       Path testProp = odms.getFolder().resolve("testProp");
       Files.write(testProp, "bla bla".getBytes(StandardCharsets.UTF_8));

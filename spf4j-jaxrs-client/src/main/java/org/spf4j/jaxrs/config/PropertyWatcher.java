@@ -21,11 +21,17 @@ import java.util.function.Consumer;
  *
  * @author Zoltan Farkas
  */
-public interface PropertyWatcher extends Consumer<ConfigEvent> {
+public interface PropertyWatcher extends Consumer<ConfigEvent>, AutoCloseable {
 
     /**
      * This is to notify the consumer that the watched configuration maybe had some
      * impacting changes, but it is not clear what they were (due to notif queue overflow, etc)
      */
     void unknownEvents();
+
+    /**
+     * called when the watcher is closed.
+     * This is to make aware of the consumers that not config updates will happen anymore.
+     */
+    void close();
 }

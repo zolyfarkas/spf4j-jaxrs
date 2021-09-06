@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import org.apache.avro.SchemaResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.spf4j.base.Throwables;
 
@@ -60,6 +61,15 @@ public final class ConfigImpl implements ExtendedConfig, AutoCloseable {
       this.observableConfig = null;
     }
   }
+
+  public ConfigImpl withNewSchemaResolver(final SchemaResolver schemaResolver) {
+    return new ConfigImpl(converters.withNewSchemaResolver(schemaResolver), configs);
+  }
+
+  public ConfigImpl withNewConverters(final ObjectConverters pconverters) {
+    return new ConfigImpl(pconverters, this.configs);
+  }
+
 
   public ObjectConverters getConverters() {
     return converters;

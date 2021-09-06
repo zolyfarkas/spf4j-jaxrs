@@ -29,7 +29,7 @@ public final class ConfigProviderResolverImpl extends ConfigProviderResolver imp
 
   private final SchemaResolver schemaResolver;
 
-  private final ConcurrentMap<ClassLoader, Config> configs = new ConcurrentHashMap<>();
+  private final ConcurrentMap<ClassLoader, Config> configs;
 
   public ConfigProviderResolverImpl() {
     this(SchemaResolver.NONE);
@@ -40,10 +40,33 @@ public final class ConfigProviderResolverImpl extends ConfigProviderResolver imp
             .addDiscoveredSources().addDiscoveredConverters().build());
   }
 
-  public ConfigProviderResolverImpl(final SchemaResolver schemaResolver, final Config config) {
+  public ConfigProviderResolverImpl(final SchemaResolver schemaResolver, final ConfigImpl config) {
     this.schemaResolver = schemaResolver;
+    configs = new ConcurrentHashMap<>();
     configs.put(Thread.currentThread().getContextClassLoader(), config);
   }
+
+  private ConfigProviderResolverImpl(final SchemaResolver schemaResolver,
+          final ConcurrentMap<ClassLoader, Config> configs) {
+    this.schemaResolver = schemaResolver;
+    this.configs = configs;
+  }
+
+
+
+  public ConfigProviderResolverImpl withNewSchemaResolver(final SchemaResolver nschemaResolver) {
+    ConcurrentMap<ClassLoader, Config> nconfigs = new ConcurrentHashMap<>();
+    for (Map.Entry<ClassLoader, Config> entry : this.configs.entrySet()) {
+      Config cfg = entry.getValue();
+      if (cfg instanceof ConfigImpl) {
+        nconfigs.put(entry.getKey(), ((ConfigImpl) cfg).withNewSchemaResolver(nschemaResolver));
+      } else {
+         nconfigs.put(entry.getKey(), cfg);
+      }
+    }
+    return new ConfigProviderResolverImpl(nschemaResolver, nconfigs);
+  }
+
 
   @Override
   public Config getConfig() {
