@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -55,10 +56,10 @@ public final class ObjectConverters {
 
   private final CachingTypeMapWrapper<BiFunction<Object, Type, Object>> resolvers;
 
-  private final SchemaResolver schemaResolver;
+  private final Supplier<SchemaResolver> schemaResolver;
 
   public ObjectConverters(final Map<Type, SortedMap<Integer, Converter<?>>> converters,
-          final SchemaResolver schemaResolver) {
+          final Supplier<SchemaResolver> schemaResolver) {
     this.schemaResolver = schemaResolver;
     resolvers = new CachingTypeMapWrapper<>(new GraphTypeMap());
     resolvers.safePut(CharSequence.class, this::resolveString);
@@ -86,12 +87,12 @@ public final class ObjectConverters {
   }
 
   private ObjectConverters(final CachingTypeMapWrapper<BiFunction<Object, Type, Object>> resolvers,
-          final SchemaResolver schemaResolver) {
+          final Supplier<SchemaResolver> schemaResolver) {
     this.resolvers = resolvers;
     this.schemaResolver = schemaResolver;
   }
 
-  public ObjectConverters withNewSchemaResolver(final SchemaResolver nschemaResolver) {
+  public ObjectConverters withNewSchemaResolver(final Supplier<SchemaResolver> nschemaResolver) {
     return new ObjectConverters(this.resolvers, nschemaResolver);
   }
 
@@ -170,12 +171,12 @@ public final class ObjectConverters {
                 (Class) type, new org.spf4j.avro.SchemaResolver() {
           @Nonnull
           public Schema resolveSchema(final String id) {
-            return schemaResolver.resolveSchema(id);
+            return schemaResolver.get().resolveSchema(id);
           }
 
           @Nullable
           public String getId(final Schema schema) {
-            return schemaResolver.getId(schema);
+            return schemaResolver.get().getId(schema);
           }
 
         }, new CharSequenceReader((CharSequence) val));

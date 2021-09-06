@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import org.apache.avro.SchemaResolver;
@@ -62,7 +63,7 @@ public final class ConfigImpl implements ExtendedConfig, AutoCloseable {
     }
   }
 
-  public ConfigImpl withNewSchemaResolver(final SchemaResolver schemaResolver) {
+  public ConfigImpl withNewSchemaResolver(final Supplier<SchemaResolver> schemaResolver) {
     return new ConfigImpl(converters.withNewSchemaResolver(schemaResolver), configs);
   }
 

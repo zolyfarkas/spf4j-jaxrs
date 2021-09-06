@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 import org.apache.avro.SchemaResolver;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
@@ -27,44 +28,60 @@ import org.spf4j.base.Throwables;
 
 public final class ConfigProviderResolverImpl extends ConfigProviderResolver implements AutoCloseable {
 
-  private final SchemaResolver schemaResolver;
+
+  public static final class SchemaResolverSupplier implements Supplier<SchemaResolver> {
+
+    private volatile SchemaResolver resolver;
+
+    public SchemaResolverSupplier(final SchemaResolver resolver) {
+      this.resolver = resolver;
+    }
+
+    @Override
+    public SchemaResolver get() {
+      return resolver;
+    }
+
+    public void set(final SchemaResolver nresolver) {
+      this.resolver = nresolver;
+    }
+
+    @Override
+    public String toString() {
+      return "SchemaSupplier{" + "resolver=" + resolver + '}';
+    }
+
+  }
+
+  private final SchemaResolverSupplier schemaResolver;
 
   private final ConcurrentMap<ClassLoader, Config> configs;
 
   public ConfigProviderResolverImpl() {
-    this(SchemaResolver.NONE);
+    this(new SchemaResolverSupplier(SchemaResolver.NONE));
   }
 
   public ConfigProviderResolverImpl(final SchemaResolver schemaResolver) {
+    this(new SchemaResolverSupplier(schemaResolver));
+  }
+
+  private ConfigProviderResolverImpl(final SchemaResolverSupplier schemaResolver) {
     this(schemaResolver, new ConfigBuilderImpl(schemaResolver).addDefaultSources()
             .addDiscoveredSources().addDiscoveredConverters().build());
   }
 
   public ConfigProviderResolverImpl(final SchemaResolver schemaResolver, final ConfigImpl config) {
+    this(new SchemaResolverSupplier(schemaResolver), config);
+  }
+
+  private ConfigProviderResolverImpl(final SchemaResolverSupplier schemaResolver, final ConfigImpl config) {
     this.schemaResolver = schemaResolver;
     configs = new ConcurrentHashMap<>();
     configs.put(Thread.currentThread().getContextClassLoader(), config);
   }
 
-  private ConfigProviderResolverImpl(final SchemaResolver schemaResolver,
-          final ConcurrentMap<ClassLoader, Config> configs) {
-    this.schemaResolver = schemaResolver;
-    this.configs = configs;
-  }
-
-
-
-  public ConfigProviderResolverImpl withNewSchemaResolver(final SchemaResolver nschemaResolver) {
-    ConcurrentMap<ClassLoader, Config> nconfigs = new ConcurrentHashMap<>();
-    for (Map.Entry<ClassLoader, Config> entry : this.configs.entrySet()) {
-      Config cfg = entry.getValue();
-      if (cfg instanceof ConfigImpl) {
-        nconfigs.put(entry.getKey(), ((ConfigImpl) cfg).withNewSchemaResolver(nschemaResolver));
-      } else {
-         nconfigs.put(entry.getKey(), cfg);
-      }
-    }
-    return new ConfigProviderResolverImpl(nschemaResolver, nconfigs);
+  public void setNewSchemaResolver(final SchemaResolver nschemaResolver) {
+    this.schemaResolver.set(nschemaResolver);
   }
 
 

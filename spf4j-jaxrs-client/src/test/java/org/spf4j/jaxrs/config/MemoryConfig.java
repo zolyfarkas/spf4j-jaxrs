@@ -30,7 +30,7 @@ public final class MemoryConfig {
 
   public static void init() {
     ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl(SchemaResolver.NONE,
-            new ConfigBuilderImpl(SchemaResolver.NONE).addDefaultSources().withSources(M_CONFIG).build()));
+            new ConfigBuilderImpl(() -> SchemaResolver.NONE).addDefaultSources().withSources(M_CONFIG).build()));
   }
 
   public static void resetToDefault() {

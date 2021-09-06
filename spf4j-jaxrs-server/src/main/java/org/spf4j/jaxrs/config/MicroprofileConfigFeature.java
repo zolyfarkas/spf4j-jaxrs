@@ -38,8 +38,7 @@ public final class MicroprofileConfigFeature implements Feature {
     ConfigProviderResolver resolver = ConfigProviderResolver.instance();
     SchemaResolver schemaResolver = SchemaResolvers.getDefault();
     if (resolver instanceof ConfigProviderResolverImpl) {
-      ConfigProviderResolver.setInstance(((ConfigProviderResolverImpl) resolver).withNewSchemaResolver(schemaResolver));
-
+      ((ConfigProviderResolverImpl) resolver).setNewSchemaResolver(schemaResolver);
     } else {
       ConfigProviderResolver.setInstance(new ConfigProviderResolverImpl(schemaResolver));
     }

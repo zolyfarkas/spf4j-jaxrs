@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Priority;
@@ -50,7 +51,7 @@ import org.spf4j.jaxrs.config.sources.SysPropConfigSource;
  */
 public final class ConfigBuilderImpl implements ConfigBuilder {
 
-  private final SchemaResolver schemaResolver;
+  private final Supplier<SchemaResolver> schemaResolver;
 
   private final List<ConfigSource> sources;
 
@@ -58,7 +59,7 @@ public final class ConfigBuilderImpl implements ConfigBuilder {
 
   private ClassLoader cl;
 
-  public ConfigBuilderImpl(final SchemaResolver schemaResolver) {
+  public ConfigBuilderImpl(final Supplier<SchemaResolver> schemaResolver) {
     sources = new ArrayList<>(4);
     converters = new HashMap<>();
     cl = Thread.currentThread().getContextClassLoader();
