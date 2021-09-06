@@ -145,7 +145,7 @@ public final class PollingDirConfigMapConfigSource extends ObservableDirConfigMa
 
   private synchronized void initState() {
     long nowSeconds = Instant.now().getEpochSecond();
-    LOG.debug("Reading initia folder state: {}", getFolder());
+    LOG.debug("Reading initial folder state: {}", getFolder());
     try (Stream<Path> stream = Files.list(getFolder())) {
       stream.forEach(path -> {
         if (!filter.test(path)) {
