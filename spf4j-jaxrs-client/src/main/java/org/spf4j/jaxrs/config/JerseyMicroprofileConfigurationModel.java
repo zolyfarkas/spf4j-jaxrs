@@ -15,6 +15,7 @@
  */
 package org.spf4j.jaxrs.config;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import gnu.trove.set.hash.THashSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,6 +41,7 @@ public final class JerseyMicroprofileConfigurationModel implements ExternalConfi
   private Map<String, Object> mergedProperties;
 
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public JerseyMicroprofileConfigurationModel(final ConfigImpl config) {
     this.config =  config;
     this.mergedProperties = Collections.EMPTY_MAP;
@@ -71,6 +73,7 @@ public final class JerseyMicroprofileConfigurationModel implements ExternalConfi
   }
 
   @Override
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public ExtendedConfig getConfig() {
     return config;
   }

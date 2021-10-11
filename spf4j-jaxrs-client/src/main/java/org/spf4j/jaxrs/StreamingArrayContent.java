@@ -15,6 +15,7 @@
  */
 package org.spf4j.jaxrs;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.Closeable;
 import java.io.IOException;
 import org.apache.avro.Schema;
@@ -61,6 +62,7 @@ public interface StreamingArrayContent<T> extends Closeable, AvroContainer, Buff
     private final Schema elementType;
     private final int bufferSize;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public StreamingArrayContentProjection(final StreamingArrayContent<IndexedRecord> toWrap,
             final Schema resultSchema, final Schema elementType, final int bufferSize) {
       this.toWrap = toWrap;
@@ -82,6 +84,7 @@ public interface StreamingArrayContent<T> extends Closeable, AvroContainer, Buff
     }
 
     @Override
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Schema getElementSchema() {
       return resultSchema;
     }

@@ -1,5 +1,6 @@
 package org.spf4j.jaxrs.client.providers;
 
+import com.google.common.base.Ascii;
 import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
@@ -73,7 +74,7 @@ public final class ExecutionContextClientFilter implements ClientRequestFilter,
 
   private static Map<String, Object> authorizationFilter(final MultivaluedMap<String, Object> headers) {
     return Maps.transformEntries(headers, (final String k, final Object v) -> {
-      if (HttpHeaders.AUTHORIZATION.equalsIgnoreCase(k)) {
+      if (Ascii.equalsIgnoreCase(HttpHeaders.AUTHORIZATION, k)) {
         return "HIDDEN";
       } else {
         return v;

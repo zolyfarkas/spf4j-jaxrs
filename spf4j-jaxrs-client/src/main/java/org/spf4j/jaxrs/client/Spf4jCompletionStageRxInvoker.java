@@ -20,6 +20,7 @@ public final class Spf4jCompletionStageRxInvoker
   private final Spf4jInvocationBuilder invocationBuilder;
   private final FailSafeExecutor executor;
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public Spf4jCompletionStageRxInvoker(final Spf4jInvocationBuilder invocationBuilder,
           final FailSafeExecutor executor) {
     this.invocationBuilder = invocationBuilder;

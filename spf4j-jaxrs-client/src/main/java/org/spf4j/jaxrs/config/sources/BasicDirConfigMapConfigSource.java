@@ -50,6 +50,7 @@ public class BasicDirConfigMapConfigSource implements ConfigSource {
 
   private final Path folder;
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public BasicDirConfigMapConfigSource(final Path folder, final Charset charset) {
     this.folder = folder;
     this.charset = charset;

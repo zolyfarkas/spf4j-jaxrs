@@ -47,7 +47,7 @@ public final class InstantParameterConverterProvider implements ParamConverterPr
 
     @Override
     public Instant fromString(final String str) {
-      if ("now".equalsIgnoreCase(str)) {
+      if ("now".equals(str)) {
         return Instant.now();
       }
       try {

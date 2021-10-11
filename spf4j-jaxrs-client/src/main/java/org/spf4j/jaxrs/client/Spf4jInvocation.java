@@ -42,6 +42,7 @@ public final class Spf4jInvocation implements Invocation, Wrapper<Invocation> {
   private final HttpExecutionPolicy execPolicy;
   private final String method;
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public Spf4jInvocation(final Invocation invocation, final HttpExecutionPolicy execPolicy,
           final AsyncRetryExecutor<Object, HttpCallable<?>> aexecutor,
           final Spf4jWebTarget target, final String method) {

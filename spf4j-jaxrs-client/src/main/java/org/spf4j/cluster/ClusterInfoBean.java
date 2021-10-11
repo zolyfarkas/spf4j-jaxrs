@@ -15,13 +15,17 @@
  */
 package org.spf4j.cluster;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.InetAddress;
 import java.util.Set;
+import java.util.HashSet;
 import org.spf4j.service.avro.NetworkService;
+import java.util.Collections;
 
 /**
  * @author Zoltan Farkas
  */
+@SuppressFBWarnings("EI_EXPOSE_REP")
 public class ClusterInfoBean implements ClusterInfo {
 
   private final Set<InetAddress> allAddresses;
@@ -32,9 +36,9 @@ public class ClusterInfoBean implements ClusterInfo {
 
   public ClusterInfoBean(final Set<InetAddress> allAddresses,
           final Set<InetAddress> localAddresses, final Set<NetworkService> services) {
-    this.allAddresses = allAddresses;
-    this.services = services;
-    this.localAddresses = localAddresses;
+    this.allAddresses = Collections.unmodifiableSet(new HashSet<>(allAddresses));
+    this.services = Collections.unmodifiableSet(new HashSet<>(services));
+    this.localAddresses = Collections.unmodifiableSet(new HashSet<>(localAddresses));
   }
 
   @Override

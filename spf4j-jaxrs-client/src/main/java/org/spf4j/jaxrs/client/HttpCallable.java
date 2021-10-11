@@ -128,6 +128,7 @@ public interface HttpCallable<T> extends Callable<T> {
     }
 
     @Override
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public URI getUri() {
       return uri;
     }

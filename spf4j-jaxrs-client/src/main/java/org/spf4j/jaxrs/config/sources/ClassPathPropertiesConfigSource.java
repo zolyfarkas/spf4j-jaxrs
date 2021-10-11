@@ -27,6 +27,7 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Collections;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
@@ -69,7 +70,7 @@ public final class ClassPathPropertiesConfigSource implements ConfigSource {
 
   @Override
   public Map<String, String> getProperties() {
-    return (Map) properties;
+    return (Map) Collections.unmodifiableMap(properties);
   }
 
   @Override

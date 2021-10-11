@@ -16,7 +16,6 @@
 package org.spf4j.cluster;
 
 import java.net.InetAddress;
-import java.util.Collections;
 import java.util.Set;
 import org.spf4j.service.avro.NetworkService;
 
@@ -28,7 +27,7 @@ public final class SingleNodeCluster implements Cluster {
   private final ClusterInfoBean clusterInfo;
 
   public SingleNodeCluster(final Set<NetworkService> services) {
-    this(Collections.unmodifiableSet(Cluster.getLocalAddresses()), services);
+    this(Cluster.getLocalAddresses(), services);
   }
 
   public SingleNodeCluster(final Set<InetAddress> localAddresses, final Set<NetworkService> services) {

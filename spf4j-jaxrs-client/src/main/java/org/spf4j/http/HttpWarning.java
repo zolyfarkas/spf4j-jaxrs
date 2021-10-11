@@ -235,6 +235,7 @@ public final class HttpWarning implements JsonWriteable {
     return text;
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP") // ZonedDateTime is immutable this is a false positive.
   public ZonedDateTime getDate() {
     return date;
   }

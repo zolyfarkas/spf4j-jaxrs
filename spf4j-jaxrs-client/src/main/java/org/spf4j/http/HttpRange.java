@@ -16,10 +16,12 @@
 package org.spf4j.http;
 
 import com.google.common.collect.Range;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,7 +49,12 @@ public final class HttpRange {
 
   public HttpRange(final String unit, final List<Range<Long>> ranges) {
     this.unit = unit;
-    this.ranges = ranges;
+    this.ranges = Collections.unmodifiableList(new ArrayList<>(ranges));
+  }
+
+  public HttpRange(final String unit, final Range<Long>... ranges) {
+    this.unit = unit;
+    this.ranges = Collections.unmodifiableList(Arrays.asList(ranges));
   }
 
   public String getUnit() {
@@ -58,6 +65,7 @@ public final class HttpRange {
     return "bytes".equals(unit);
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP") // not realy... false positive.
   public List<Range<Long>> getRanges() {
     return ranges;
   }
@@ -115,7 +123,7 @@ public final class HttpRange {
       if (ranges.isEmpty()) {
         throw new IllegalArgumentException("Invalid range header: " + rangeHeader);
       }
-      return new HttpRange(unit, Collections.unmodifiableList(ranges));
+      return new HttpRange(unit, ranges);
     } else {
       throw new IllegalArgumentException("Invalid range header: " + rangeHeader);
     }

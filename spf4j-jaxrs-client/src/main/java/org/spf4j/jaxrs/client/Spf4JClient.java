@@ -336,7 +336,7 @@ public final class Spf4JClient implements Client {
      * @throws IOException
      */
     @Override
-    @SuppressFBWarnings({"PREDICTABLE_RANDOM", "URLCONNECTION_SSRF_FD"})
+    @SuppressFBWarnings({"PREDICTABLE_RANDOM", "URLCONNECTION_SSRF_FD", "IMPROPER_UNICODE"})
     public HttpURLConnection getConnection(final URL url) throws IOException {
       try {
         String protocol = url.getProtocol();

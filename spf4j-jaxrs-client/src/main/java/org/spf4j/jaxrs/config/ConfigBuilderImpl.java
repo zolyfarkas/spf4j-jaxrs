@@ -152,6 +152,7 @@ public final class ConfigBuilderImpl implements ConfigBuilder {
   }
 
   @Override
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public ConfigBuilderImpl forClassLoader(final ClassLoader ncl) {
     this.cl = ncl;
     return this;

@@ -19,6 +19,7 @@ public final class Spf4jAsyncInvoker implements AsyncInvoker {
 
   private final Spf4jInvocationBuilder invocation;
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public Spf4jAsyncInvoker(final Spf4jInvocationBuilder invocation) {
     this.invocation = invocation;
   }

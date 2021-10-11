@@ -16,6 +16,7 @@
 package org.spf4j.http.multi;
 
 import com.google.common.annotations.Beta;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
 import javax.annotation.Nullable;
@@ -29,6 +30,7 @@ public final class Spf4jURLStreamHandlerFactory implements URLStreamHandlerFacto
 
   @Override
   @Nullable
+  @SuppressFBWarnings("IMPROPER_UNICODE")
   public URLStreamHandler createURLStreamHandler(final String protocol) {
     if ("mhttp".equalsIgnoreCase(protocol)) {
       return MultiHttpURLStreamHandler.INSTANCE;
