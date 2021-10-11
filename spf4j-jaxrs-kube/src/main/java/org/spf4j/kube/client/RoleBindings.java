@@ -15,6 +15,7 @@
  */
 package org.spf4j.kube.client;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 import org.apache.avro.reflect.AvroDefault;
 import org.apache.avro.reflect.Nullable;
@@ -61,18 +62,22 @@ public final class RoleBindings {
     this.kind = kind;
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public MetaData getMetadata() {
     return metadata;
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public void setMetadata(final MetaData metadata) {
     this.metadata = metadata;
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public List<RoleBinding> getItems() {
     return items;
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public void setItems(final List<RoleBinding> items) {
     this.items = items;
   }
@@ -109,18 +114,22 @@ public final class RoleBindings {
     private List<Subject> subjects;
     private RoleRef roleRef;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public List<Subject> getSubjects() {
       return subjects;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setSubjects(final List<Subject> subjects) {
       this.subjects = subjects;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public RoleRef getRoleRef() {
       return roleRef;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setRoleRef(final RoleRef roleRef) {
       this.roleRef = roleRef;
     }

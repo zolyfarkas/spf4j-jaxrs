@@ -15,6 +15,7 @@
  */
 package org.spf4j.kube.client;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 import org.apache.avro.reflect.AvroDefault;
 import org.spf4j.service.avro.NetworkProtocol;
@@ -80,10 +81,12 @@ public final class Endpoints {
   @AvroDefault("[]")
   private List<SubSet> subsets;
 
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public List<SubSet> getSubsets() {
     return subsets;
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public void setSubsets(final List<SubSet> subsets) {
     this.subsets = subsets;
   }
@@ -156,26 +159,32 @@ public final class Endpoints {
 
     private List<Port> ports;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public List<Address> getAddresses() {
       return addresses;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setAddresses(final List<Address> addresses) {
       this.addresses = addresses;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public List<Address> getNotReadyAddresses() {
       return notReadyAddresses;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setNotReadyAddresses(final List<Address> notReadyAddresses) {
       this.notReadyAddresses = notReadyAddresses;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public List<Port> getPorts() {
       return ports;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setPorts(final List<Port> ports) {
       this.ports = ports;
     }

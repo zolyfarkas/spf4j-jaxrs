@@ -15,6 +15,7 @@
  */
 package org.spf4j.kube.cluster;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashSet;
@@ -54,6 +55,7 @@ public final class KubeCluster implements Cluster {
   }
 
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public KubeCluster(final Set<InetAddress> localAddresses,
           final Client client, final String nameSpace, final String endpointName) {
     this.client = client;

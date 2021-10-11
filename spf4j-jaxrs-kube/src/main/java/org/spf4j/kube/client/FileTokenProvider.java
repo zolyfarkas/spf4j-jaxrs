@@ -42,6 +42,7 @@ public final class FileTokenProvider implements TokenProvider {
     this(filePath, StandardCharsets.UTF_8);
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public FileTokenProvider(final Path filePath, final Charset charSet) {
     this.filePath = filePath;
     this.charSet = charSet;

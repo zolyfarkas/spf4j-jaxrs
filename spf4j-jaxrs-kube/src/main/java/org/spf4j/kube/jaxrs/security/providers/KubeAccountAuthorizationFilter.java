@@ -15,6 +15,7 @@
  */
 package org.spf4j.kube.jaxrs.security.providers;
 
+import com.google.common.base.Ascii;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -153,7 +154,7 @@ public final class KubeAccountAuthorizationFilter implements ContainerRequestFil
 
     @Override
     public boolean isSecure() {
-      return "https".equalsIgnoreCase(scheme);
+      return Ascii.equalsIgnoreCase("https", scheme);
     }
 
     @Override

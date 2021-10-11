@@ -15,6 +15,7 @@
  */
 package org.spf4j.kube.client;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 import org.apache.avro.reflect.AvroDefault;
 import org.apache.avro.reflect.Nullable;
@@ -108,10 +109,12 @@ public final class TokenReview {
       this.uid = uid;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public List<String> getGroups() {
       return groups;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setGroups(final List<String> groups) {
       this.groups = groups;
     }
@@ -144,10 +147,12 @@ public final class TokenReview {
       this.authenticated = authenticated;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public User getUser() {
       return user;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setUser(final User user) {
       this.user = user;
     }
@@ -176,18 +181,22 @@ public final class TokenReview {
   public TokenReview() {
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public Token getSpec() {
     return spec;
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public void setSpec(final Token spec) {
     this.spec = spec;
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public Status getStatus() {
     return status;
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public void setStatus(final Status status) {
     this.status = status;
   }
