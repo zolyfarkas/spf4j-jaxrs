@@ -2,6 +2,7 @@ package org.spf4j.actuator.profiles;
 
 import com.github.jknack.handlebars.Handlebars;
 import com.github.jknack.handlebars.io.ClassPathTemplateLoader;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import gnu.trove.set.hash.THashSet;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -70,6 +71,7 @@ public class ProfilesResource {
   private final String hostName;
 
   @Inject
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public ProfilesResource(final LogsResource logsResource,
           final LogFilesResource logFilesResource, final Sampler sampler,
           @ConfigProperty(name = "hostName", defaultValue = "127.0.0.1") final String hostName) throws IOException {

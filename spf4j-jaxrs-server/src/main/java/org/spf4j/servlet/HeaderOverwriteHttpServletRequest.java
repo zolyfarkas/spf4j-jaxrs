@@ -16,6 +16,7 @@
 package org.spf4j.servlet;
 
 import com.google.common.collect.Iterators;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Enumeration;
@@ -37,6 +38,7 @@ public final class HeaderOverwriteHttpServletRequest extends HttpServletRequestW
 
   private final MultivaluedMap<String, String> overwrites;
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public HeaderOverwriteHttpServletRequest(final HttpServletRequest request,
           final MultivaluedMap<String, String> overwrites) {
     super(request);

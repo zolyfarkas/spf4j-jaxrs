@@ -1,6 +1,7 @@
 
 package org.spf4j.servlet;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -21,6 +22,7 @@ public final class CountingHttpServletResponse extends HttpServletResponseWrappe
   }
 
   @Override
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public synchronized ServletOutputStream getOutputStream() throws IOException {
     if (os == null) {
       os = new CountingServletOutputStream(super.getOutputStream());

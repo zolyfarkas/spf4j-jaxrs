@@ -1,5 +1,6 @@
 package org.spf4j.servlet;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import javax.annotation.ParametersAreNonnullByDefault;
 import javax.servlet.ReadListener;
@@ -19,6 +20,7 @@ public final class CountingServletInputStream extends ServletInputStream
 
   private long mark = -1;
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public CountingServletInputStream(final ServletInputStream wrapped) {
     this.in = wrapped;
     this.count = 0;
@@ -89,6 +91,7 @@ public final class CountingServletInputStream extends ServletInputStream
     count = mark;
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public ServletInputStream getWrappedStream() {
     return in;
   }
@@ -119,6 +122,7 @@ public final class CountingServletInputStream extends ServletInputStream
   }
 
   @Override
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public ServletInputStream getWrapped() {
     return this.in;
   }

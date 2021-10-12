@@ -15,6 +15,7 @@
  */
 package org.spf4j.grizzly;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Context;
@@ -31,6 +32,7 @@ public class Spf4jJaxrsApplication extends ResourceConfig {
   private final ServiceLocator locator;
 
   @Inject
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public Spf4jJaxrsApplication(@Context final ServletContext srvContext,
           final ServiceLocator locator) {
     this.locator = locator;

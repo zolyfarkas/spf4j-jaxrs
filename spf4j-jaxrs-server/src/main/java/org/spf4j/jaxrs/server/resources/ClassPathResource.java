@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -60,22 +62,15 @@ public class ClassPathResource {
   }
 
 
-  public ClassPathResource(final String cpBase, final List<String> welcomeFiles) {
+  public ClassPathResource(final String cpBase, final Collection<String> welcomeFiles) {
     this(cpBase, Thread.currentThread().getContextClassLoader(), welcomeFiles);
   }
 
-  public ClassPathResource(final String cpBase, final ClassLoader classLoader, final List<String> welcomeFiles) {
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
+  public ClassPathResource(final String cpBase, final ClassLoader classLoader, final Collection<String> welcomeFiles) {
     this.cpBase = cpBase;
     this.classLoader = classLoader;
-    this.welcomeFiles = welcomeFiles;
-  }
-
-  public String getCpBase() {
-    return cpBase;
-  }
-
-  public List<String> getWelcomeFiles() {
-    return welcomeFiles;
+    this.welcomeFiles = new ArrayList<>(welcomeFiles);
   }
 
   @Override

@@ -1,6 +1,7 @@
 
 package org.spf4j.jaxrs.server;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -19,6 +20,7 @@ public class AsyncResponseWrapper implements AsyncResponse, Wrapper<AsyncRespons
 
   private final AsyncResponse resp;
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public AsyncResponseWrapper(final AsyncResponse resp) {
     this.resp = resp;
   }
@@ -95,6 +97,7 @@ public class AsyncResponseWrapper implements AsyncResponse, Wrapper<AsyncRespons
   }
 
   @Override
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public final AsyncResponse getWrapped() {
     return resp;
   }

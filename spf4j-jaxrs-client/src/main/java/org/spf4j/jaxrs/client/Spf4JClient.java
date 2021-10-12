@@ -1,5 +1,6 @@
 package org.spf4j.jaxrs.client;
 
+import com.google.common.base.Ascii;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -336,14 +337,14 @@ public final class Spf4JClient implements Client {
      * @throws IOException
      */
     @Override
-    @SuppressFBWarnings({"PREDICTABLE_RANDOM", "URLCONNECTION_SSRF_FD", "IMPROPER_UNICODE"})
+    @SuppressFBWarnings({"PREDICTABLE_RANDOM", "URLCONNECTION_SSRF_FD"})
     public HttpURLConnection getConnection(final URL url) throws IOException {
       try {
         String protocol = url.getProtocol();
-        if ("file".equalsIgnoreCase(protocol)) {
+        if (Ascii.equalsIgnoreCase("file", protocol)) {
           throw new IOException("File protocol not supported: " + url);
         }
-        if ("https".equalsIgnoreCase(protocol)) {
+        if (Ascii.equalsIgnoreCase("https", protocol)) {
           return (HttpURLConnection) url.openConnection();
         }
         URI uri = url.toURI();

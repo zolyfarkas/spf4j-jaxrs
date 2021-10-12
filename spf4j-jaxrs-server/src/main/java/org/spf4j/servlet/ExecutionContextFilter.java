@@ -1,5 +1,6 @@
 package org.spf4j.servlet;
 
+import com.google.common.base.Ascii;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.EOFException;
 import org.spf4j.http.ContextTags;
@@ -503,7 +504,7 @@ public final class ExecutionContextFilter implements Filter {
     Enumeration<String> names = req.getHeaderNames();
     while (names.hasMoreElements()) {
       String headerName = names.nextElement();
-      if (HttpHeaders.AUTHORIZATION.equalsIgnoreCase(headerName)) {
+      if (Ascii.equalsIgnoreCase(HttpHeaders.AUTHORIZATION, headerName)) {
         continue;
       }
       LogUtils.logUpgrade(logger, org.spf4j.log.Level.INFO, "request.header.{0}", headerName,

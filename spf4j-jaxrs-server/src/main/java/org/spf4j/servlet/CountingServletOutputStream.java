@@ -1,6 +1,7 @@
 
 package org.spf4j.servlet;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import javax.annotation.ParametersAreNonnullByDefault;
 import javax.servlet.ServletOutputStream;
@@ -20,6 +21,7 @@ public final class CountingServletOutputStream extends ServletOutputStream
   private long count;
 
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public CountingServletOutputStream(final ServletOutputStream out) {
     this.out = out;
   }
@@ -67,6 +69,7 @@ public final class CountingServletOutputStream extends ServletOutputStream
   }
 
   @Override
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public ServletOutputStream getWrapped() {
     return this.out;
   }

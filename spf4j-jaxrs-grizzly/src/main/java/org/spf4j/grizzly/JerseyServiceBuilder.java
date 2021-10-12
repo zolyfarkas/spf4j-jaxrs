@@ -25,6 +25,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -227,11 +228,11 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
   }
 
   public Set<String> getProviderPackages() {
-    return providerPackages;
+    return Collections.unmodifiableSet(providerPackages);
   }
 
   public List<Binder> getBinders() {
-    return binders;
+    return Collections.unmodifiableList(binders);
   }
 
 

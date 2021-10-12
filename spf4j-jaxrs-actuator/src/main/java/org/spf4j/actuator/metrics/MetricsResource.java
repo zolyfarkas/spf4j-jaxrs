@@ -15,6 +15,7 @@
  */
 package org.spf4j.actuator.metrics;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.prometheus.client.Collector;
 import io.prometheus.client.exporter.common.TextFormat;
 import java.io.BufferedWriter;
@@ -67,6 +68,7 @@ public class MetricsResource {
   private final MeasurementStore mStore;
 
   @Inject
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public MetricsResource(@ConfigProperty(name = "metrics.fromDefaultDuration",
           defaultValue = "PT1M") final Duration defaultFromDuration) {
     this.defaultFromDuration = defaultFromDuration;

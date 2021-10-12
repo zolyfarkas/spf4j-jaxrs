@@ -1,5 +1,7 @@
 package org.spf4j.jaxrs.server.providers;
 
+import com.google.common.base.Ascii;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -51,6 +53,7 @@ public final class StdErrorResponseExceptionMapper implements ExceptionMapper<Th
   private final ContainerRequestContext reqCtx;
 
   @Inject
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public StdErrorResponseExceptionMapper(
          @ConfigProperty(name = "hostName", defaultValue = "hostName") final String host,
          @Context final ContainerRequestContext reqCtx) {
@@ -106,7 +109,7 @@ public final class StdErrorResponseExceptionMapper implements ExceptionMapper<Th
     }
     ctx.accumulateComponent(ContextTags.LOG_ATTRIBUTES, exception);
     String reqProfileOnError = reqCtx.getHeaderString("X-Req-Profile-On-Error");
-    boolean isReqProfileOnError = "true".equalsIgnoreCase(reqProfileOnError);
+    boolean isReqProfileOnError = Ascii.equalsIgnoreCase("true", reqProfileOnError);
     return Response.status(status)
             .entity(new ServiceError(status, exception.getClass().getName(),
                     message, payload,
