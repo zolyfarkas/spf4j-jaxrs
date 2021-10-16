@@ -109,7 +109,7 @@ public final class StdErrorResponseExceptionMapper implements ExceptionMapper<Th
     }
     ctx.accumulateComponent(ContextTags.LOG_ATTRIBUTES, exception);
     String reqProfileOnError = reqCtx.getHeaderString("X-Req-Profile-On-Error");
-    boolean isReqProfileOnError = Ascii.equalsIgnoreCase("true", reqProfileOnError);
+    boolean isReqProfileOnError = reqProfileOnError != null && Ascii.equalsIgnoreCase("true", reqProfileOnError);
     return Response.status(status)
             .entity(new ServiceError(status, exception.getClass().getName(),
                     message, payload,
