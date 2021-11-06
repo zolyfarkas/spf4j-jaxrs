@@ -178,11 +178,14 @@ public class ProfilesClusterResource {
   @Path("cluster/groups")
   @GET
   @Produces({"application/json", "application/avro"})
-  public void getSampleLabels(@Suspended final AsyncResponse ar) throws IOException, URISyntaxException {
+  public void getSampleLabels(
+          @Nullable @QueryParam("from") final Instant from,
+          @Nullable @QueryParam("to") final Instant to,
+          @Suspended final AsyncResponse ar) throws IOException, URISyntaxException {
     CompletableFuture<Set<String>> cf
             = ContextPropagatingCompletableFuture.supplyAsync(() -> {
               try {
-                return new THashSet<>(profiles.getSampleLabels());
+                return new THashSet<>(profiles.getSampleLabels(from, to));
               } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
               }
@@ -192,7 +195,14 @@ public class ProfilesClusterResource {
     for (InetAddress addr : peerAddresses) {
       URI uri = new URI(protocol, null,
                   addr.getHostAddress(), port, "/profiles/local/groups", null, null);
-      cf = cf.thenCombine(httpClient.target(uri).request("application/avro")
+      Spf4jWebTarget target = httpClient.target(uri);
+      if (from != null) {
+        target = target.queryParam("from", from.toString());
+      }
+      if (to != null) {
+        target = target.queryParam("to", to.toString());
+      }
+      cf = cf.thenCombine(target.request("application/avro")
               .rx().get(new GenericType<List<String>>() { }),
               (Set<String> result, List<String> resp) -> {
                 result.addAll(resp);
@@ -212,6 +222,7 @@ public class ProfilesClusterResource {
   @GET
   @Produces({"application/stack.samples+json", "application/stack.samples.d3+json"})
   public void getLabeledSamples(@PathParam("label") final String label,
+          @Nullable @QueryParam("tag") final String tag,
           @Nullable @QueryParam("from") final Instant from,
           @Nullable @QueryParam("to") final Instant to,
           @Suspended final AsyncResponse ar) throws IOException, URISyntaxException {
@@ -219,7 +230,7 @@ public class ProfilesClusterResource {
     CompletableFuture<SampleNode> cf
             = ContextPropagatingCompletableFuture.supplyAsync(() -> {
               try {
-                return profiles.getLabeledSamples(label, from, to);
+                return profiles.getLabeledSamples(label, tag, from, to);
               } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
               }
@@ -230,6 +241,9 @@ public class ProfilesClusterResource {
       URI uri = new URI(protocol, null,
                   addr.getHostAddress(), port, "/profiles/local/groups", null, null);
       Spf4jWebTarget target = httpClient.target(uri).path(label);
+      if (tag != null) {
+        target = target.queryParam("tag", tag);
+      }
       if (from != null) {
         target = target.queryParam("from", from.toString());
       }
@@ -279,6 +293,7 @@ public class ProfilesClusterResource {
   @GET
   @Produces(MediaType.TEXT_HTML)
   public StreamingOutput visualizeGroups(@PathParam("label") final String label,
+          @Nullable @QueryParam("tag") final String tag,
           @Nullable @QueryParam("from") final Instant from,
           @Nullable @QueryParam("to") final Instant to) throws IOException {
     return new StreamingOutput() {
@@ -288,6 +303,10 @@ public class ProfilesClusterResource {
           StringBuilder url = new StringBuilder(64);
           url.append("/profiles/cluster/groups/" + UriComponent.encode(label, UriComponent.Type.PATH_SEGMENT)
                   + "?_Accept=application/stack.samples.d3%2Bjson");
+          if (tag != null) {
+            url.append("&tag=");
+            url.append(UriComponent.encode(tag, UriComponent.Type.QUERY_PARAM));
+          }
           if (from != null) {
             url.append("&from=");
             url.append(UriComponent.encode(from.toString(), UriComponent.Type.QUERY_PARAM));

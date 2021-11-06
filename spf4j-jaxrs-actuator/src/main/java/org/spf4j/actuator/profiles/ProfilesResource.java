@@ -46,6 +46,7 @@ import org.spf4j.base.avro.StackSampleElement;
 import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.ssdump2.Converter;
+import org.spf4j.stackmonitor.AvroStackSampleSupplier;
 import org.spf4j.stackmonitor.ProfilingTLAttacher;
 import org.spf4j.stackmonitor.SampleNode;
 import org.spf4j.stackmonitor.Sampler;
@@ -142,7 +143,11 @@ public class ProfilesResource {
   @Path("local/groups")
   @GET
   @Produces({"application/json", "application/avro"})
-  public Set<String> getSampleLabels() throws IOException {
+  public Set<String> getSampleLabels(
+          @Nullable @QueryParam("from") final Instant pfrom,
+          @Nullable @QueryParam("to") final Instant pto) throws IOException {
+    final Instant from = pfrom == null ? Instant.MIN : pfrom;
+    final Instant to = pto == null ? Instant.MAX : pfrom;
     java.nio.file.Path base = logFilesResource.getFiles().getBase();
     Set<String> result = new THashSet<>();
     result.addAll(sampler.getStackCollections().keySet());
@@ -160,6 +165,9 @@ public class ProfilesResource {
           Converter.loadLabels(elem.toFile(), result::add);
         } else if (fileName.endsWith(".ssdump2") || fileName.endsWith(".ssdump2.gz")) {
           result.add(Converter.getLabelFromSsdump2FileName(fileName));
+        } else if (fileName.endsWith("ssp.avro")) {
+          AvroStackSampleSupplier ss = new AvroStackSampleSupplier(elem);
+          result.addAll(ss.getMetaData(from, to).getContexts());
         }
       }
     }
@@ -170,6 +178,7 @@ public class ProfilesResource {
   @GET
   @Produces({"application/stack.samples+json", "application/stack.samples.d3+json"})
   public SampleNode getLabeledSamples(@PathParam("label") final String label,
+          @Nullable @QueryParam("tag") final String tag,
           @Nullable @QueryParam("from") final Instant from,
           @Nullable @QueryParam("to") final Instant to) throws IOException {
     if (from == null && to == null) { // return current in memory samples.
@@ -203,6 +212,9 @@ public class ProfilesResource {
             if (label.equals(fileLabel) && inRange(elem, from, to)) {
               samples = SampleNode.aggregateNullableUnsafe(samples, Converter.load(elem.toFile()));
             }
+          } else if (fileName.endsWith("ssp.avro")) {
+            AvroStackSampleSupplier ss = new AvroStackSampleSupplier(elem);
+            samples = SampleNode.aggregateNullableUnsafe(samples, ss.getSamples(label, tag, from, to));
           }
         }
       }

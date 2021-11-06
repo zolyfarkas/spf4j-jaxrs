@@ -16,6 +16,9 @@
 package org.spf4j.grizzly;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Paths;
 import java.util.function.Function;
 import org.spf4j.base.Env;
 import java.util.logging.Level;
@@ -36,11 +39,9 @@ import org.spf4j.stackmonitor.ProfiledExecutionContextFactory;
 import org.spf4j.stackmonitor.ProfilingTLAttacher;
 import org.spf4j.stackmonitor.Sampler;
 import org.spf4j.stackmonitor.TracingExecutionContexSampler;
+import org.spf4j.stackmonitor.AvroProfilePersister;
 
-/**
- *
- * @author Zoltan Farkas
- */
+@SuppressFBWarnings("PATH_TRAVERSAL_IN")
 public final class JvmServicesBuilder {
 
   private static JvmServices services;
@@ -169,19 +170,20 @@ public final class JvmServicesBuilder {
   }
 
   @Nullable
-  private Sampler createSampler() {
+  private Sampler createSampler() throws IOException {
     Sampler sampler;
     ThreadLocalContextAttacher threadLocalAttacher = ExecutionContexts.threadLocalAttacher();
     if (!(threadLocalAttacher instanceof ProfilingTLAttacher)) {
       Logger.getLogger(JvmServicesBuilder.class.getName()).log(Level.WARNING, "ProfilingTLAttacher is NOT active,"
               + " alternate profiling config already set up: {}", threadLocalAttacher);
       sampler = new Sampler(profilerSampleTimeMillis, profilerDumpTimeMillis,
-              (t) -> new FastStackCollector(false, true, new Thread[]{t}), logFolder, hostName);
+              (t) -> new FastStackCollector(false, true, new Thread[]{t}),
+              new AvroProfilePersister(Paths.get(logFolder), hostName, true, profilerDumpTimeMillis));
     } else {
       ProfilingTLAttacher contextFactory = (ProfilingTLAttacher) threadLocalAttacher;
       sampler = new Sampler(profilerSampleTimeMillis, profilerDumpTimeMillis,
               (t) -> new TracingExecutionContexSampler(contextFactory::getCurrentThreadContexts, aggregationGroups),
-              logFolder, hostName);
+              new AvroProfilePersister(Paths.get(logFolder), hostName, true, profilerDumpTimeMillis));
     }
     if (profilerJmx) {
       sampler.registerJmx();
@@ -200,7 +202,12 @@ public final class JvmServicesBuilder {
       initUncaughtExceptionHandler();
       initRequestAttributedProfiler();
       JAXRSAvroSerializers.registerJaxRsObjectSerializers(); // does not belong here...
-      Sampler sampler = createSampler();
+      Sampler sampler;
+      try {
+        sampler = createSampler();
+      } catch (IOException ex) {
+        throw new UncheckedIOException(ex);
+      }
       services = new JvmServicesImpl(sampler, ProcessVitals.getOrCreate(openFilesSampleTimeMillis,
               memoryUseSampleTimeMillis, gcUseSampleTimeMillis, threadUseSampleTimeMillis, cpuUseSampleTimeMillis),
               new LogbackService(applicationName, logFolder, hostName),

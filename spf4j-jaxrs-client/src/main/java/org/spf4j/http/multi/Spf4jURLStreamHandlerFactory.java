@@ -31,6 +31,9 @@ public final class Spf4jURLStreamHandlerFactory implements URLStreamHandlerFacto
   @Override
   @Nullable
   public URLStreamHandler createURLStreamHandler(final String protocol) {
+    if (protocol == null) {
+      return null;
+    }
     if (Ascii.equalsIgnoreCase("mhttp", protocol)) {
       return MultiHttpURLStreamHandler.INSTANCE;
     } else if (Ascii.equalsIgnoreCase("mhttps", protocol)) {
