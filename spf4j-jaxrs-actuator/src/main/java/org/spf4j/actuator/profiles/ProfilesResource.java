@@ -11,6 +11,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -179,50 +180,48 @@ public class ProfilesResource {
   @Produces({"application/stack.samples+json", "application/stack.samples.d3+json"})
   public SampleNode getLabeledSamples(@PathParam("label") final String label,
           @Nullable @QueryParam("tag") final String tag,
-          @Nullable @QueryParam("from") final Instant from,
+          @Nullable @QueryParam("from") final Instant pfrom,
           @Nullable @QueryParam("to") final Instant to) throws IOException {
-    if (from == null && to == null) { // return current in memory samples.
-      SampleNode samples = sampler.getStackCollections().get(label);
-      if (samples == null) {
-        throw new NotFoundException("No currernt samples for: " + label);
-      }
-      return samples;
+    Instant from;
+    if (pfrom == null) {
+      from = Instant.now().minus(Duration.ofHours(1));
     } else {
-      SampleNode samples = null;
-      if (to == null) {
-        samples = sampler.getStackCollections().get(label);
-      }
-      java.nio.file.Path base = logFilesResource.getFiles().getBase();
-      try (DirectoryStream<java.nio.file.Path> stream = Files.newDirectoryStream(base)) {
-        for (java.nio.file.Path elem : stream) {
-          if (Files.isDirectory(elem)) { // will not recurse for now.
-            continue;
+      from = pfrom;
+    }
+    SampleNode samples = null;
+    if (to == null || to.isAfter(sampler.getLastDumpInstant())) {
+      samples = sampler.getStackCollections().get(label);
+    }
+    java.nio.file.Path base = logFilesResource.getFiles().getBase();
+    try (DirectoryStream<java.nio.file.Path> stream = Files.newDirectoryStream(base)) {
+      for (java.nio.file.Path elem : stream) {
+        if (Files.isDirectory(elem)) { // will not recurse for now.
+          continue;
+        }
+        java.nio.file.Path elemName = elem.getFileName();
+        if (elemName == null) {
+          continue;
+        }
+        String fileName = elemName.toString();
+        if (fileName.endsWith(".ssdump3") || fileName.endsWith(".ssdump3.gz")) {
+          if (inRange(elem, from, to)) {
+            samples = SampleNode.aggregateNullableUnsafe(samples, Converter.loadLabeledDump(elem.toFile(), label));
           }
-          java.nio.file.Path elemName = elem.getFileName();
-          if (elemName == null) {
-            continue;
+        } else if (fileName.endsWith(".ssdump2") || fileName.endsWith(".ssdump2.gz")) {
+          String fileLabel = Converter.getLabelFromSsdump2FileName(fileName);
+          if (label.equals(fileLabel) && inRange(elem, from, to)) {
+            samples = SampleNode.aggregateNullableUnsafe(samples, Converter.load(elem.toFile()));
           }
-          String fileName = elemName.toString();
-          if (fileName.endsWith(".ssdump3") || fileName.endsWith(".ssdump3.gz")) {
-            if (inRange(elem, from, to)) {
-              samples = SampleNode.aggregateNullableUnsafe(samples, Converter.loadLabeledDump(elem.toFile(), label));
-            }
-          } else if (fileName.endsWith(".ssdump2") || fileName.endsWith(".ssdump2.gz")) {
-            String fileLabel = Converter.getLabelFromSsdump2FileName(fileName);
-            if (label.equals(fileLabel) && inRange(elem, from, to)) {
-              samples = SampleNode.aggregateNullableUnsafe(samples, Converter.load(elem.toFile()));
-            }
-          } else if (fileName.endsWith("ssp.avro")) {
-            AvroStackSampleSupplier ss = new AvroStackSampleSupplier(elem);
-            samples = SampleNode.aggregateNullableUnsafe(samples, ss.getSamples(label, tag, from, to));
-          }
+        } else if (fileName.endsWith("ssp.avro")) {
+          AvroStackSampleSupplier ss = new AvroStackSampleSupplier(elem);
+          samples = SampleNode.aggregateNullableUnsafe(samples, ss.getSamples(label, tag, from, to));
         }
       }
-      if (samples == null) {
-        throw new NotFoundException("No samples for: " + label + " in range [" + from + ", " + to + ']');
-      }
-      return samples;
     }
+    if (samples == null) {
+      throw new NotFoundException("No samples for: " + label + " in range [" + from + ", " + to + ']');
+    }
+    return samples;
   }
 
   private static boolean inRange(final java.nio.file.Path file,
