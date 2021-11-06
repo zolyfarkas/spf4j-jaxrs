@@ -181,12 +181,18 @@ public class ProfilesResource {
   public SampleNode getLabeledSamples(@PathParam("label") final String label,
           @Nullable @QueryParam("tag") final String tag,
           @Nullable @QueryParam("from") final Instant pfrom,
-          @Nullable @QueryParam("to") final Instant to) throws IOException {
+          @Nullable @QueryParam("to") final Instant pto) throws IOException {
     Instant from;
     if (pfrom == null) {
       from = Instant.now().minus(Duration.ofHours(1));
     } else {
       from = pfrom;
+    }
+    Instant to;
+    if (pto == null) {
+      to = Instant.now();
+    } else {
+      to = pto;
     }
     SampleNode samples = null;
     if (to == null || to.isAfter(sampler.getLastDumpInstant())) {
