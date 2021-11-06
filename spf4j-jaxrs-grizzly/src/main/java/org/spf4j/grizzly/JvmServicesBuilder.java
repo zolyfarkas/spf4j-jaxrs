@@ -72,7 +72,7 @@ public final class JvmServicesBuilder {
 
   public JvmServicesBuilder() {
     this.profilerSampleTimeMillis = Env.getValue("PROFILER_SAMPLE_MILLIS", 10);
-    this.profilerDumpTimeMillis = Env.getValue("PROFILER_DUMNP_MILLIS", 3600000);
+    this.profilerDumpTimeMillis = Env.getValue("PROFILER_DUMNP_MILLIS", 300000);
     this.profilerJmx = Env.getValue("PROFILER_JMX", true);
     this.applicationName = null;
     this.hostName = null;
