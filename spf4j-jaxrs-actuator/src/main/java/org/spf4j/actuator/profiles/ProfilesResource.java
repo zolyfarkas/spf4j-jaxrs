@@ -147,11 +147,13 @@ public class ProfilesResource {
   public Set<String> getSampleLabels(
           @Nullable @QueryParam("from") final Instant pfrom,
           @Nullable @QueryParam("to") final Instant pto) throws IOException {
-    final Instant from = pfrom == null ? Instant.MIN : pfrom;
-    final Instant to = pto == null ? Instant.MAX : pfrom;
+    Instant now = Instant.now();
+    final Instant from = pfrom == null ? now.minus(Duration.ofHours(1)) : pfrom;
+    final Instant to = pto == null ? now : pfrom;
     java.nio.file.Path base = logFilesResource.getFiles().getBase();
     Set<String> result = new THashSet<>();
     result.addAll(sampler.getStackCollections().keySet());
+    String filePrefix = sampler.getFilePrefix();
     try (DirectoryStream<java.nio.file.Path> stream = Files.newDirectoryStream(base)) {
       for (java.nio.file.Path elem : stream) {
         if (Files.isDirectory(elem)) { // will not recurse for now.
@@ -162,6 +164,9 @@ public class ProfilesResource {
           continue;
         }
         String fileName = fname.toString();
+        if (!fname.startsWith(filePrefix)) {
+          continue;
+        }
         if (fileName.endsWith(".ssdump3") || fileName.endsWith(".ssdump3.gz")) {
           Converter.loadLabels(elem.toFile(), result::add);
         } else if (fileName.endsWith(".ssdump2") || fileName.endsWith(".ssdump2.gz")) {
