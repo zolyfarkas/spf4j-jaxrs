@@ -198,6 +198,7 @@ public class ProfilesResource {
     if (to == null || to.isAfter(sampler.getLastDumpInstant())) {
       samples = sampler.getStackCollections().get(label);
     }
+    sampler.flushPersister();
     java.nio.file.Path base = logFilesResource.getFiles().getBase();
     try (DirectoryStream<java.nio.file.Path> stream = Files.newDirectoryStream(base)) {
       for (java.nio.file.Path elem : stream) {
