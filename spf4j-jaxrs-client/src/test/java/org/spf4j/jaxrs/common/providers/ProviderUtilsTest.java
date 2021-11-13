@@ -38,7 +38,7 @@ public class ProviderUtilsTest {
     NullabilityParameterConverterProvider npp = new NullabilityParameterConverterProvider(null);
     CsvParameterConverterProvider csvp = new CsvParameterConverterProvider(null);
     List<ParamConverterProvider> ordered = ProviderUtils.ordered(Arrays.asList(new ParamConverters.DateProvider(),
-            new ParamConverters.AggregatedProvider(), csvp, npp));
+            new ParamConverters.AggregatedProvider(null), csvp, npp));
     Assert.assertSame(npp, ordered.get(0));
     Assert.assertSame(csvp, ordered.get(1));
 
