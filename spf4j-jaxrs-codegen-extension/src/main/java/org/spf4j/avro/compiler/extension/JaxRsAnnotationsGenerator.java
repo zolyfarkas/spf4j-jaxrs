@@ -16,10 +16,8 @@
 package org.spf4j.avro.compiler.extension;
 
 import com.google.common.collect.Sets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -41,15 +39,12 @@ import org.apache.avro.compiler.specific.SpecificCompiler;
  */
 public final class JaxRsAnnotationsGenerator implements JavaAnnotationsGenerator {
 
-  private static final List<Class> PARAM_ANNOTATION_CLASSES = Arrays.<Class>asList(PathParam.class,
-          QueryParam.class,
-            HeaderParam.class, CookieParam.class, MatrixParam.class, FormParam.class, BeanParam.class);
-
   private static final Map<String, String> PARAM_MAP;
 
   static {
     PARAM_MAP = new HashMap<>();
-    for (Class clasz : PARAM_ANNOTATION_CLASSES) {
+    for (Class clasz : new Class[] {PathParam.class, QueryParam.class,
+            HeaderParam.class, CookieParam.class, MatrixParam.class, FormParam.class, BeanParam.class}) {
       PARAM_MAP.put(clasz.getSimpleName(), clasz.getName());
     }
   }
