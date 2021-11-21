@@ -15,6 +15,7 @@
  */
 package org.spf4j.grizzly;
 
+import org.spf4j.base.ShutdownThread;
 import org.spf4j.log.LogbackService;
 import org.spf4j.perf.ProcessVitals;
 import org.spf4j.stackmonitor.Sampler;
@@ -55,13 +56,13 @@ public interface JvmServices extends AutoCloseable {
 
   default JvmServices start() {
     getLoggingService().start();
-    getProfiler().start();
     getVitals().start();
+    getProfiler().start();
     return this;
   }
 
   default JvmServices closeOnShutdown() {
-    org.spf4j.base.Runtime.queueHookAtEnd(() -> {
+    ShutdownThread.get().queueHookAtEnd(() -> {
       try {
         this.close();
       } catch (Exception ex) {

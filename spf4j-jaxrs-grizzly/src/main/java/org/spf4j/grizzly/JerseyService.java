@@ -17,6 +17,7 @@ package org.spf4j.grizzly;
 
 import java.io.Closeable;
 import java.io.IOException;
+import org.spf4j.base.ShutdownThread;
 
 /**
  *
@@ -30,5 +31,16 @@ public interface JerseyService extends Closeable {
 
   @Override
   void close();
+
+  default JerseyService closeOnShutdown() {
+    ShutdownThread.get().queueHook(Integer.MAX_VALUE - 1, () -> {
+      try {
+        this.close();
+      } catch (Exception ex) {
+        throw new RuntimeException(ex);
+      }
+    });
+    return this;
+  }
 
 }

@@ -30,7 +30,10 @@ import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.DispatcherType;
@@ -39,6 +42,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Feature;
 import org.apache.avro.SchemaResolver;
 import org.apache.avro.SchemaResolvers;
+import org.glassfish.grizzly.GrizzlyFuture;
 import org.glassfish.grizzly.http.CompressionConfig;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
@@ -57,6 +61,7 @@ import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.spf4j.avro.NoSnapshotRefsResolver;
 import org.spf4j.avro.SchemaClient;
+import org.spf4j.base.TimeSource;
 import org.spf4j.concurrent.LifoThreadPoolBuilder;
 import org.spf4j.jaxrs.Spf4jBinder;
 import org.spf4j.http.DefaultDeadlineProtocol;
@@ -421,8 +426,47 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
     public void close() {
       Logger.getLogger("JerseyService").log(Level.INFO, "Shutting dow jersery service: {0}", server);
       appContext.undeploy();
-      server.shutdown(30, TimeUnit.SECONDS);
+      List<ExecutorService> tps = new ArrayList<>(4);
+      for (NetworkListener listener : server.getListeners()) {
+        TCPNIOTransport transport = listener.getTransport();
+        tps.add(transport.getKernelThreadPool());
+        tps.add(transport.getWorkerThreadPool());
+      }
+      GrizzlyFuture<HttpServer> sf = server.shutdown(30, TimeUnit.SECONDS);
+      long deadlineNanos = TimeSource.nanoTime() + TimeUnit.NANOSECONDS.convert(30, TimeUnit.SECONDS);
+      for (ExecutorService es : tps) {
+        es.shutdown();
+      }
+      Exception e = null;
+      try {
+        sf.get(TimeSource.getTimeToDeadlineStrict(deadlineNanos, TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
+      } catch (TimeoutException ex) {
+        e = ex;
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      } catch (ExecutionException | RuntimeException ex) {
+        e = ex;
+      }
+      for (ExecutorService es : tps) {
+        try {
+          es.awaitTermination(TimeSource.getTimeToDeadlineStrict(deadlineNanos, TimeUnit.NANOSECONDS),
+                  TimeUnit.NANOSECONDS);
+        } catch (TimeoutException ex) {
+          e = ex;
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+      }
       server.shutdownNow();
+      for (ExecutorService es : tps) {
+        List<Runnable> remaining = es.shutdownNow();
+        if (remaining.size() > 0) {
+          Logger.getLogger(JerseyServiceBuilder.class.getName()).log(Level.WARNING, "Remaining tasks: {0}", remaining);
+        }
+      }
+      if (e != null) {
+        throw new RuntimeException(e);
+      }
     }
 
     @Override
