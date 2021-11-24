@@ -15,9 +15,10 @@
  */
 package org.spf4j.actuator.jmx;
 
+import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.Nullable;
 import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.OpenType;
@@ -44,17 +45,22 @@ import org.spf4j.base.Reflections;
  */
 public final class SimpleTypes {
 
+  private static final SimpleTypeRegistry TYPE_REGISTRY = new SimpleTypeRegistry();
+
+  private static final class SimpleTypeRegistry {
+
     private static final SimpleType<?>[] TYPE_ARRAY = {
-        VOID, BOOLEAN, CHARACTER, BYTE, SHORT, INTEGER, LONG, FLOAT,
-        DOUBLE, STRING, BIGDECIMAL, BIGINTEGER, DATE, OBJECTNAME,
+      VOID, BOOLEAN, CHARACTER, BYTE, SHORT, INTEGER, LONG, FLOAT,
+      DOUBLE, STRING, BIGDECIMAL, BIGINTEGER, DATE, OBJECTNAME
     };
 
-    private static final Map<String, SimpleType> MAP = new HashMap<>();
+    private final Map<String, SimpleType> classNameToSType;
 
-    private static final Map<String, SimpleType> PRIMITIVES = new HashMap<>();
+    private final Map<String, SimpleType> primitiveClassNameToSType;
 
-
-    static {
+    SimpleTypeRegistry() {
+      this.classNameToSType = Maps.newHashMapWithExpectedSize(TYPE_ARRAY.length  + 9);
+      this.primitiveClassNameToSType = Maps.newHashMapWithExpectedSize(9);
       for (SimpleType type : TYPE_ARRAY) {
         String className = type.getClassName();
         Class<?> clasz;
@@ -63,39 +69,52 @@ public final class SimpleTypes {
         } catch (ClassNotFoundException ex) {
           throw new ExceptionInInitializerError(ex);
         }
-        MAP.put(clasz.getName(), type);
+        classNameToSType.put(clasz.getName(), type);
         Class<?> prim = Reflections.wrapperToPrimitive(clasz);
         if (prim != null && clasz != prim) {
-          MAP.put(prim.getName(), type);
-          PRIMITIVES.put(prim.getName(), type);
+          String primName = prim.getName();
+          classNameToSType.put(primName, type);
+          primitiveClassNameToSType.put(primName, type);
         }
       }
     }
 
-    private SimpleTypes() { }
-
-    @SuppressFBWarnings("ITC_INHERITANCE_TYPE_CHECKING")
-    public static OpenType getOpenType(final String typeName) {
-      if (typeName.startsWith("[")) {
-        try {
-          // arrays
-          Class<?> arrayClass = Class.forName(typeName);
-          OpenType openType = getOpenType(arrayClass.getComponentType().getName());
-          if (openType instanceof ArrayType) {
-            ArrayType arrType = (ArrayType) openType;
-            return new ArrayType(arrType.getDimension() + 1, arrType.getElementOpenType());
-          } else if (openType instanceof SimpleType) {
-            return new ArrayType((SimpleType) openType, PRIMITIVES.containsKey(openType.getClassName()));
-          }
-        } catch (ClassNotFoundException | OpenDataException ex) {
-          throw new IllegalArgumentException("Invalid class " + typeName, ex);
-        }
-      }
-      SimpleType st = MAP.get(typeName);
-      if (st == null) {
-        throw new IllegalArgumentException("Not a simple type: " + typeName);
-      }
-      return st;
+    private boolean isPrimitive(final OpenType openType) {
+      return primitiveClassNameToSType.containsKey(openType.getClassName());
     }
+
+    @Nullable
+    private SimpleType getSimpleType(final String className) {
+      return classNameToSType.get(className);
+    }
+
+  }
+
+  private SimpleTypes() {
+  }
+
+  @SuppressFBWarnings("ITC_INHERITANCE_TYPE_CHECKING")
+  public static OpenType getOpenType(final String typeName) {
+    if (typeName.startsWith("[")) {
+      try {
+        // arrays
+        Class<?> arrayClass = Class.forName(typeName);
+        OpenType openType = getOpenType(arrayClass.getComponentType().getName());
+        if (openType instanceof ArrayType) {
+          ArrayType arrType = (ArrayType) openType;
+          return new ArrayType(arrType.getDimension() + 1, arrType.getElementOpenType());
+        } else if (openType instanceof SimpleType) {
+          return new ArrayType((SimpleType) openType, TYPE_REGISTRY.isPrimitive(openType));
+        }
+      } catch (ClassNotFoundException | OpenDataException ex) {
+        throw new IllegalArgumentException("Invalid class " + typeName, ex);
+      }
+    }
+    SimpleType st = TYPE_REGISTRY.getSimpleType(typeName);
+    if (st == null) {
+      throw new IllegalArgumentException("Not a simple type: " + typeName);
+    }
+    return st;
+  }
 
 }
