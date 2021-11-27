@@ -15,6 +15,7 @@
  */
 package org.spf4j.grizzly;
 
+import org.spf4j.base.ShutdownHooks;
 import org.spf4j.base.ShutdownThread;
 import org.spf4j.log.LogbackService;
 import org.spf4j.perf.ProcessVitals;
@@ -62,13 +63,15 @@ public interface JvmServices extends AutoCloseable {
   }
 
   default JvmServices closeOnShutdown() {
-    ShutdownThread.get().queueHookAtEnd(() -> {
+    if (!ShutdownThread.get().queueHook(ShutdownHooks.ShutdownPhase.OBSERVABILITY_SERVICES, () -> {
       try {
         this.close();
       } catch (Exception ex) {
         throw new RuntimeException(ex);
       }
-    });
+    })) {
+      this.close();
+    }
     return this;
   }
 
