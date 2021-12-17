@@ -94,7 +94,7 @@ public final class StdErrorResponseExceptionMapper implements ExceptionMapper<Th
               .setCode(status);
       if (isOperator) {
               errBuilder.setDetail(new DebugDetail(host,
-                      Collections.EMPTY_LIST, Converters.convert(exception), Collections.EMPTY_LIST));
+                      Collections.emptyList(), Converters.convert(exception), Collections.emptyList()));
       }
       errBuilder.setType(exception.getClass().getName())
               .setMessage(message).setPayload(payload);
