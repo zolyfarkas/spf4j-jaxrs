@@ -55,7 +55,7 @@ public interface StreamingArrayContent<T> extends Closeable, AvroContainer, Buff
     return new StreamingArrayContentProjection(this, resultSchema, elementType, bufferSize);
   }
 
-  class StreamingArrayContentProjection<T> implements StreamingArrayContent {
+  final class StreamingArrayContentProjection<T> implements StreamingArrayContent {
 
     private final StreamingArrayContent<IndexedRecord> toWrap;
     private final Schema resultSchema;
