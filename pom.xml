@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.spf4j</groupId>
     <artifactId>spf4j</artifactId>
-    <version>8.9.5-SNAPSHOT</version>
+    <version>8.9.5</version>
   </parent>
   <name>${project.artifactId}-${project.version}</name>
   <version>2.1.40-SNAPSHOT</version>
@@ -34,8 +34,8 @@
     <findbugs.excludeFilterFile>${basedir}/../findbugs_exclude.xml</findbugs.excludeFilterFile>
     <checkstyle.configLocation>${basedir}/../checkstyle_checks.xml</checkstyle.configLocation>
     <jersey.version>2.35</jersey.version>
-    <spf4j.version>8.9.5-SNAPSHOT</spf4j.version>
-    <spf4j.logback.version>1.2.25</spf4j.logback.version>
+    <spf4j.version>8.9.5</spf4j.version>
+    <spf4j.logback.version>1.2.26</spf4j.logback.version>
     <swagger.version>2.1.10</swagger.version>
     <service-schema.version>1.0.0</service-schema.version>
   </properties>
