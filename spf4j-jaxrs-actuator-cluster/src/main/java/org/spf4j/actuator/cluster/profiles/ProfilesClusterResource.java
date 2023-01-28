@@ -28,7 +28,6 @@ import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -40,19 +39,12 @@ import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.StreamingOutput;
 import org.glassfish.jersey.uri.UriComponent;
-import org.spf4j.actuator.cluster.logs.LogsClusterResource;
 import org.spf4j.actuator.profiles.ProfilesResource;
-import org.spf4j.base.AppendableUtils;
-import org.spf4j.base.avro.LogRecord;
-import org.spf4j.base.avro.Order;
-import org.spf4j.base.avro.StackSampleElement;
 import org.spf4j.cluster.Cluster;
 import org.spf4j.cluster.ClusterInfo;
 import org.spf4j.concurrent.ContextPropagatingCompletableFuture;
 import org.spf4j.concurrent.DefaultExecutor;
 import org.spf4j.jaxrs.client.Spf4JClient;
-import org.spf4j.jaxrs.server.AsyncResponseWrapper;
-import org.spf4j.ssdump2.Converter;
 import org.spf4j.stackmonitor.SampleNode;
 import javax.ws.rs.core.GenericType;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -72,8 +64,6 @@ import org.spf4j.jaxrs.client.Spf4jWebTarget;
 @Singleton
 public class ProfilesClusterResource {
 
-  private final LogsClusterResource logsResource;
-
   private final ProfilesResource profiles;
 
   private final Cluster cluster;
@@ -85,12 +75,11 @@ public class ProfilesClusterResource {
   private final String protocol;
 
   @Inject
-  public ProfilesClusterResource(final LogsClusterResource logsResource, final ProfilesResource profiles,
+  public ProfilesClusterResource(final ProfilesResource profiles,
            final Cluster cluster, final Spf4JClient httpClient,
           @ConfigProperty(name = "servlet.port") final int port,
           @ConfigProperty(name = "servlet.protocol") final String protocol)
           throws IOException {
-    this.logsResource = logsResource;
     this.profiles = profiles;
     this.cluster = cluster;
     this.httpClient = httpClient;
@@ -134,30 +123,40 @@ public class ProfilesClusterResource {
   @GET
   @Produces(value = {"application/stack.samples+json", "application/stack.samples.d3+json"})
   public void getSamples(@PathParam("trId") final String traceId,
-          @QueryParam("tailOffsetScanStart") @DefaultValue("10000") final long tailOffsetScanStart,
           @Suspended final AsyncResponse ar)
           throws IOException, URISyntaxException {
-    StringBuilder sb = new StringBuilder(traceId.length());
-    AppendableUtils.escapeJsonString(traceId, sb);
-    logsResource.getClusterLogs(10, "log.stackSamples.length != 0 and log.trId == \""
-            + sb + "\"", Order.DESC, null, tailOffsetScanStart, new AsyncResponseWrapper(ar) {
-      @Override
-      public boolean resume(final Object response) {
-        List<LogRecord> logs = (List<LogRecord>) response;
-        if (logs.isEmpty()) {
-          return super.resume(null);
-        }
-        SampleNode result = Converter.convert(logs.get(0).getStackSamples().iterator());
-        for (int i = 1, l = logs.size(); i < l; i++) {
-          List<StackSampleElement> stackSamples = logs.get(i).getStackSamples();
-          if (stackSamples.isEmpty()) {
-            continue;
-          }
-          result = SampleNode.aggregate(result, Converter.convert(stackSamples.iterator()));
-        }
-        return super.resume(result);
-      }
 
+    CompletableFuture<SampleNode> cf
+            = ContextPropagatingCompletableFuture.supplyAsync(() -> {
+              try {
+                return profiles.getSamples(traceId);
+              } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+              }
+            }, DefaultExecutor.INSTANCE);
+    ClusterInfo clusterInfo = cluster.getClusterInfo();
+    Set<InetAddress> peerAddresses = clusterInfo.getPeerAddresses();
+    for (InetAddress addr : peerAddresses) {
+      URI uri = new URI(protocol, null,
+                  addr.getHostAddress(), port, "/profiles/local/traces", null, null);
+      Spf4jWebTarget target = httpClient.target(uri).path(traceId);
+      cf = cf.thenCombine(target.request("application/stack.samples+json")
+              .rx().get(InputStream.class),
+              (SampleNode resp, InputStream input) -> {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
+                  SampleNode.parseInto(br, resp);
+                } catch (IOException ex) {
+                  throw new UncheckedIOException(ex);
+                }
+                return resp;
+              });
+    }
+    cf.whenComplete((samples, t) -> {
+      if (t != null) {
+        ar.resume(t);
+      } else {
+        ar.resume(samples);
+      }
     });
   }
 

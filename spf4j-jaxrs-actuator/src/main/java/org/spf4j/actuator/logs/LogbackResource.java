@@ -106,8 +106,7 @@ public class LogbackResource {
               "", level, Instant.ofEpochMilli(status.getDate()), "status",
               Thread.currentThread().getName(),
               status.getMessage(), Collections.EMPTY_LIST, Collections.EMPTY_LIST, Collections.EMPTY_MAP,
-              t == null ? null : Converters.convert(t),
-              Collections.EMPTY_LIST));
+              t == null ? null : Converters.convert(t)));
       if (status.hasChildren()) {
         addStatuses(status::iterator, result, limit);
       }

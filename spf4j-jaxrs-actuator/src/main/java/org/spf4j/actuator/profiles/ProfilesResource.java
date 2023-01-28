@@ -23,7 +23,6 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
@@ -35,15 +34,10 @@ import javax.ws.rs.core.StreamingOutput;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.glassfish.jersey.uri.UriComponent;
 import org.spf4j.actuator.logs.LogFilesResource;
-import org.spf4j.actuator.logs.LogsResource;
-import org.spf4j.base.AppendableUtils;
 import org.spf4j.base.ExecutionContext;
 import org.spf4j.base.ExecutionContexts;
 import org.spf4j.base.ThreadLocalContextAttacher;
 import org.spf4j.base.avro.DebugDetail;
-import org.spf4j.base.avro.LogRecord;
-import org.spf4j.base.avro.Order;
-import org.spf4j.base.avro.StackSampleElement;
 import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.ProjectionSupport;
 import org.spf4j.ssdump2.Converter;
@@ -62,8 +56,6 @@ import org.spf4j.stackmonitor.Sampler;
 @Singleton
 public class ProfilesResource {
 
-  private final LogsResource logsResource;
-
   private final LogFilesResource logFilesResource;
 
   private final FlameGraphTemplate visualizePage;
@@ -74,10 +66,8 @@ public class ProfilesResource {
 
   @Inject
   @SuppressFBWarnings("EI_EXPOSE_REP2")
-  public ProfilesResource(final LogsResource logsResource,
-          final LogFilesResource logFilesResource, final Sampler sampler,
+  public ProfilesResource(final LogFilesResource logFilesResource, final Sampler sampler,
           @ConfigProperty(name = "hostName", defaultValue = "127.0.0.1") final String hostName) throws IOException {
-    this.logsResource = logsResource;
     this.logFilesResource = logFilesResource;
     this.sampler = sampler;
     Handlebars hb = new Handlebars(new ClassPathTemplateLoader("", ""));
@@ -121,24 +111,28 @@ public class ProfilesResource {
   @GET
   @Produces({"application/stack.samples+json", "application/stack.samples.d3+json"})
   @Nullable
-  public SampleNode getSamples(@PathParam("trId") final String traceId,
-          @QueryParam("tailOffsetScanStart") @DefaultValue("10000") final long tailOffsetScanStart) throws IOException {
-    StringBuilder sb = new StringBuilder(traceId.length());
-    AppendableUtils.escapeJsonString(traceId, sb);
-    List<LogRecord> logs = logsResource.getLocalLogs(10, "log.stackSamples.length != 0 and log.trId == \""
-            + sb + "\"", Order.DESC, null, tailOffsetScanStart);
-    if (logs.isEmpty()) {
-      return null;
-    }
-    SampleNode result = Converter.convert(logs.get(0).getStackSamples().iterator());
-    for (int i = 1, l = logs.size(); i < l; i++) {
-      List<StackSampleElement> stackSamples = logs.get(i).getStackSamples();
-      if (stackSamples.isEmpty()) {
-        continue;
+  public SampleNode getSamples(@PathParam("trId") final String traceId) throws IOException {
+    java.nio.file.Path base = logFilesResource.getFiles().getBase();
+    try (DirectoryStream<java.nio.file.Path> stream = Files.newDirectoryStream(base)) {
+      for (java.nio.file.Path elem : stream) {
+        if (Files.isDirectory(elem)) { // will not recurse for now.
+          continue;
+        }
+        java.nio.file.Path elemName = elem.getFileName();
+        if (elemName == null) {
+          continue;
+        }
+        String fileName = elemName.toString();
+        if (fileName.endsWith("ssp.avro")) {
+          AvroStackSampleSupplier ss = new AvroStackSampleSupplier(elem);
+          SampleNode samples = ss.getSamples(null, traceId, Instant.MIN, Instant.MAX);
+          if (samples != null) {
+            return samples;
+          }
+        }
       }
-      result = SampleNode.aggregate(result, Converter.convert(stackSamples.iterator()));
     }
-    return result;
+    return null;
   }
 
   @Path("local/groups")
@@ -298,7 +292,7 @@ public class ProfilesResource {
 
   @Override
   public String toString() {
-    return "ProfilesResource{" + "logsResource=" + logsResource + ", logFilesResource="
+    return "ProfilesResource{logFilesResource="
             + logFilesResource + ", visualizePage=" + visualizePage
             + ", sampler=" + sampler + ", hostName=" + hostName + '}';
   }

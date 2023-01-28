@@ -286,7 +286,8 @@ public final class JerseyServiceBuilder implements JaxRsConfiguration {
       FixedWebappContext webappContext = new FixedWebappContext(jerseyAppName, "");
       DefaultDeadlineProtocol dp = new DefaultDeadlineProtocol(defaultTimeoutNanos, maximumAllowedTimeoutNanos,
               TimeUnit.NANOSECONDS);
-      FilterRegistration fr = webappContext.addFilter("ecFilter", new ExecutionContextFilter(dp, auth));
+      FilterRegistration fr = webappContext.addFilter("ecFilter",
+              new ExecutionContextFilter(dp, auth, jvmServices.getProfiler().getPersister()));
       fr.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "/*");
 
       SchemaResolver schemaClient;

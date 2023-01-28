@@ -1,12 +1,14 @@
 package org.spf4j.servlet;
 
 import com.google.common.base.Ascii;
+import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.EOFException;
 import org.spf4j.http.ContextTags;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -14,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
@@ -48,7 +52,6 @@ import org.spf4j.base.avro.Converters;
 import org.spf4j.base.avro.DebugDetail;
 import org.spf4j.service.avro.ServiceError;
 import org.spf4j.http.DeadlineProtocol;
-import org.spf4j.http.DefaultDeadlineProtocol;
 import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
 import org.spf4j.jaxrs.JaxRsSecurityContext;
@@ -63,6 +66,7 @@ import org.spf4j.log.Slf4jLogRecord;
 import org.spf4j.perf.MeasurementRecorder;
 import org.spf4j.perf.MeasurementRecorderSource;
 import org.spf4j.perf.impl.RecorderFactory;
+import org.spf4j.stackmonitor.ProfilePersister;
 
 /**
  * A Filter for REST services.
@@ -123,24 +127,24 @@ public final class ExecutionContextFilter implements Filter {
 
   private String headerOverwriteQueryParamPrefix;
 
+  private final ProfilePersister profilepersister;
 
-  public ExecutionContextFilter(final SecurityAuthenticator auth) {
-    this(new DefaultDeadlineProtocol(), auth);
-  }
 
-  public ExecutionContextFilter(final DeadlineProtocol deadlineProtocol, final SecurityAuthenticator auth) {
+  public ExecutionContextFilter(final DeadlineProtocol deadlineProtocol, final SecurityAuthenticator auth,
+          final ProfilePersister profilepersister) {
     this(deadlineProtocol, auth, Env.getValue("WARN_TIME_ERROR_THRESHOLD", 0.4f),
-            Env.getValue("EXEC_TIME_ERROR_THRESHOLD", 0.9f));
+            Env.getValue("EXEC_TIME_ERROR_THRESHOLD", 0.9f), profilepersister);
   }
 
   public ExecutionContextFilter(final DeadlineProtocol deadlineProtocol,
           final SecurityAuthenticator auth,
-          final float warnThreshold, final float errorThreshold) {
+          final float warnThreshold, final float errorThreshold, final ProfilePersister profilepersister) {
     this.deadlineProtocol = deadlineProtocol;
     this.auth = auth;
     this.warnThreshold = warnThreshold;
     this.errorThreshold = errorThreshold;
     this.headerOverwriteQueryParamPrefix = "_";
+    this.profilepersister = profilepersister;
   }
 
   public DeadlineProtocol getDeadlineProtocol() {
@@ -313,7 +317,7 @@ public final class ExecutionContextFilter implements Filter {
       if (logAttrs == null) {
         logAttrs = new ArrayList<>(2);
       }
-      logContextProfile(log, execTimeNanos, ctx);
+      logContextProfile(execTimeNanos, ctx);
       logAttrs.add(LogAttribute.of("performanceError", "exec time > " + etn + " ns"));
       if (level.ordinal() < Level.ERROR.ordinal()) {
         level = level.ERROR;
@@ -324,7 +328,7 @@ public final class ExecutionContextFilter implements Filter {
         if (logAttrs == null) {
           logAttrs = new ArrayList<>(2);
         }
-        logContextProfile(log, execTimeNanos, ctx);
+        logContextProfile(execTimeNanos, ctx);
         logAttrs.add(LogAttribute.of("performanceWarning", "exec time > " + wtn + " ns"));
         if (level.ordinal() < Level.WARN.ordinal()) {
           level = level.WARN;
@@ -512,13 +516,25 @@ public final class ExecutionContextFilter implements Filter {
     }
   }
 
-  private static void logContextProfile(final Logger logger, final long execTimeNanos, final ExecutionContext ctx) {
+  private final Lock contextLogLock = new ReentrantLock();
+
+  @SuppressFBWarnings("MDM_THREAD_FAIRNESS")
+  private void logContextProfile(final long execTimeNanos, final ExecutionContext ctx) {
     StackSamples stackSamples = ctx.getAndClearStackSamples();
     if (stackSamples != null) {
-      logger.log(java.util.logging.Level.INFO, "Profile Detail for {0}",
-              new Object[]{ctx.getName(), LogAttribute.traceId(ctx.getId()),
-                LogAttribute.execTimeMicros(execTimeNanos, TimeUnit.NANOSECONDS),
-                LogAttribute.profileSamples(stackSamples)});
+      if (contextLogLock.tryLock()) { // Best effort + basic thread safety and a way to limit profiling overhead.
+        try {
+          Instant now = Instant.now();
+          try {
+            this.profilepersister.persist(ImmutableMap.of(ctx.getName(), stackSamples),
+                    ctx.getId().toString(), now.minusNanos(execTimeNanos), now);
+          } catch (IOException ex) {
+            this.log.log(java.util.logging.Level.WARNING, "Failed to persist profiles", ex);
+          }
+        } finally {
+          contextLogLock.unlock();
+        }
+      }
     }
   }
 
