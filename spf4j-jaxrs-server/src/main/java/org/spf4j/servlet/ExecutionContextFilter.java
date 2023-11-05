@@ -54,6 +54,8 @@ import org.spf4j.service.avro.ServiceError;
 import org.spf4j.http.DeadlineProtocol;
 import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
+import org.spf4j.http.ServerTiming;
+import org.spf4j.http.ServerTiming.ServerTimingMetric;
 import org.spf4j.jaxrs.JaxRsSecurityContext;
 import org.spf4j.jaxrs.server.SecurityAuthenticator;
 import org.spf4j.io.LazyOutputStreamWrapper;
@@ -206,7 +208,7 @@ public final class ExecutionContextFilter implements Filter {
       deadlineNanos = deadlineProtocol.deserialize(httpReq::getHeader, startTimeNanos);
     } catch (IllegalArgumentException ex) {
       errorResponse(httpResp, 400, "Invalid deadline/timeout", ex, secCtx);
-      logRequestEnd(startTimeNanos, org.spf4j.log.Level.WARN, name, reqId, httpReq, httpResp);
+      logRequestEnd(startTimeNanos, org.spf4j.log.Level.WARN, name, reqId, httpReq, httpResp, secCtx);
       return;
     }
     String ctxLoglevel = httpReq.getHeader(ctxLogLevelHeaderName);
@@ -216,7 +218,7 @@ public final class ExecutionContextFilter implements Filter {
         level = Level.valueOf(httpReq.getHeader(ctxLogLevelHeaderName));
       } catch (IllegalArgumentException ex) {
         errorResponse(httpResp, 400, "Invalid log level: " + ctxLoglevel, ex, secCtx);
-        logRequestEnd(startTimeNanos, org.spf4j.log.Level.WARN, name, reqId, httpReq, httpResp);
+        logRequestEnd(startTimeNanos, org.spf4j.log.Level.WARN, name, reqId, httpReq, httpResp, secCtx);
         return;
       }
     } else {
@@ -244,7 +246,7 @@ public final class ExecutionContextFilter implements Filter {
               throw new UncheckedIOException(ex);
             } finally {
               try {
-                logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp);
+                logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp, secCtx);
               } finally {
                 ctx.close();
               }
@@ -269,7 +271,7 @@ public final class ExecutionContextFilter implements Filter {
         }, request, response);
       } else {
         try {
-          logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp);
+          logRequestEnd(org.spf4j.log.Level.INFO, ctx, httpReq, httpResp, secCtx);
         } finally {
           ctx.close();
         }
@@ -281,7 +283,7 @@ public final class ExecutionContextFilter implements Filter {
         }
         ctx.accumulateComponent(ContextTags.LOG_ATTRIBUTES, t);
         Level logLevel = isCommunicationError(t) ? org.spf4j.log.Level.WARN : org.spf4j.log.Level.ERROR;
-        logRequestEnd(logLevel, ctx, httpReq, httpResp);
+        logRequestEnd(logLevel, ctx, httpReq, httpResp, secCtx);
       } finally {
         ctx.close();
       }
@@ -297,9 +299,10 @@ public final class ExecutionContextFilter implements Filter {
   }
 
 
-  @SuppressFBWarnings("UCC_UNRELATED_COLLECTION_CONTENTS")
+  @SuppressFBWarnings({"UCC_UNRELATED_COLLECTION_CONTENTS", "HTTP_RESPONSE_SPLITTING"})
   private void logRequestEnd(final Level plevel,
-          final ExecutionContext ctx, final CountingHttpServletRequest req, final CountingHttpServletResponse resp) {
+          final ExecutionContext ctx, final CountingHttpServletRequest req, final CountingHttpServletResponse resp,
+          final JaxRsSecurityContext secCtx) {
     org.spf4j.log.Level level;
     org.spf4j.log.Level ctxOverride = ctx.get(ContextTags.LOG_LEVEL);
     if (ctxOverride != null && ctxOverride.ordinal() > plevel.ordinal()) {
@@ -349,6 +352,10 @@ public final class ExecutionContextFilter implements Filter {
       }
     }
     long execTimeMicros = TimeUnit.NANOSECONDS.toMicros(execTimeNanos);
+    if (secCtx.isUserInRole(JaxRsSecurityContext.OPERATOR_ROLE)) {
+      resp.addHeader("Server-Timing", new ServerTiming(
+              new ServerTimingMetric("server_time", execTimeMicros / 1000.0, "")).toString());
+    }
     String remoteHost = getRemoteHost(req);
     int status = resp.getStatus();
     long bytesRead = req.getBytesRead();
@@ -397,14 +404,19 @@ public final class ExecutionContextFilter implements Filter {
     }
   }
 
+  @SuppressFBWarnings({"HTTP_RESPONSE_SPLITTING"})
   private void logRequestEnd(final long startTimeNanos, final Level level, final String reqStr,
           final String reqId, final CountingHttpServletRequest req,
-          final CountingHttpServletResponse resp) {
+          final CountingHttpServletResponse resp, final JaxRsSecurityContext secCtx) {
     Object[] args;
     int status = resp.getStatus();
     long bytesRead = req.getBytesRead();
     long bytesWritten = resp.getBytesWritten();
     long execTimeMicros = TimeUnit.NANOSECONDS.toMicros(TimeSource.nanoTime() - startTimeNanos);
+    if (secCtx.isUserInRole(JaxRsSecurityContext.OPERATOR_ROLE)) {
+      resp.addHeader("Server-Timing", new ServerTiming(
+              new ServerTimingMetric("server_time", execTimeMicros / 1000.0, "")).toString());
+    }
     if (status >= 500) {
       SERVER_ERRORS.increment();
     } else if (status >= 400) {

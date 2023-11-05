@@ -178,6 +178,15 @@ public final class Headers {
     return i + 1;
   }
 
+  /**
+   *  quoted-string  = DQUOTE *( qdtext / quoted-pair ) DQUOTE
+   *  qdtext         = HTAB / SP /%x21 / %x23-5B / %x5D-7E / obs-text
+   *  obs-text       = %x80-FF
+   *  quoted-pair    = "\" ( HTAB / SP / VCHAR / obs-text )
+   * @param source
+   * @param destination
+   * @throws IOException
+   */
   @SuppressFBWarnings("SF_SWITCH_NO_DEFAULT") // not really
   static void writeQuotedString(final CharSequence source,
           final Appendable destination) throws IOException  {
