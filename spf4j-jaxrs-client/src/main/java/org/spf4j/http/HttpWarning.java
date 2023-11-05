@@ -57,69 +57,6 @@ public final class HttpWarning implements JsonWriteable {
   private final String text;
   private final ZonedDateTime date;
 
-  private static int parseString(final CharSequence source,
-          final int from,
-          final StringBuilder destination)  {
-    if (source.charAt(from) != '"') {
-      throw new IllegalArgumentException("No quoted-string at " + from + " in " + source);
-    }
-    boolean escaped = false;
-    boolean closed = false;
-    int i = from + 1;
-    OUTER:
-    for (int l = source.length(); i < l; i++) {
-      char charAt = source.charAt(i);
-      switch (charAt) {
-        case '\\':
-          if (escaped) {
-            destination.append(charAt);
-            escaped = false;
-          } else {
-            escaped = true;
-          }
-          break;
-        case '"':
-          if (escaped) {
-            destination.append(charAt);
-            escaped = false;
-          } else {
-            closed = true;
-            break OUTER;
-          }
-          break;
-        default:
-          destination.append(charAt);
-          if (escaped) {
-            escaped = false;
-          }
-          break;
-      }
-    }
-    if (!closed) {
-      throw new IllegalArgumentException("Not closed quoted-string in " + source);
-    }
-    return i + 1;
-  }
-
-
-  @SuppressFBWarnings("SF_SWITCH_NO_DEFAULT") // not really
-  private static void writeString(final CharSequence source,
-          final Appendable destination) throws IOException  {
-    destination.append('"');
-    for (int i = 0, l = source.length(); i < l; i++) {
-      char charAt = source.charAt(i);
-      switch (charAt) {
-        case '"':
-        case '\\':
-        case '\n':
-        case '\r':
-          destination.append('\\');
-        default:
-          destination.append(charAt);
-      }
-    }
-    destination.append('"');
-  }
 
 
   /**
@@ -153,7 +90,7 @@ public final class HttpWarning implements JsonWriteable {
     }
     String agent = headerValue.subSequence(agStartIdx, ssIdx).toString();
     StringBuilder textB = new StringBuilder();
-    int txtEnd = parseString(headerValue, ssIdx + 1, textB);
+    int txtEnd = Headers.parseQuotedString(headerValue, ssIdx + 1, textB);
     String text;
     try {
       text = MimeUtility.decodeText(textB.toString());
@@ -165,7 +102,7 @@ public final class HttpWarning implements JsonWriteable {
       zdt = null;
     } else {
       StringBuilder dateB = new StringBuilder();
-      parseString(headerValue, txtEnd + 1, dateB);
+      Headers.parseQuotedString(headerValue, txtEnd + 1, dateB);
       zdt = DateTimeFormatter.RFC_1123_DATE_TIME.parse(dateB, ZonedDateTime::from);
     }
     return new HttpWarning(code, agent, zdt, text);
@@ -215,7 +152,7 @@ public final class HttpWarning implements JsonWriteable {
     sb.append(' ');
     sb.append(agent);
     sb.append(' ');
-    writeString(MimeUtility.encodeText(text), sb);
+    Headers.writeQuotedString(MimeUtility.encodeText(text), sb);
     if (date != null) {
       sb.append(" \"");
       DateTimeFormatter.RFC_1123_DATE_TIME.formatTo(date, sb);
