@@ -18,6 +18,8 @@ public final class Headers {
    */
   public static final String REQ_DEADLINE = "request-deadline";
 
+  public static final String SERVER_TIMING = "Server-Timing";
+
   /**
    * request-timeout → TimeoutValue TimeoutUnit?
    *  TimeoutValue → {positive integer as ASCII string of at most 8 digits}

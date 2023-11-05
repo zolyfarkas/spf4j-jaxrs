@@ -353,7 +353,7 @@ public final class ExecutionContextFilter implements Filter {
     }
     long execTimeMicros = TimeUnit.NANOSECONDS.toMicros(execTimeNanos);
     if (secCtx.isUserInRole(JaxRsSecurityContext.OPERATOR_ROLE)) {
-      resp.addHeader("Server-Timing", new ServerTiming(
+      resp.addHeader(Headers.SERVER_TIMING, new ServerTiming(
               new ServerTimingMetric("server_time", execTimeMicros / 1000.0, "")).toString());
     }
     String remoteHost = getRemoteHost(req);
@@ -414,7 +414,7 @@ public final class ExecutionContextFilter implements Filter {
     long bytesWritten = resp.getBytesWritten();
     long execTimeMicros = TimeUnit.NANOSECONDS.toMicros(TimeSource.nanoTime() - startTimeNanos);
     if (secCtx.isUserInRole(JaxRsSecurityContext.OPERATOR_ROLE)) {
-      resp.addHeader("Server-Timing", new ServerTiming(
+      resp.addHeader(Headers.SERVER_TIMING, new ServerTiming(
               new ServerTimingMetric("server_time", execTimeMicros / 1000.0, "")).toString());
     }
     if (status >= 500) {

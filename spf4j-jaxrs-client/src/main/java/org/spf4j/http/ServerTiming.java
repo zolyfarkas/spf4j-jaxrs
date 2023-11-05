@@ -52,6 +52,10 @@ public final class ServerTiming implements JsonWriteable {
       return parameters;
     }
 
+    public ServerTimingMetric(final String name, final Double durationMs) {
+      this(name, toParameters(durationMs, null), true);
+    }
+
     public ServerTimingMetric(final String name, final Double durationMs, final String description) {
       this(name, toParameters(durationMs, description), true);
     }

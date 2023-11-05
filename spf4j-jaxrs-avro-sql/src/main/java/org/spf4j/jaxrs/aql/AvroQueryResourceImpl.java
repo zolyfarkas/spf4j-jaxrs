@@ -47,8 +47,11 @@ import org.spf4j.log.ExecContextLogger;
 import org.spf4j.avro.calcite.AvroDataSetAsProjectableFilterableTable;
 import org.spf4j.aql.AvroDataSetContract;
 import org.spf4j.avro.calcite.PlannerUtils;
+import org.spf4j.base.TimeSource;
+import org.spf4j.base.Timing;
 import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
+import org.spf4j.http.ServerTiming;
 import org.spf4j.jaxrs.JaxRsSecurityContext;
 
 /**
@@ -107,8 +110,10 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
 
   @Override
   public Response query(final Reader query, final JaxRsSecurityContext secCtx) {
+    long startTimeNs = TimeSource.nanoTime();
     RelNode relNode = parsePlan(query);
-    LOG.debug("exec plan: {}", new ReadablePlan(relNode));
+    long parseElapsedNs = TimeSource.nanoTime() - startTimeNs;
+    LOG.debug("exec plan: {} optained in {} ns", new ReadablePlan(relNode), parseElapsedNs);
     RelDataType rowType = relNode.getRowType();
     LOG.debug("Return row type: {}", rowType);
     Schema from = Types.from(rowType);
@@ -116,6 +121,10 @@ public class AvroQueryResourceImpl implements AvroQueryResource {
     EmbededDataContext dc = new EmbededDataContext(new JavaTypeFactoryImpl(), secCtx);
     Interpreter interpreter = new Interpreter(dc, relNode);
     Response.ResponseBuilder rb = Response.ok(new IterableInterpreter(from, interpreter));
+    if (secCtx.isUserInRole(JaxRsSecurityContext.OPERATOR_ROLE)) {
+      rb.header(Headers.SERVER_TIMING, new ServerTiming(
+              new ServerTiming.ServerTimingMetric("sql_parse_time", parseElapsedNs / 1000000.0)));
+    }
     Map<String, String> deprecations = (Map<String, String>) dc.get(EmbededDataContext.DEPRECATIONS);
     if (deprecations != null && !deprecations.isEmpty()) {
       for (Map.Entry<String, String> dep : deprecations.entrySet()) {
