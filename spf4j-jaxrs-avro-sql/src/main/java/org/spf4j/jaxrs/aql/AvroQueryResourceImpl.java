@@ -48,7 +48,6 @@ import org.spf4j.avro.calcite.AvroDataSetAsProjectableFilterableTable;
 import org.spf4j.aql.AvroDataSetContract;
 import org.spf4j.avro.calcite.PlannerUtils;
 import org.spf4j.base.TimeSource;
-import org.spf4j.base.Timing;
 import org.spf4j.http.Headers;
 import org.spf4j.http.HttpWarning;
 import org.spf4j.http.ServerTiming;
