@@ -29,10 +29,12 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.GenericEntity;
@@ -132,6 +134,8 @@ public class ProfilesClusterResource {
                 return profiles.getSamples(traceId);
               } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
+              } catch (NotFoundException ex) {
+                return null;
               }
             }, DefaultExecutor.INSTANCE);
     ClusterInfo clusterInfo = cluster.getClusterInfo();
@@ -141,10 +145,28 @@ public class ProfilesClusterResource {
                   addr.getHostAddress(), port, "/profiles/local/traces", null, null);
       Spf4jWebTarget target = httpClient.target(uri).path(traceId);
       cf = cf.thenCombine(target.request("application/stack.samples+json")
-              .rx().get(InputStream.class),
+              .rx().get(InputStream.class).handleAsync((is, t) -> {
+              if (t != null) {
+                  if (t instanceof WebApplicationException) {
+                    if (((WebApplicationException) t).getResponse().getStatus() == 404) {
+                      return null;
+                    } else {
+                      throw new RuntimeException(t);
+                    }
+                  } else {
+                    throw new RuntimeException(t);
+                  }
+              } else {
+                return is;
+              }
+              }),
               (SampleNode resp, InputStream input) -> {
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
-                  SampleNode.parseInto(br, resp);
+                  if (resp != null) {
+                    SampleNode.parseInto(br, resp);
+                  } else {
+                    resp = SampleNode.parse(br).getSecond();
+                  }
                 } catch (IOException ex) {
                   throw new UncheckedIOException(ex);
                 }

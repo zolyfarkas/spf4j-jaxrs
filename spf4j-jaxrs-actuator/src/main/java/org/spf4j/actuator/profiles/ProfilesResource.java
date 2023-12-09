@@ -110,7 +110,6 @@ public class ProfilesResource {
   @Path("local/traces/{trId}")
   @GET
   @Produces({"application/stack.samples+json", "application/stack.samples.d3+json"})
-  @Nullable
   public SampleNode getSamples(@PathParam("trId") final String traceId) throws IOException {
     java.nio.file.Path base = logFilesResource.getFiles().getBase();
     try (DirectoryStream<java.nio.file.Path> stream = Files.newDirectoryStream(base)) {
@@ -132,7 +131,7 @@ public class ProfilesResource {
         }
       }
     }
-    return null;
+    throw new NotFoundException("No samples for trId = " + traceId);
   }
 
   @Path("local/groups")
