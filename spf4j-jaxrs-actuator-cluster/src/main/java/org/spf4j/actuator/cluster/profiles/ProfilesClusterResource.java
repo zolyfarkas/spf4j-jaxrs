@@ -161,6 +161,9 @@ public class ProfilesClusterResource {
               }
               }),
               (SampleNode resp, InputStream input) -> {
+                if (input == null) {
+                  return resp;
+                }
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
                   if (resp != null) {
                     SampleNode.parseInto(br, resp);
@@ -177,6 +180,9 @@ public class ProfilesClusterResource {
       if (t != null) {
         ar.resume(t);
       } else {
+        if (samples == null) {
+          ar.resume(new NotFoundException("No samples found for trId = " + traceId));
+        }
         ar.resume(samples);
       }
     });
