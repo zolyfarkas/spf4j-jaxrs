@@ -17,10 +17,12 @@ package org.spf4j.jaxrs.common.providers;
 
 import java.util.Arrays;
 import java.util.List;
+import javax.ws.rs.RuntimeType;
 import javax.ws.rs.ext.ParamConverterProvider;
 import org.junit.Assert;
 import org.glassfish.jersey.internal.inject.ParamConverters;
 import org.junit.Test;
+import org.spf4j.jaxrs.NoConfiguration;
 import org.spf4j.jaxrs.common.providers.gp.CsvParameterConverterProvider;
 import org.spf4j.jaxrs.common.providers.gp.NullabilityParameterConverterProvider;
 
@@ -38,7 +40,7 @@ public class ProviderUtilsTest {
     NullabilityParameterConverterProvider npp = new NullabilityParameterConverterProvider(null);
     CsvParameterConverterProvider csvp = new CsvParameterConverterProvider(null);
     List<ParamConverterProvider> ordered = ProviderUtils.ordered(Arrays.asList(
-            new ParamConverters.AggregatedProvider(null, null), csvp, npp));
+            new ParamConverters.AggregatedProvider(null, new NoConfiguration(RuntimeType.CLIENT)), csvp, npp));
     Assert.assertSame(npp, ordered.get(0));
     Assert.assertSame(csvp, ordered.get(1));
 
